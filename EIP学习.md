@@ -1427,6 +1427,57 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 最终得到 ret 为 '363d3d373d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af43d82803e903d91602b57fd5bf3', 这里的含义就是，执行这段 code 时都是执行 delegatecall 逻辑，
 即 当EVM运行完上述代码后，go-ethereum客户端会把返回的字节码存储到ret变量中，通过evm.StateDB.SetCode(address, ret)将合约地址和合约代码保存到StateDB数据库中，在我们后期进行调用时，仅运行EVM返回的以下字节码 '363d3d373d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af43d82803e903d91602b57fd5bf3'
 
+
+【调用】
+
+在后续的调用中每次使用 ret 中的 '363d3d37' 进行获取 用户入参的 calldata ,其中 '363d3d37' 为：
+
+36  CALLDATASIZE    获得calldata的长度  
+3d  RETURNDATASIZE  如前文所述，一种向堆栈中推入0的廉价方式   
+3d  RETURNDATASIZE  同上  
+37  CALLDATACOPY    如前所述复制calldata到内存   
+
+
+最终吧用户的 calldata 复制到 memory 中，然后 '3d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af4' 为：
+
+3d  RETURNDATASIZE   
+3d  RETURNDATASIZE  
+3d  RETURNDATASIZE   
+36  CALLDATASIZE     
+3d  RETURNDATASIZE   
+73bebebebebebebebebebebebebebebebebebebebe  PUSH20 bebebebebebebebebebebebebebebebebebebebe 
+5a  GAS  
+f4  DELEGATECALL  
+
+意思为 进行 delegatecall 调用，被调用的合约为 0xbebebebebebebebebebebebebebebebebebebebe，调用参数为 上述获取的用户 calldata。
+
+最后使用 '3d82803e' 核心操作码为RETURNDATACOPY 读取 delegatecall 的结果 returndata 中的数据到 memory 中。
+
+3d  RETURNDATASIZE  rds success 0   [0-cds]Calldata
+82  DUP3    0 rds success 0 [0-cds]Calldata
+80  DUP1    0 0 rds success 0   [0-cds]Calldata
+3e  RETURNDATACOPY  success 0   [0-rds]Returndata
+
+
+(辅助操作码为DUPn(其中n∈[1, 16])，其主要为将堆栈中的第n个元素复制并推入堆栈, 如目前堆栈中存在0 1两个元素，使用DUP2后运行完后堆栈为1 0 1，即将第二个元素1复制并推入堆栈)
+
+
+最最后使用 '903d91602b57fd5bf3' 将结果返回给用户。
+
+|           0x00000024      90             swap1                 0 suc
+|           0x00000025      3d             returndatasize        rds 0 suc
+|           0x00000026      91             swap2                 success 0 rds
+|           0x00000027      602b           push1 0x2b            0x2b success 0 rds
+|       ,=< 0x00000029      57             jumpi                 0 rds
+|       |   0x0000002a      fd             revert
+|       `-> 0x0000002b      5b             jumpdest              0 rds
+\           0x0000002c      f3             return
+
+
+
+
+
+
 */
 
 
@@ -1441,3 +1492,8 @@ EIP-1967  代理存储槽
 
 
 一个一致的位置，代理存储它们委托给的逻辑合约的地址，以及其他特定于代理的信息。
+
+
+EIP-897 (PROXY)
+
+EIP-1822 (UUPS)
