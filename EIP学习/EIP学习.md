@@ -1212,7 +1212,7 @@ hashStruct(s : Struct) = keccak256(typeHash ‖ encodeData(s))
 1. 合约钱包拥有者使用自己的私钥进行签名;
 2. 向目标合约提交合约钱包拥有者的签名
 3. 目标合约使用此签名向合约钱包进行isValidSignature方法。
-4. 合约钱包中的isValidSignature方法会检查签名是否属于合约拥有者。如果属于，合约钱包返回0x1626ba7e，否则返回0xffffffff
+4. 合约钱包中的isValidSignature方法会检查签名是否属于合约拥有者。如果属于，合约钱包返回 0x1626ba7e  [其实就是 `bytes4(keccak256("isValidSignature(bytes32,bytes)")` 的值]，否则返回0xffffffff
 5. 目标合约接受返回值，通过签名正误决定下一步操作
 
 
@@ -1259,6 +1259,36 @@ function isValidSignature(
 }
 
 其中对于 recoverSigner 需要根据具体的签名类型由用户自行编写，较为简单的方法是使用 ecrecover，(用户自行实现自己的钱包合约逻辑)
+
+
+
+
+EIP-1271 合约
+
+
+
+contract ERC1271 {
+
+  // bytes4(keccak256("isValidSignature(bytes32,bytes)")
+  bytes4 constant internal MAGICVALUE = 0x1626ba7e;
+
+  /**
+   * @dev Should return whether the signature provided is valid for the provided hash
+   * @param _hash      Hash of the data to be signed
+   * @param _signature Signature byte array associated with _hash
+   *
+   * MUST return the bytes4 magic value 0x1626ba7e when function passes.
+   * MUST NOT modify state (using STATICCALL for solc < 0.5, view modifier for solc > 0.5)
+   * MUST allow external calls
+   */ 
+  function isValidSignature(
+    bytes32 _hash, 
+    bytes memory _signature)
+    public
+    view 
+    returns (bytes4 magicValue);
+}
+
 
 
 ```
@@ -1998,7 +2028,17 @@ interface IDiamondCut {
 
 ```
 
+Diamond 是一个合约，它将调用委托给称为面的实现合约。Diamond 合约实现了一个 diamondCut 函数，它提供了添加/替换/删除的能力。除了 diamondCut 函数之外，还实现了一组 loupe 函数。这些函数显示了关于所实现的Diamond 的信息。Diamond 合约维护了一个selectorToFacet的映射，这基本上是一个函数签名到实现合约地址的映射。当用户调用一个函数时，Diamond 代理的回退函数使用函数签名来寻找这个映射中的实现地址。在找到函数签名的地址后，回退函数只是将调用委托给实现合约，并将响应返回给用户。
+
+Diamond 代理依靠的是一种存储模式。该代理被一些被称为面的实现合约所共享。理想情况下，每个切面都有自己的存储。然而，根据实施要求，面可以与其他面共享存储。 DiamondStorage 和 AppStorage 是一些流行的存储模式，分别用于[隔离]和[共享]存储。
+
+
+
+
 说白了就是将一些逻辑合约的地址和逻辑合约的 finction sig 进行映射，存到代理合约中，用来实现 modules 功能。
+
+
+
 
 
 
