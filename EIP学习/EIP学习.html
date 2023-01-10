@@ -1,0 +1,2753 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body {
+  max-width: 980px;
+  outline: 1300px solid #fff;
+  margin: 16px auto;
+}
+
+body .markdown-body
+{
+  padding: 45px;
+}
+
+@font-face {
+  font-family: fontawesome-mini;
+  src: url(data:font/woff;charset=utf-8;base64,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) format('woff');
+}
+
+.markdown-body {
+  font-family: sans-serif;
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  color: #333333;
+  overflow: hidden;
+  font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+.markdown-body a {
+  background: transparent;
+}
+
+.markdown-body a:active,
+.markdown-body a:hover {
+  outline: 0;
+}
+
+.markdown-body b,
+.markdown-body strong {
+  font-weight: bold;
+}
+
+.markdown-body mark {
+  background: #ff0;
+  color: #000;
+  font-style: italic;
+  font-weight: bold;
+}
+
+.markdown-body sub,
+.markdown-body sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+.markdown-body sup {
+  top: -0.5em;
+}
+.markdown-body sub {
+  bottom: -0.25em;
+}
+
+.markdown-body h1 {
+  font-size: 2em;
+  margin: 0.67em 0;
+}
+
+.markdown-body img {
+  border: 0;
+}
+
+.markdown-body hr {
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+  height: 0;
+}
+
+.markdown-body pre {
+  overflow: auto;
+}
+
+.markdown-body code,
+.markdown-body kbd,
+.markdown-body pre,
+.markdown-body samp {
+  font-family: monospace, monospace;
+  font-size: 1em;
+}
+
+.markdown-body input {
+  color: inherit;
+  font: inherit;
+  margin: 0;
+}
+
+.markdown-body html input[disabled] {
+  cursor: default;
+}
+
+.markdown-body input {
+  line-height: normal;
+}
+
+.markdown-body input[type="checkbox"] {
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.markdown-body td,
+.markdown-body th {
+  padding: 0;
+}
+
+.markdown-body .codehilitetable,
+.markdown-body .highlighttable {
+  border: 0;
+  border-spacing: 0;
+}
+
+.markdown-body .codehilitetable tr,
+.markdown-body .highlighttable {
+  border: 0;
+}
+
+.markdown-body .codehilitetable pre,
+.markdown-body .codehilitetable div.codehilite,
+.markdown-body .highlighttable pre,
+.markdown-body .highlighttable div.highlight {
+  margin: 0;
+}
+
+.markdown-body .linenos,
+.markdown-body .code,
+.markdown-body .codehilitetable td,
+.markdown-body .highlighttable td {
+  border: 0;
+  padding: 0;
+}
+
+.markdown-body td:not(.linenos) .linenodiv {
+  padding: 0 !important;
+}
+
+.markdown-body .code {
+  width: 100%;
+}
+
+.markdown-body .linenos div pre,
+.markdown-body .linenodiv pre,
+.markdown-body .linenodiv {
+  border: 0;
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  border-radius: 0;
+  -webkit-border-top-left-radius: 3px;
+  -webkit-border-bottom-left-radius: 3px;
+  -moz-border-radius-topleft: 3px;
+  -moz-border-radius-bottomleft: 3px;
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+
+.markdown-body .code div pre,
+.markdown-body .code div {
+  border: 0;
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  border-radius: 0;
+  -webkit-border-top-right-radius: 3px;
+  -webkit-border-bottom-right-radius: 3px;
+  -moz-border-radius-topright: 3px;
+  -moz-border-radius-bottomright: 3px;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+}
+
+.markdown-body * {
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.markdown-body input {
+  font: 13px Helvetica, arial, freesans, clean, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+  line-height: 1.4;
+}
+
+.markdown-body a {
+  color: #4183c4;
+  text-decoration: none;
+}
+
+.markdown-body a:hover,
+.markdown-body a:focus,
+.markdown-body a:active {
+  text-decoration: underline;
+}
+
+.markdown-body hr {
+  height: 0;
+  margin: 15px 0;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.markdown-body hr:before,
+.markdown-body hr:after {
+  display: table;
+  content: " ";
+}
+
+.markdown-body hr:after {
+  clear: both;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 15px;
+  margin-bottom: 15px;
+  line-height: 1.1;
+}
+
+.markdown-body h1 {
+  font-size: 30px;
+}
+
+.markdown-body h2 {
+  font-size: 21px;
+}
+
+.markdown-body h3 {
+  font-size: 16px;
+}
+
+.markdown-body h4 {
+  font-size: 14px;
+}
+
+.markdown-body h5 {
+  font-size: 12px;
+}
+
+.markdown-body h6 {
+  font-size: 11px;
+}
+
+.markdown-body blockquote {
+  margin: 0;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.markdown-body ol ol,
+.markdown-body ul ol {
+  list-style-type: lower-roman;
+}
+
+.markdown-body ul ul ol,
+.markdown-body ul ol ol,
+.markdown-body ol ul ol,
+.markdown-body ol ol ol {
+  list-style-type: lower-alpha;
+}
+
+.markdown-body dd {
+  margin-left: 0;
+}
+
+.markdown-body code,
+.markdown-body pre,
+.markdown-body samp {
+  font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  font-size: 12px;
+}
+
+.markdown-body pre {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.markdown-body kbd {
+  background-color: #e7e7e7;
+  background-image: -moz-linear-gradient(#fefefe, #e7e7e7);
+  background-image: -webkit-linear-gradient(#fefefe, #e7e7e7);
+  background-image: linear-gradient(#fefefe, #e7e7e7);
+  background-repeat: repeat-x;
+  border-radius: 2px;
+  border: 1px solid #cfcfcf;
+  color: #000;
+  padding: 3px 5px;
+  line-height: 10px;
+  font: 11px Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  display: inline-block;
+}
+
+.markdown-body>*:first-child {
+  margin-top: 0 !important;
+}
+
+.markdown-body>*:last-child {
+  margin-bottom: 0 !important;
+}
+
+.markdown-body .headerlink {
+  font: normal 400 16px fontawesome-mini;
+  vertical-align: middle;
+  margin-left: -16px;
+  float: left;
+  display: inline-block;
+  text-decoration: none;
+  opacity: 0;
+  color: #333;
+}
+
+.markdown-body .headerlink:focus {
+  outline: none;
+}
+
+.markdown-body h1 .headerlink {
+  margin-top: 0.8rem;
+}
+
+.markdown-body h2 .headerlink,
+.markdown-body h3 .headerlink {
+  margin-top: 0.6rem;
+}
+
+.markdown-body h4 .headerlink {
+  margin-top: 0.2rem;
+}
+
+.markdown-body h5 .headerlink,
+.markdown-body h6 .headerlink {
+  margin-top: 0;
+}
+
+.markdown-body .headerlink:hover,
+.markdown-body h1:hover .headerlink,
+.markdown-body h2:hover .headerlink,
+.markdown-body h3:hover .headerlink,
+.markdown-body h4:hover .headerlink,
+.markdown-body h5:hover .headerlink,
+.markdown-body h6:hover .headerlink {
+  opacity: 1;
+  text-decoration: none;
+}
+
+.markdown-body h1 {
+  padding-bottom: 0.3em;
+  font-size: 2.25em;
+  line-height: 1.2;
+  border-bottom: 1px solid #eee;
+}
+
+.markdown-body h2 {
+  padding-bottom: 0.3em;
+  font-size: 1.75em;
+  line-height: 1.225;
+  border-bottom: 1px solid #eee;
+}
+
+.markdown-body h3 {
+  font-size: 1.5em;
+  line-height: 1.43;
+}
+
+.markdown-body h4 {
+  font-size: 1.25em;
+}
+
+.markdown-body h5 {
+  font-size: 1em;
+}
+
+.markdown-body h6 {
+  font-size: 1em;
+  color: #777;
+}
+
+.markdown-body p,
+.markdown-body blockquote,
+.markdown-body ul,
+.markdown-body ol,
+.markdown-body dl,
+.markdown-body table,
+.markdown-body pre,
+.markdown-body .admonition {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.markdown-body hr {
+  height: 4px;
+  padding: 0;
+  margin: 16px 0;
+  background-color: #e7e7e7;
+  border: 0 none;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 2em;
+}
+
+.markdown-body ul ul,
+.markdown-body ul ol,
+.markdown-body ol ol,
+.markdown-body ol ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.markdown-body li>p {
+  margin-top: 16px;
+}
+
+.markdown-body dl {
+  padding: 0;
+}
+
+.markdown-body dl dt {
+  padding: 0;
+  margin-top: 16px;
+  font-size: 1em;
+  font-style: italic;
+  font-weight: bold;
+}
+
+.markdown-body dl dd {
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+
+.markdown-body blockquote {
+  padding: 0 15px;
+  color: #777;
+  border-left: 4px solid #ddd;
+}
+
+.markdown-body blockquote>:first-child {
+  margin-top: 0;
+}
+
+.markdown-body blockquote>:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body table {
+  display: block;
+  width: 100%;
+  overflow: auto;
+  word-break: normal;
+  word-break: keep-all;
+}
+
+.markdown-body table th {
+  font-weight: bold;
+}
+
+.markdown-body table th,
+.markdown-body table td {
+  padding: 6px 13px;
+  border: 1px solid #ddd;
+}
+
+.markdown-body table tr {
+  background-color: #fff;
+  border-top: 1px solid #ccc;
+}
+
+.markdown-body table tr:nth-child(2n) {
+  background-color: #f8f8f8;
+}
+
+.markdown-body img {
+  max-width: 100%;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.markdown-body code,
+.markdown-body samp {
+  padding: 0;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  margin: 0;
+  font-size: 85%;
+  background-color: rgba(0,0,0,0.04);
+  border-radius: 3px;
+}
+
+.markdown-body code:before,
+.markdown-body code:after {
+  letter-spacing: -0.2em;
+  content: "\00a0";
+}
+
+.markdown-body pre>code {
+  padding: 0;
+  margin: 0;
+  font-size: 100%;
+  word-break: normal;
+  white-space: pre;
+  background: transparent;
+  border: 0;
+}
+
+.markdown-body .codehilite,
+.markdown-body .highlight {
+  margin-bottom: 16px;
+}
+
+.markdown-body .codehilite pre,
+.markdown-body .highlight pre,
+.markdown-body pre {
+  padding: 16px;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  background-color: #f7f7f7;
+  border-radius: 3px;
+}
+
+.markdown-body .codehilite pre,
+.markdown-body .highlight pre {
+  margin-bottom: 0;
+  word-break: normal;
+}
+
+.markdown-body pre {
+  word-wrap: normal;
+}
+
+.markdown-body pre code {
+  display: inline;
+  max-width: initial;
+  padding: 0;
+  margin: 0;
+  overflow: initial;
+  line-height: inherit;
+  word-wrap: normal;
+  background-color: transparent;
+  border: 0;
+}
+
+.markdown-body pre code:before,
+.markdown-body pre code:after {
+  content: normal;
+}
+
+/* Admonition */
+.markdown-body .admonition {
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  position: relative;
+  border-radius: 3px;
+  border: 1px solid #e0e0e0;
+  border-left: 6px solid #333;
+  padding: 10px 10px 10px 30px;
+}
+
+.markdown-body .admonition table {
+  color: #333;
+}
+
+.markdown-body .admonition p {
+  padding: 0;
+}
+
+.markdown-body .admonition-title {
+  font-weight: bold;
+  margin: 0;
+}
+
+.markdown-body .admonition>.admonition-title {
+  color: #333;
+}
+
+.markdown-body .attention>.admonition-title {
+  color: #a6d796;
+}
+
+.markdown-body .caution>.admonition-title {
+  color: #d7a796;
+}
+
+.markdown-body .hint>.admonition-title {
+  color: #96c6d7;
+}
+
+.markdown-body .danger>.admonition-title {
+  color: #c25f77;
+}
+
+.markdown-body .question>.admonition-title {
+  color: #96a6d7;
+}
+
+.markdown-body .note>.admonition-title {
+  color: #d7c896;
+}
+
+.markdown-body .admonition:before,
+.markdown-body .attention:before,
+.markdown-body .caution:before,
+.markdown-body .hint:before,
+.markdown-body .danger:before,
+.markdown-body .question:before,
+.markdown-body .note:before {
+  font: normal normal 16px fontawesome-mini;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  line-height: 1.5;
+  color: #333;
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding-top: 10px;
+  padding-left: 10px;
+}
+
+.markdown-body .admonition:before {
+  content: "\f056\00a0";
+  color: 333;
+}
+
+.markdown-body .attention:before {
+  content: "\f058\00a0";
+  color: #a6d796;
+}
+
+.markdown-body .caution:before {
+  content: "\f06a\00a0";
+  color: #d7a796;
+}
+
+.markdown-body .hint:before {
+  content: "\f05a\00a0";
+  color: #96c6d7;
+}
+
+.markdown-body .danger:before {
+  content: "\f057\00a0";
+  color: #c25f77;
+}
+
+.markdown-body .question:before {
+  content: "\f059\00a0";
+  color: #96a6d7;
+}
+
+.markdown-body .note:before {
+  content: "\f040\00a0";
+  color: #d7c896;
+}
+
+.markdown-body .admonition::after {
+  content: normal;
+}
+
+.markdown-body .attention {
+  border-left: 6px solid #a6d796;
+}
+
+.markdown-body .caution {
+  border-left: 6px solid #d7a796;
+}
+
+.markdown-body .hint {
+  border-left: 6px solid #96c6d7;
+}
+
+.markdown-body .danger {
+  border-left: 6px solid #c25f77;
+}
+
+.markdown-body .question {
+  border-left: 6px solid #96a6d7;
+}
+
+.markdown-body .note {
+  border-left: 6px solid #d7c896;
+}
+
+.markdown-body .admonition>*:first-child {
+  margin-top: 0 !important;
+}
+
+.markdown-body .admonition>*:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* progress bar*/
+.markdown-body .progress {
+  display: block;
+  width: 300px;
+  margin: 10px 0;
+  height: 24px;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  background-color: #ededed;
+  position: relative;
+  box-shadow: inset -1px 1px 3px rgba(0, 0, 0, .1);
+}
+
+.markdown-body .progress-label {
+  position: absolute;
+  text-align: center;
+  font-weight: bold;
+  width: 100%; margin: 0;
+  line-height: 24px;
+  color: #333;
+  text-shadow: 1px 1px 0 #fefefe, -1px -1px 0 #fefefe, -1px 1px 0 #fefefe, 1px -1px 0 #fefefe, 0 1px 0 #fefefe, 0 -1px 0 #fefefe, 1px 0 0 #fefefe, -1px 0 0 #fefefe, 1px 1px 2px #000;
+  -webkit-font-smoothing: antialiased !important;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.markdown-body .progress-bar {
+  height: 24px;
+  float: left;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  background-color: #96c6d7;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -1px 0 rgba(0, 0, 0, .1);
+  background-size: 30px 30px;
+  background-image: -webkit-linear-gradient(
+    135deg, rgba(255, 255, 255, .4) 27%,
+    transparent 27%,
+    transparent 52%, rgba(255, 255, 255, .4) 52%,
+    rgba(255, 255, 255, .4) 77%,
+    transparent 77%, transparent
+  );
+  background-image: -moz-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, .4) 27%, transparent 27%,
+    transparent 52%, rgba(255, 255, 255, .4) 52%,
+    rgba(255, 255, 255, .4) 77%, transparent 77%,
+    transparent
+  );
+  background-image: -ms-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, .4) 27%, transparent 27%,
+    transparent 52%, rgba(255, 255, 255, .4) 52%,
+    rgba(255, 255, 255, .4) 77%, transparent 77%,
+    transparent
+  );
+  background-image: -o-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, .4) 27%, transparent 27%,
+    transparent 52%, rgba(255, 255, 255, .4) 52%,
+    rgba(255, 255, 255, .4) 77%, transparent 77%,
+    transparent
+  );
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, .4) 27%, transparent 27%,
+    transparent 52%, rgba(255, 255, 255, .4) 52%,
+    rgba(255, 255, 255, .4) 77%, transparent 77%,
+    transparent
+  );
+}
+
+.markdown-body .progress-100plus .progress-bar {
+  background-color: #a6d796;
+}
+
+.markdown-body .progress-80plus .progress-bar {
+  background-color: #c6d796;
+}
+
+.markdown-body .progress-60plus .progress-bar {
+  background-color: #d7c896;
+}
+
+.markdown-body .progress-40plus .progress-bar {
+  background-color: #d7a796;
+}
+
+.markdown-body .progress-20plus .progress-bar {
+  background-color: #d796a6;
+}
+
+.markdown-body .progress-0plus .progress-bar {
+  background-color: #c25f77;
+}
+
+.markdown-body .candystripe-animate .progress-bar{
+  -webkit-animation: animate-stripes 3s linear infinite;
+  -moz-animation: animate-stripes 3s linear infinite;
+  animation: animate-stripes 3s linear infinite;
+}
+
+@-webkit-keyframes animate-stripes {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 60px 0;
+  }
+}
+
+@-moz-keyframes animate-stripes {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 60px 0;
+  }
+}
+
+@keyframes animate-stripes {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 60px 0;
+  }
+}
+
+.markdown-body .gloss .progress-bar {
+  box-shadow:
+    inset 0 4px 12px rgba(255, 255, 255, .7),
+    inset 0 -12px 0 rgba(0, 0, 0, .05);
+}
+
+/* MultiMarkdown Critic Blocks */
+.markdown-body .critic_mark {
+  background: #ff0;
+}
+
+.markdown-body .critic_delete {
+  color: #c82829;
+  text-decoration: line-through;
+}
+
+.markdown-body .critic_insert {
+  color: #718c00 ;
+  text-decoration: underline;
+}
+
+.markdown-body .critic_comment {
+  color: #8e908c;
+  font-style: italic;
+}
+
+.markdown-body .headeranchor {
+  font: normal normal 16px fontawesome-mini;
+  line-height: 1;
+  display: inline-block;
+  text-decoration: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.headeranchor:before {
+  content: '\e157';
+}
+
+.markdown-body .task-list-item {
+  list-style-type: none;
+}
+
+.markdown-body .task-list-item+.task-list-item {
+  margin-top: 3px;
+}
+
+.markdown-body .task-list-item input {
+  margin: 0 4px 0.25em -20px;
+  vertical-align: middle;
+}
+
+.markdown-body diagram-div, .markdown-body div.uml-sequence-diagram, .markdown-body, div.uml-flowchart {
+  overflow: auto;
+}
+
+/* Media */
+@media only screen and (min-width: 480px) {
+  .markdown-body {
+    font-size:14px;
+  }
+}
+
+@media only screen and (min-width: 768px) {
+  .markdown-body {
+    font-size:16px;
+  }
+}
+
+@media print {
+  .markdown-body * {
+    background: transparent !important;
+    color: black !important;
+    filter:none !important;
+    -ms-filter: none !important;
+  }
+
+  .markdown-body {
+    font-size:12pt;
+    max-width:100%;
+    outline:none;
+    border: 0;
+  }
+
+  .markdown-body a,
+  .markdown-body a:visited {
+    text-decoration: underline;
+  }
+
+  .markdown-body .headeranchor-link {
+    display: none;
+  }
+
+  .markdown-body a[href]:after {
+    content: " (" attr(href) ")";
+  }
+
+  .markdown-body abbr[title]:after {
+    content: " (" attr(title) ")";
+  }
+
+  .markdown-body .ir a:after,
+  .markdown-body a[href^="javascript:"]:after,
+  .markdown-body a[href^="#"]:after {
+    content: "";
+  }
+
+  .markdown-body pre {
+    white-space: pre;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .markdown-body pre,
+  .markdown-body blockquote {
+    border: 1px solid #999;
+    padding-right: 1em;
+    page-break-inside: avoid;
+  }
+
+  .markdown-body .progress,
+  .markdown-body .progress-bar {
+    -moz-box-shadow: none;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+  }
+
+  .markdown-body .progress {
+    border: 1px solid #ddd;
+  }
+
+  .markdown-body .progress-bar {
+    height: 22px;
+    border-right: 1px solid #ddd;
+  }
+
+  .markdown-body tr,
+  .markdown-body img {
+    page-break-inside: avoid;
+  }
+
+  .markdown-body img {
+    max-width: 100% !important;
+  }
+
+  .markdown-body p,
+  .markdown-body h2,
+  .markdown-body h3 {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .markdown-body h2,
+  .markdown-body h3 {
+    page-break-after: avoid;
+  }
+}
+</style><style>/*GitHub*/
+.highlight {background-color:#fff;color:#333333;}
+.highlight .hll {background-color:#ffffcc;}
+.highlight .c{color:#999988;font-style:italic}
+.highlight .err{color:#a61717;background-color:#e3d2d2}
+.highlight .k{font-weight:bold}
+.highlight .o{font-weight:bold}
+.highlight .cm{color:#999988;font-style:italic}
+.highlight .cp{color:#999999;font-weight:bold}
+.highlight .c1{color:#999988;font-style:italic}
+.highlight .cs{color:#999999;font-weight:bold;font-style:italic}
+.highlight .gd{color:#000000;background-color:#ffdddd}
+.highlight .ge{font-style:italic}
+.highlight .gr{color:#aa0000}
+.highlight .gh{color:#999999}
+.highlight .gi{color:#000000;background-color:#ddffdd}
+.highlight .go{color:#888888}
+.highlight .gp{color:#555555}
+.highlight .gs{font-weight:bold}
+.highlight .gu{color:#800080;font-weight:bold}
+.highlight .gt{color:#aa0000}
+.highlight .kc{font-weight:bold}
+.highlight .kd{font-weight:bold}
+.highlight .kn{font-weight:bold}
+.highlight .kp{font-weight:bold}
+.highlight .kr{font-weight:bold}
+.highlight .kt{color:#445588;font-weight:bold}
+.highlight .m{color:#009999}
+.highlight .s{color:#dd1144}
+.highlight .n{color:#333333}
+.highlight .na{color:teal}
+.highlight .nb{color:#0086b3}
+.highlight .nc{color:#445588;font-weight:bold}
+.highlight .no{color:teal}
+.highlight .ni{color:purple}
+.highlight .ne{color:#990000;font-weight:bold}
+.highlight .nf{color:#990000;font-weight:bold}
+.highlight .nn{color:#555555}
+.highlight .nt{color:navy}
+.highlight .nv{color:teal}
+.highlight .ow{font-weight:bold}
+.highlight .w{color:#bbbbbb}
+.highlight .mf{color:#009999}
+.highlight .mh{color:#009999}
+.highlight .mi{color:#009999}
+.highlight .mo{color:#009999}
+.highlight .sb{color:#dd1144}
+.highlight .sc{color:#dd1144}
+.highlight .sd{color:#dd1144}
+.highlight .s2{color:#dd1144}
+.highlight .se{color:#dd1144}
+.highlight .sh{color:#dd1144}
+.highlight .si{color:#dd1144}
+.highlight .sx{color:#dd1144}
+.highlight .sr{color:#009926}
+.highlight .s1{color:#dd1144}
+.highlight .ss{color:#990073}
+.highlight .bp{color:#999999}
+.highlight .vc{color:teal}
+.highlight .vg{color:teal}
+.highlight .vi{color:teal}
+.highlight .il{color:#009999}
+.highlight .gc{color:#999;background-color:#EAF2F5}
+</style><title>EIP学习</title></head><body><article class="markdown-body"><h1 id="ethereum-improvement-proposals-eip">Ethereum Improvement Proposals (EIP) 以太坊改进协议<a class="headerlink" href="#ethereum-improvement-proposals-eip" title="Permanent link"></a></h1>
+<p>ERC 肯定是 EIP， 反之不是</p>
+<h1 id="ethereum-request-for-comment">Ethereum Request for Comment (以太坊版的意见征求稿)<a class="headerlink" href="#ethereum-request-for-comment" title="Permanent link"></a></h1>
+<p>用以记录以太坊上应用级的各种开发标准和协议(application-level standards and conventions).</p>
+<h2 id="_1">参考<a class="headerlink" href="#_1" title="Permanent link"></a></h2>
+<p><a href="https://eips.ethereum.org/erc">https://eips.ethereum.org/erc</a></p>
+<p><a class="magiclink magiclink-github magiclink-repository" href="https://github.com/ethereum/EIPs" title="GitHub Repository: ethereum/EIPs">ethereum/EIPs</a></p>
+<h2 id="erc-20">ERC-20<a class="headerlink" href="#erc-20" title="Permanent link"></a></h2>
+<div class="highlight"><pre>function name() public view returns (string)                                                                    【可选】 返回令牌的名称 - 例如&quot;MyToken&quot;
+
+function symbol() public view returns (string)                                                                  【可选】 返回令牌的符号。例如&quot;HIX&quot;
+
+function decimals() public view returns (uint8)                                                                 【可选】 返回令牌使用的小数位数 - 例如8，表示将令牌数量除以100000000以获得其用户表示
+
+function totalSupply() public view returns (uint256)                                                            返回总代币供应量
+
+function balanceOf(address _owner) public view returns (uint256 balance)                                        返回另一个具有 address 的帐户的帐户余额_owner
+
+function transfer(address _to, uint256 _value) public returns (bool success)                                    转账
+
+function transferFrom(address _from, address _to, uint256 _value) public returns (bool success)                 转被授权的帐
+
+function approve(address _spender, uint256 _value) public returns (bool success)                                批准
+
+function allowance(address _owner, address _spender) public view returns (uint256 remaining)                    津贴 (查看被批准的数值)
+
+
+事件:
+
+event Transfer(address indexed _from, address indexed _to, uint256 _value)
+
+event Approval(address indexed _owner, address indexed _spender, uint256 _value)
+</pre></div>
+
+<h2 id="erc-721">ERC 721 (非同质代币)<a class="headerlink" href="#erc-721" title="Permanent link"></a></h2>
+<div class="highlight"><pre>event Transfer(address indexed _from, address indexed _to, uint256 indexed _tokenId);
+event Approval(address indexed _owner, address indexed _approved, uint256 indexed _tokenId);
+event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved);
+
+
+
+
+必备函数
+
+function balanceOf(address _owner) external view returns (uint256);
+function ownerOf(uint256 _tokenId) external view returns (address);
+function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes calldata data) external payable;
+function safeTransferFrom(address _from, address _to, uint256 _tokenId) external payable;
+function transferFrom(address _from, address _to, uint256 _tokenId) external payable;
+function approve(address _approved, uint256 _tokenId) external payable;
+function setApprovalForAll(address _operator, bool _approved) external;
+function getApproved(uint256 _tokenId) external view returns (address);
+function isApprovedForAll(address _owner, address _operator) external view returns(bool);
+</pre></div>
+
+<div class="highlight"><pre>// 例子
+
+pragma solidity ^0.4.20;
+
+
+interface ERC721 {
+    /// @dev 当任何NFT的所有权更改时（不管哪种方式），就会触发此事件。
+    ///  包括在创建时（`from` == 0）和销毁时(`to` == 0), 合约创建时除外。
+    event Transfer(address indexed _from, address indexed _to, uint256 indexed _tokenId);
+
+    /// @dev 当更改或确认NFT的授权地址时触发。
+    ///  零地址表示没有授权的地址。
+    ///  发生 `Transfer` 事件时，同样表示该NFT的授权地址（如果有）被重置为“无”（零地址）。
+    event Approval(address indexed _owner, address indexed _approved, uint256 indexed _tokenId);
+
+    /// @dev 所有者启用或禁用操作员时触发。（操作员可管理所有者所持有的NFTs）
+    event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved);
+
+    /// @notice 统计所持有的NFTs数量
+    /// @dev NFT 不能分配给零地址，查询零地址同样会异常
+    /// @param _owner ： 待查地址
+    /// @return 返回数量，也许是0
+    function balanceOf(address _owner) external view returns (uint256);
+
+    /// @notice 返回所有者
+    /// @dev NFT 不能分配给零地址，查询零地址抛出异常
+    /// @param _tokenId NFT 的id
+    /// @return 返回所有者地址
+    function ownerOf(uint256 _tokenId) external view returns (address);
+
+    /// @notice 将NFT的所有权从一个地址转移到另一个地址
+    /// @dev 如果`msg.sender` 不是当前的所有者（或授权者）抛出异常
+    /// 如果 `_from` 不是所有者、`_to` 是零地址、`_tokenId` 不是有效id 均抛出异常。
+    ///  当转移完成时，函数检查  `_to` 是否是合约，如果是，调用 `_to`的 `onERC721Received` 并且检查返回值是否是 `0x150b7a02` (即：`bytes4(keccak256(&quot;onERC721Received(address,address,uint256,bytes)&quot;))`)  如果不是抛出异常。
+    /// @param _from ：当前的所有者
+    /// @param _to ：新的所有者
+    /// @param _tokenId ：要转移的token id.
+    /// @param data : 附加额外的参数（没有指定格式），传递给接收者。
+    function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes data) external payable;
+
+    /// @notice 将NFT的所有权从一个地址转移到另一个地址，功能同上，不带data参数。
+    function safeTransferFrom(address _from, address _to, uint256 _tokenId) external payable;
+
+    /// @notice 转移所有权 -- 调用者负责确认`_to`是否有能力接收NFTs，否则可能永久丢失。
+    /// @dev 如果`msg.sender` 不是当前的所有者（或授权者、操作员）抛出异常
+    /// 如果 `_from` 不是所有者、`_to` 是零地址、`_tokenId` 不是有效id 均抛出异常。
+    function transferFrom(address _from, address _to, uint256 _tokenId) external payable;
+
+    /// @notice 更改或确认NFT的授权地址
+    /// @dev 零地址表示没有授权的地址。
+    ///  如果`msg.sender` 不是当前的所有者或操作员
+    /// @param _approved 新授权的控制者
+    /// @param _tokenId ： token id
+    function approve(address _approved, uint256 _tokenId) external payable;
+
+    /// @notice 启用或禁用第三方（操作员）管理 `msg.sender` 所有资产
+    /// @dev 触发 ApprovalForAll 事件，合约必须允许每个所有者可以有多个操作员。
+    /// @param _operator 要添加到授权操作员列表中的地址
+    /// @param _approved True 表示授权, false 表示撤销
+    function setApprovalForAll(address _operator, bool _approved) external;
+
+    /// @notice 获取单个NFT的授权地址
+    /// @dev 如果 `_tokenId` 无效，抛出异常。
+    /// @param _tokenId ：  token id
+    /// @return 返回授权地址， 零地址表示没有。
+    function getApproved(uint256 _tokenId) external view returns (address);
+
+    /// @notice 查询一个地址是否是另一个地址的授权操作员
+    /// @param _owner 所有者
+    /// @param _operator 代表所有者的授权操作员
+    function isApprovedForAll(address _owner, address _operator) external view returns (bool);
+}
+
+
+interface ERC165 {
+    /// @notice 是否合约实现了接口
+    /// @param interfaceID  ERC-165定义的接口id
+    /// @dev 函数要少于  30,000 gas.
+    /// @return 合约实现了 `interfaceID`（不为  0xffffffff）返回`true` ， 否则false.
+    function supportsInterface(bytes4 interfaceID) external view returns (bool);
+}
+
+
+
+interface ERC721TokenReceiver {
+    /// @notice 处理接收NFT
+    /// @dev ERC721智能合约在`transfer`完成后，在接收者地址上调用这个函数。
+    /// 函数可以通过revert 拒绝接收。返回非`0x150b7a02` 也同样是拒绝接收。
+    /// 注意: 调用这个函数的 msg.sender 是ERC721的合约地址
+    /// @param _operator ：调用 `safeTransferFrom` 函数的地址。
+    /// @param _from ：之前的NFT拥有者
+    /// @param _tokenId ： NFT token id
+    /// @param _data ： 附加信息
+    /// @return 正确处理时返回 `bytes4(keccak256(&quot;onERC721Received(address,address,uint256,bytes)&quot;))`
+    function onERC721Received(address _operator, address _from, uint256 _tokenId, bytes _data) external returns(bytes4);
+}
+
+
+
+interface ERC721Metadata {
+    /// @notice NFTs 集合的名字
+    function name() external view returns (string _name);
+
+    /// @notice NFTs 缩写代号
+    function symbol() external view returns (string _symbol);
+
+    /// @notice 一个给定资产的唯一的统一资源标识符(URI)
+    /// @dev 如果 `_tokenId` 无效，抛出异常. URIs在 RFC 3986 定义，
+    /// URI 也许指向一个 符合 &quot;ERC721 元数据 JSON Schema&quot; 的 JSON 文件
+    function tokenURI(uint256 _tokenId) external view returns (string);
+}
+
+
+
+interface ERC721Enumerable {
+    /// @notice  NFTs 计数
+    /// @return  返回合约有效跟踪（所有者不为零地址）的 NFT数量
+    function totalSupply() external view returns (uint256);
+
+    /// @notice 枚举索引NFT
+    /// @dev 如果 `_index` &gt;= `totalSupply()` 则抛出异常
+    /// @param _index 小于 `totalSupply()`的索引号
+    /// @return 对应的token id（标准不指定排序方式)
+    function tokenByIndex(uint256 _index) external view returns (uint256);
+
+    /// @notice 枚举索引某个所有者的 NFTs
+    /// @dev  如果 `_index` &gt;= `balanceOf(_owner)` 或 `_owner` 是零地址，抛出异常
+    /// @param _owner 查询的所有者地址
+    /// @param _index 小于 `balanceOf(_owner)` 的索引号
+    /// @return 对应的token id （标准不指定排序方式)
+    function tokenOfOwnerByIndex(address _owner, uint256 _index) external view returns (uint256);
+}
+</pre></div>
+
+<h2 id="erc-1820-erc-165-erc-672">ERC-1820 (伪自省注册表合约)  比对 ERC-165 和 ERC-672<a class="headerlink" href="#erc-1820-erc-165-erc-672" title="Permanent link"></a></h2>
+<p>ERC1820标准向后兼容 ERC165, ERC1820标准定义了一个通用注册表合约，任何地址（合约或普通用户帐户）都可以注册它支持的接口以及哪个智能合约负责接口实现。</p>
+<p>ERC1820标准定义智能合约和普通用户帐户可以向注册表发布其实现了哪些功能（普通用户帐户通过代理合约实现）</p>
+<p>任何人都可以查询此注册表，询问哪个地址是否实现了给定的接口以及哪个智能合约处理实现逻辑。</p>
+<p>ERC1820注册表合约可以部署在任何链上，并在所有链上的地址是相同的。</p>
+<p>接口的后28个字节都为0的话，会认为是 ERC-165 接口，并且注册表将转发到合约以查看是否实现了接口。</p>
+<p>此合约还充当 ERC165 缓存，以减少 gas 消耗。</p>
+<p>在以太坊上有很多方法定义伪自省，ERC165不能由普通用户帐户使用。 ERC672 则使用了反向 ENS，反向 ENS 有两个问题：增加了不必要的复杂度，其次，ENS 是由多签控制的中心化合约。 从理论上讲，这种多签能够修改系统。</p>
+<p>ERC1820标准比 ERC-672 简单得多，并且完全去中心化。</p>
+<p>此标准还为所有链提供一个唯一（相同的）地址。从而解决了解决不同链的查找注册表地址的问题。</p>
+<div class="highlight"><pre>pragma solidity 0.5.3;
+// IV is value needed to have a vanity address starting with &#39;0x1820&#39;.
+// IV: 53759
+
+/// @dev 如果合约为其他的地址实现了接口， 则必须实现这个接口。
+interface ERC1820ImplementerInterface {
+    /// @notice 指示合约是否为地址 “addr” 实现接口 “interfaceHash”。
+    /// @param interfaceHash 接口名称的 keccak256 哈希值
+    /// @param addr 为哪一个地址实现接口
+    /// @return 只有当合约为地址&#39;addr&#39;实现&#39;interfaceHash&#39;时返回 ERC1820_ACCEPT_MAGIC
+    function canImplementInterfaceForAddress(bytes32 interfaceHash, address addr) external view returns(bytes32);
+}
+
+
+/// @title ERC1820 伪自省注册表合约
+/// @notice 该合约是ERC1820注册表的官方实现。
+contract ERC1820Registry {
+
+    /// @notice ERC165 无效 ID.
+    bytes4 constant internal INVALID_ID = 0xffffffff;
+    /// @notice ERC165 的 supportsInterface 接口ID (= `bytes4(keccak256(&#39;supportsInterface(bytes4)&#39;))`).
+    bytes4 constant internal ERC165ID = 0x01ffc9a7;
+    /// @notice 如果合约代表某个其他地址实现接口，则返回Magic值。
+    bytes32 constant internal ERC1820_ACCEPT_MAGIC = keccak256(abi.encodePacked(&quot;ERC1820_ACCEPT_MAGIC&quot;));
+
+    /// @notice 映射地址 及 接口 到对应的实现合约地址
+    mapping(address =&gt; mapping(bytes32 =&gt; address)) internal interfaces;
+
+    /// @notice 映射地址 到 管理者
+    mapping(address =&gt; address) internal managers;
+
+    /// @notice 每个地址 和 ERC-165 接口的flag，指示是否被缓存。
+    mapping(address =&gt; mapping(bytes4 =&gt; bool)) internal erc165Cached;
+
+    /// @notice 表示合约implementer是&#39;addr&#39;的&#39;interfaceHash&#39;的&#39;实现者&#39;。
+    event InterfaceImplementerSet(address indexed addr, bytes32 indexed interfaceHash, address indexed implementer);
+
+    /// @notice 表示&#39;newManager&#39;是&#39;addr&#39;的新管理者的地址。
+    event ManagerChanged(address indexed addr, address indexed newManager);
+
+    /// @notice 查询地址是否实现了接口以及通过哪个合约实现的。
+    /// @param _addr 查询地址（如果&#39;_addr&#39;是零地址，则假定为&#39;msg.sender&#39;）。
+    /// @param _interfaceHash 查询接口，它是接口名称字符串的 keccak256 哈希值
+    /// 例如: &#39;web3.utils.keccak256(&quot;ERC777TokensRecipient&quot;)&#39; 表示 &#39;ERC777TokensRecipient&#39; 接口.
+    /// @return 返回实现者的地址，没有实现返回 ‘0’
+    function getInterfaceImplementer(address _addr, bytes32 _interfaceHash) external view returns (address) {
+        address addr = _addr == address(0) ? msg.sender : _addr;
+        if (isERC165Interface(_interfaceHash)) {
+            bytes4 erc165InterfaceHash = bytes4(_interfaceHash);
+            return implementsERC165Interface(addr, erc165InterfaceHash) ? addr : address(0);
+        }
+        return interfaces[addr][_interfaceHash];
+    }
+
+    /// @notice 设置某个地址的接口由哪个合约实现，需要由管理员来设置。（每个地址是他自己的管理员，直到设置了一个新的地址）。
+    /// @param _addr 待设置的关联接口的地址（如果&#39;_addr&#39;是零地址，则假定为&#39;msg.sender&#39;）
+    /// @param _interfaceHash 接口，它是接口名称字符串的 keccak256 哈希值
+    /// 例如: &#39;web3.utils.keccak256(&quot;ERC777TokensRecipient&quot;)&#39; 表示 &#39;ERC777TokensRecipient&#39; 接口。
+    /// @param _implementer 为地址&#39;_addr&#39;实现了 &#39;_interfaceHash&#39;接口的合约地址
+    function setInterfaceImplementer(address _addr, bytes32 _interfaceHash, address _implementer) external {
+        address addr = _addr == address(0) ? msg.sender : _addr;
+        require(getManager(addr) == msg.sender, &quot;Not the manager&quot;);
+
+        require(!isERC165Interface(_interfaceHash), &quot;Must not be an ERC165 hash&quot;);
+        if (_implementer != address(0) &amp;&amp; _implementer != msg.sender) {
+            require(
+                ERC1820ImplementerInterface(_implementer)
+                    .canImplementInterfaceForAddress(_interfaceHash, addr) == ERC1820_ACCEPT_MAGIC,
+                &quot;Does not implement the interface&quot;
+            );
+        }
+        interfaces[addr][_interfaceHash] = _implementer;
+        emit InterfaceImplementerSet(addr, _interfaceHash, _implementer);
+    }
+
+    /// @notice 为地址_addr 设置新的管理员地址_newManager， 新的管理员能给&#39;_addr&#39; 调用 &#39;setInterfaceImplementer&#39; 设置是实现者。
+    ///  (传 &#39;0x0&#39; 为地址_addr 重置管理员)
+
+    function setManager(address _addr, address _newManager) external {
+        require(getManager(_addr) == msg.sender, &quot;Not the manager&quot;);
+        managers[_addr] = _newManager == _addr ? address(0) : _newManager;
+        emit ManagerChanged(_addr, _newManager);
+    }
+
+    /// @notice 获取地址 _addr的管理员
+    function getManager(address _addr) public view returns(address) {
+        // By default the manager of an address is the same address
+        if (managers[_addr] == address(0)) {
+            return _addr;
+        } else {
+            return managers[_addr];
+        }
+    }
+
+    /// @notice 计算给定名称的接口的keccak256哈希值。
+    function interfaceHash(string calldata _interfaceName) external pure returns(bytes32) {
+        return keccak256(abi.encodePacked(_interfaceName));
+    }
+
+    /* --- ERC165 相关方法 --- */
+
+    /// @notice 更新合约是否实现了ERC165接口的缓存。
+    function updateERC165Cache(address _contract, bytes4 _interfaceId) external {
+        interfaces[_contract][_interfaceId] = implementsERC165InterfaceNoCache(
+            _contract, _interfaceId) ? _contract : address(0);
+        erc165Cached[_contract][_interfaceId] = true;
+    }
+
+    /// @notice 检查合约是否实现ERC165接口。
+    //  如果未缓存结果，则对合约地址进行查找。 如果结果未缓存或缓存已过期，则必须通过使用合约地址调用“updateERC165Cache”手动更新缓存。
+    /// @param _contract 要检查的合约地址。
+    /// @param _interfaceId 要检查ERC165接口。
+    /// @return True 如果合约实现了接口返回 true, 否则false.
+    function implementsERC165Interface(address _contract, bytes4 _interfaceId) public view returns (bool) {
+        if (!erc165Cached[_contract][_interfaceId]) {
+            return implementsERC165InterfaceNoCache(_contract, _interfaceId);
+        }
+        return interfaces[_contract][_interfaceId] == _contract;
+    }
+
+    /// @notice 在不使用或更新缓存的情况下检查合约是否实现ERC165接口。
+    /// @param _contract 要检查的合约地址。
+    /// @param _interfaceId 要检查ERC165接口。
+    /// @return True 如果合约实现了接口返回 true, 否则false.
+    function implementsERC165InterfaceNoCache(address _contract, bytes4 _interfaceId) public view returns (bool) {
+        uint256 success;
+        uint256 result;
+
+        (success, result) = noThrowCall(_contract, ERC165ID);
+        if (success == 0 || result == 0) {
+            return false;
+        }
+
+        (success, result) = noThrowCall(_contract, INVALID_ID);
+        if (success == 0 || result != 0) {
+            return false;
+        }
+
+        (success, result) = noThrowCall(_contract, _interfaceId);
+        if (success == 1 &amp;&amp; result == 1) {
+            return true;
+        }
+        return false;
+    }
+
+    /// @notice 检查_interfaceHash 是否是ERC165接口（以28个零结尾）。
+    /// @param _interfaceHash 要检查接口 hash。
+    /// @return  如果 &#39;_interfaceHash&#39;是ERC165接口返回 True, 否则返回false
+    function isERC165Interface(bytes32 _interfaceHash) internal pure returns (bool) {
+        return _interfaceHash &amp; 0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF == 0;
+    }
+
+    /// @dev 调用合约接口，如果函数不存在也不抛出异常。
+    function noThrowCall(address _contract, bytes4 _interfaceId)
+        internal view returns (uint256 success, uint256 result)
+    {
+        bytes4 erc165ID = ERC165ID;
+
+        assembly {
+            let x := mload(0x40)               // Find empty storage location using &quot;free memory pointer&quot;
+            mstore(x, erc165ID)                // Place signature at beginning of empty storage
+            mstore(add(x, 0x04), _interfaceId) // Place first argument directly next to signature
+
+            success := staticcall(
+                30000,                         // 30k gas
+                _contract,                     // To addr
+                x,                             // Inputs are stored at location x
+                0x24,                          // Inputs are 36 (4 + 32) bytes long
+                x,                             // Store output over input (saves space)
+                0x20                           // Outputs are 32 bytes long
+            )
+
+            result := mload(x)                 // Load the result
+        }
+    }
+}
+</pre></div>
+
+<h2 id="erc-777-erc-20">ERC-777 (ERC-20 的高级拓展)<a class="headerlink" href="#erc-777-erc-20" title="Permanent link"></a></h2>
+<p>如：操作员（operators） 可以代表另一个地址（合约或普通账户）发送代币， 以及 send/receive 加入了钩子函数（hooks ）让代币持有者可以有更多的控制。</p>
+<p>使用和发送以太相同的理念发送token，方法为：send(dest, value, data).</p>
+<p>合约和普通地址都可以通过注册tokensToSend hook函数来控制和拒绝发送哪些token（拒绝发送通过在hook函数tokensToSend 里 revert 来实现）。</p>
+<p>合约和普通地址都可以通过注册tokensReceived hook函数来控制和拒绝接受哪些token（拒绝接受通过在hook函数tokensReceived 里 revert 来实现）。</p>
+<p>tokensReceived 可以通过hook函数可以做到在一个交易里完成发送代币和通知合约接受代币，而不像 ERC20 必须通过两次调用（approve/transferFrom）来完成。</p>
+<p>持有者可以&rdquo;授权&rdquo;和&rdquo;撤销&rdquo;操作员（operators: 可以代表持有者发送代币）。 这些操作员通常是（去中心化）交易所、支票处理机或自动支付系统。</p>
+<p>每个代币交易都包含 data 和 operatorData 字段， 可以分别传递来自持有者和操作员的数据。</p>
+<p>可以通过部署实现 tokensReceived 的代理合约来兼容没有实现tokensReceived 函数的地址。</p>
+<div class="highlight"><pre>interface ERC777Token {
+    function name() external view returns (string memory);
+    function symbol() external view returns (string memory);
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address holder) external view returns (uint256);
+    function granularity() external view returns (uint256);
+
+
+    // 获取代币合约默认的操作员列表。
+    //
+    //注意: 如果代币合约没有默认操作员, 必须返回空列表。
+    function defaultOperators() external view returns (address[] memory);
+    function isOperatorFor(
+        address operator,
+        address holder
+    ) external view returns (bool);
+    function authorizeOperator(address operator) external;
+    function revokeOperator(address operator) external;
+
+    // 持有者自己转账
+    function send(address to, uint256 amount, bytes calldata data) external;
+
+    // 操作员 (被授权的) 代替持有者转账
+    function operatorSend(
+        address from,
+        address to,
+        uint256 amount,
+        bytes calldata data,
+        bytes calldata operatorData
+    ) external;
+
+    // ##########################################################################
+    // ##########################################################################
+    // ERC-777 中故意没有定义 mint 函数，用意是不希望限制ERC777标准的使用，因为铸币通常特定于特定的代币。
+    //
+
+    function burn(uint256 amount, bytes calldata data) external;
+    function operatorBurn(
+        address from,
+        uint256 amount,
+        bytes calldata data,
+        bytes calldata operatorData
+    ) external;
+
+    event Sent(
+        address indexed operator,
+        address indexed from,
+        address indexed to,
+        uint256 amount,
+        bytes data,
+        bytes operatorData
+    );
+
+    // 虽然 没定义 mint 函数，但是还是支持 用户需要 [铸币] 需求的
+    event Minted(
+        address indexed operator,
+        address indexed to,
+        uint256 amount,
+        bytes data,
+        bytes operatorData
+    );
+    event Burned(
+        address indexed operator,
+        address indexed from,
+        uint256 amount,
+        bytes data,
+        bytes operatorData
+    );
+
+    // 操作员是可以代表持有者发送和销毁代币的账号地址。
+    //
+    // 当地址成为持有者的操作员时，需要触发 AuthorizedOperator 事件。触发事件时操作员是第 一个参数，持有者是第二个参数。
+    event AuthorizedOperator(
+        address indexed operator,
+        address indexed holder
+    );
+
+    // 撤销操作员时需要触发 RevokedOperator 事件。触发事件时操作员是第一个参数，持有者是第二个参数。
+    event RevokedOperator(address indexed operator, address indexed holder);
+
+    // 注意: 持有者可以有多个操作员。
+}
+
+
+
+合约需要用自己的地址通过 ERC1820 标准注册 ERC777Token 接口。
+
+注册方法是调用ERC1820 注册表合约的 setInterfaceImplementer 方法，参数 _addr 及 _implementer 均是合约的地址，_interfaceHash 是 ERC777Token 的 keccak256 哈希值， 即0xac7fbab5f54a3ca8194167523c6753bfeb96a445279294b6125b68cce2177054
+
+如果合约有一个开关来启用或禁用ERC777功能，每次触发开关时，代币合约必须相应地通过ERC1820注册或取消注册ERC777Token接口。
+
+取消注册使用代币合约地址作为参数 _addr 、ERC777Token的keccak256哈希作为接口哈希及&#39;0x0作为实现者参数_implementer调用函数setInterfaceImplementer`， 有关详细信息，请参阅ERC1820中的为接口设置实现地址
+
+当和代币合约进行交互时，所有的数量和余额都是无符号整型 uint256 类型 。总是以18次方存储（ decimals 只能是 18），0.5个代币存储为 500,000,000,000,000,000 (0.5×1018) ERC20内部处理也是一样（不过decimals可为其他值），最小单位相当于 wei, 用户看见的币相当于 ether。
+
+
+
+
+
+
+
+
+
+interface ERC777TokensSender {
+
+    // 通知（或请求）从持有人地址发送或销毁 amount 数量的代币。
+    //
+    // 注意: 请勿在发送（或 ERC20 transfer）或 销毁 之外调用。
+    function tokensToSend(
+        address operator,
+        address from,
+        address to,
+        uint256 amount,
+        bytes calldata userData,
+        bytes calldata operatorData
+    ) external;
+}
+
+调用tokensToSend钩子函数用于通知持有者余额减少（如发送和销毁）。
+
+任何希望收到代币通知的地址（普通地址或合约）都会从需要按ERC1820注册及实现 ERC777TokensSender 接口，描述如下：
+
+通过调用 ERC1820 注册表合约上的 setInterfaceImplementer 函数来完成的，其中持有者地址为地址参数，ERC777TokensSender 的 keccak256哈希值（0x29ddb589b1fb5fc7cf394961c1adf5f8c6454761adf795e67fe149f658abe895）作为接口哈希参数，以及实现ERC777TokensSender的合约作为实现者参数。
+
+注意: 普通地址可以用一个实现的合约（代表普通地址来执行）地址注册，合约可以用自己的地址也可以用另一个地址注册，只要其实现了对应的接口。
+
+
+
+
+
+interface ERC777TokensRecipient {
+
+    // 用于通知接受代币。
+    //
+    // 注意: 请勿在发送（或 ERC20 transfer）或 铸币 之外调用。
+    function tokensReceived(
+        address operator,
+        address from,
+        address to,
+        uint256 amount,
+        bytes calldata data,
+        bytes calldata operatorData
+    ) external;
+}
+
+
+
+
+
+调用tokensReceived钩子函数用于通知接收者余额增加了（如发送和铸币）。
+
+任何希望收到代币通知的地址（普通地址或合约）都会从需要按ERC1820注册及实现 ERC777TokensRecipient 接口，描述如下：
+
+通过调用 ERC1820 注册表合约上的 setInterfaceImplementer 函数来完成的，其中接收者地址为地址参数，ERC777TokensRecipient 的 keccak256哈希值（0xb281fc8c12954d22544db45de3159a39272895b169a852b314f9cc762e44c53b）作为接口哈希参数，以及实现ERC777TokensRecipient的合约作为实现者参数。
+
+注意: 普通地址可以用一个实现的合约（代表普通地址来执行）地址注册，合约可以用自己的地址也可以用另一个地址注册，只要其实现了对应的接口。
+
+
+
+
+
+与 ERC-20 相比，ERC-777 提供了以下改进。
+
+钩子
+钩子是智能合约代码中描述的一个函数。 钩子将会在代币通过合约发送或者接收时调用。 这将允许智能合约对进出的通证做出互动。
+
+** 钩子是使用 ERC-1820 标准注册及发现利用的 **
+</pre></div>
+
+<h2 id="erc-55">ERC-55 (混合大小写校验和地址编码)<a class="headerlink" href="#erc-55" title="Permanent link"></a></h2>
+<h2 id="erc-1167-gas">ERC-1167  (最小代理合约： 节省Gas部署合约)<a class="headerlink" href="#erc-1167-gas" title="Permanent link"></a></h2>
+<div class="highlight"><pre>pragma solidity ^0.8.0;
+library Clones {
+
+
+    // @implementation: 被用来做复制 (未使用构造函数做初始化)的合约实例地址
+    // @instance: 被复制部署的 新合约实例地址
+    function clone(address implementation) internal returns (address instance) {
+        &lt;!-- assembly {
+            let ptr := mload(0x40)
+            mstore(ptr, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
+            mstore(add(ptr, 0x14), shl(0x60, implementation))
+            mstore(add(ptr, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
+            instance := create(0, ptr, 0x37)
+        } --&gt;
+        assembly {
+          let clone := mload(0x40)
+          mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
+          mstore(add(clone, 0x14), bytes20(implementation))
+          mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
+          instance := create(0, clone, 0x37)
+        }
+        require(instance != address(0), &quot;ERC1167: create failed&quot;);
+    }
+    ///....
+}
+</pre></div>
+
+<h2 id="erc-165">ERC-165  (标准接口检测)<a class="headerlink" href="#erc-165" title="Permanent link"></a></h2>
+<p>这个提案创建一个标准方法以发布和检测智能合约实现了哪些接口。</p>
+<p>接口如何识别。
+合约如何发布实现的接口。
+如何检测合约是否实现了 ERC-165。
+如何检测合约是否实现了某个接口。</p>
+<div class="highlight"><pre>以下Solidity 代码示例演示如何计算接口标识符：
+
+pragma solidity ^0.4.20;
+
+interface Solidity101 {
+    function hello() external pure;
+    function world(int) external pure;
+}
+
+contract Selector {
+    function calculateSelector() public pure returns (bytes4) {
+        Solidity101 i;
+        return i.hello.selector ^ i.world.selector;
+    }
+}
+
+注意: 接口不允许可选函数，因此接口标识符不包含它们。
+
+
+
+
+
+
+兼容 ERC-165的合约应该实现以下接口（ ERC165.sol）：
+
+pragma solidity ^0.4.20;
+
+interface ERC165 {
+    /// @notice 查询一个合约时候实现了一个接口
+    /// @param interfaceID  参数：接口ID, 参考上面的定义
+    /// @return true 如果函数实现了 interfaceID (interfaceID 不为 0xffffffff )返回true, 否则为 false
+    function supportsInterface(bytes4 interfaceID) external view returns (bool);
+}
+
+
+这个接口的接口ID 为 0x01ffc9a7， 可以使用 bytes4(keccak256(&#39;supportsInterface(bytes4)&#39;)); 或者 i.supportsInterface.selector 得到；
+
+
+因此，合约实现 supportsInterface 函数将返回：
+
+true ：当接口ID interfaceID 是 0x01ffc9a7 (EIP165 标准接口)返回 true
+false ：当 interfaceID 是 0xffffffff 返回 false
+true ：任何合约实现了接口的 interfaceID 都返回 true
+false ：其他的都返回 false。
+
+
+
+
+
+检测合约是否实现了 ERC-165
+
+在合约地址上使用附加数据（input data）0x01ffc9a701ffc9a700000000000000000000000000000000000000000000000000000000 和 gas 30,000 进行STATICCALL调用，相当于 contract.supportsInterface(0x01ffc9a7)。
+
+如果调用失败或返回false , 说明合约不兼容ERC-165标准
+如果返回true，则使用输入数据0x01ffc9a7ffffffff000000000000000000000000000000000000000000000000000000000000进行第二次调用，相当于 contract.supportsInterface(0xffffffff)。
+如果第二次调用失败或返回true，则目标合约不会实现ERC-165。
+否则它实现了ERC-165。
+
+
+
+
+
+示例：
+
+
+
+pragma solidity ^0.4.20;
+
+import &quot;./ERC165.sol&quot;;
+
+interface Simpson {
+    function is2D() external returns (bool);
+    function skinColor() external returns (string);
+}
+
+contract Homer is ERC165, Simpson {
+    function supportsInterface(bytes4 interfaceID) external view returns (bool) {
+        return
+          interfaceID == this.supportsInterface.selector || // 证明实现了 ERC165
+          interfaceID == this.is2D.selector
+                         ^ this.skinColor.selector; // 证明实现了 Simpson
+    }
+
+    function is2D() external returns (bool){}
+    function skinColor() external returns (string){}
+}
+</pre></div>
+
+<h2 id="erc-4626">ERC-4626 (代币化资金库标准)<a class="headerlink" href="#erc-4626" title="Permanent link"></a></h2>
+<h2 id="erc-1155">ERC-1155 (多代币标准)<a class="headerlink" href="#erc-1155" title="Permanent link"></a></h2>
+<div class="highlight"><pre>pragma solidity ^0.5.9;
+
+/**
+    @title ERC-1155 Multi Token Standard
+    @dev See https://learnblockchain.cn/docs/eips/eip-1155.html
+    Note: The ERC-165 identifier for this interface is 0xd9b67a26.
+ */
+interface ERC1155 /* is ERC165 */ {
+    /**
+        @dev Either `TransferSingle` or `TransferBatch` MUST emit when tokens are transferred, including zero value transfers as well as minting or burning (see &quot;Safe Transfer Rules&quot; section of the standard).
+        The `_operator` argument MUST be the address of an account/contract that is approved to make the transfer (SHOULD be msg.sender).
+        The `_from` argument MUST be the address of the holder whose balance is decreased.
+        The `_to` argument MUST be the address of the recipient whose balance is increased.
+        The `_id` argument MUST be the token type being transferred.
+        The `_value` argument MUST be the number of tokens the holder balance is decreased by and match what the recipient balance is increased by.
+        When minting/creating tokens, the `_from` argument MUST be set to `0x0` (i.e. zero address).
+        When burning/destroying tokens, the `_to` argument MUST be set to `0x0` (i.e. zero address).
+    */
+    event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
+
+    /**
+        @dev Either `TransferSingle` or `TransferBatch` MUST emit when tokens are transferred, including zero value transfers as well as minting or burning (see &quot;Safe Transfer Rules&quot; section of the standard).
+        The `_operator` argument MUST be the address of an account/contract that is approved to make the transfer (SHOULD be msg.sender).
+        The `_from` argument MUST be the address of the holder whose balance is decreased.
+        The `_to` argument MUST be the address of the recipient whose balance is increased.
+        The `_ids` argument MUST be the list of tokens being transferred.
+        The `_values` argument MUST be the list of number of tokens (matching the list and order of tokens specified in _ids) the holder balance is decreased by and match what the recipient balance is increased by.
+        When minting/creating tokens, the `_from` argument MUST be set to `0x0` (i.e. zero address).
+        When burning/destroying tokens, the `_to` argument MUST be set to `0x0` (i.e. zero address).
+    */
+    event TransferBatch(address indexed _operator, address indexed _from, address indexed _to, uint256[] _ids, uint256[] _values);
+
+    /**
+        @dev MUST emit when approval for a second party/operator address to manage all tokens for an owner address is enabled or disabled (absence of an event assumes disabled).
+    */
+    event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved);
+
+    /**
+        @dev MUST emit when the URI is updated for a token ID.
+        URIs are defined in RFC 3986.
+        The URI MUST point to a JSON file that conforms to the &quot;ERC-1155 Metadata URI JSON Schema&quot;.
+    */
+    event URI(string _value, uint256 indexed _id);
+
+    /**
+        @notice Transfers `_value` amount of an `_id` from the `_from` address to the `_to` address specified (with safety call).
+        @dev Caller must be approved to manage the tokens being transferred out of the `_from` account (see &quot;Approval&quot; section of the standard).
+        MUST revert if `_to` is the zero address.
+        MUST revert if balance of holder for token `_id` is lower than the `_value` sent.
+        MUST revert on any other error.
+        MUST emit the `TransferSingle` event to reflect the balance change (see &quot;Safe Transfer Rules&quot; section of the standard).
+        After the above conditions are met, this function MUST check if `_to` is a smart contract (e.g. code size &gt; 0). If so, it MUST call `onERC1155Received` on `_to` and act appropriately (see &quot;Safe Transfer Rules&quot; section of the standard).
+        @param _from    Source address
+        @param _to      Target address
+        @param _id      ID of the token type
+        @param _value   Transfer amount
+        @param _data    Additional data with no specified format, MUST be sent unaltered in call to `onERC1155Received` on `_to`
+    */
+    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) external;
+
+    /**
+        @notice Transfers `_values` amount(s) of `_ids` from the `_from` address to the `_to` address specified (with safety call).
+        @dev Caller must be approved to manage the tokens being transferred out of the `_from` account (see &quot;Approval&quot; section of the standard).
+        MUST revert if `_to` is the zero address.
+        MUST revert if length of `_ids` is not the same as length of `_values`.
+        MUST revert if any of the balance(s) of the holder(s) for token(s) in `_ids` is lower than the respective amount(s) in `_values` sent to the recipient.
+        MUST revert on any other error.
+        MUST emit `TransferSingle` or `TransferBatch` event(s) such that all the balance changes are reflected (see &quot;Safe Transfer Rules&quot; section of the standard).
+        Balance changes and events MUST follow the ordering of the arrays (_ids[0]/_values[0] before _ids[1]/_values[1], etc).
+        After the above conditions for the transfer(s) in the batch are met, this function MUST check if `_to` is a smart contract (e.g. code size &gt; 0). If so, it MUST call the relevant `ERC1155TokenReceiver` hook(s) on `_to` and act appropriately (see &quot;Safe Transfer Rules&quot; section of the standard).
+        @param _from    Source address
+        @param _to      Target address
+        @param _ids     IDs of each token type (order and length must match _values array)
+        @param _values  Transfer amounts per token type (order and length must match _ids array)
+        @param _data    Additional data with no specified format, MUST be sent unaltered in call to the `ERC1155TokenReceiver` hook(s) on `_to`
+    */
+    function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) external;
+
+    /**
+        @notice Get the balance of an account&#39;s tokens.
+        @param _owner  The address of the token holder
+        @param _id     ID of the token
+        @return        The _owner&#39;s balance of the token type requested
+     */
+    function balanceOf(address _owner, uint256 _id) external view returns (uint256);
+
+    /**
+        @notice Get the balance of multiple account/token pairs
+        @param _owners The addresses of the token holders
+        @param _ids    ID of the tokens
+        @return        The _owner&#39;s balance of the token types requested (i.e. balance for each (owner, id) pair)
+     */
+    function balanceOfBatch(address[] calldata _owners, uint256[] calldata _ids) external view returns (uint256[] memory);
+
+    /**
+        @notice Enable or disable approval for a third party (&quot;operator&quot;) to manage all of the caller&#39;s tokens.
+        @dev MUST emit the ApprovalForAll event on success.
+        @param _operator  Address to add to the set of authorized operators
+        @param _approved  True if the operator is approved, false to revoke approval
+    */
+    function setApprovalForAll(address _operator, bool _approved) external;
+
+    /**
+        @notice Queries the approval status of an operator for a given owner.
+        @param _owner     The owner of the tokens
+        @param _operator  Address of authorized operator
+        @return           True if the operator is approved, false if not
+    */
+    function isApprovedForAll(address _owner, address _operator) external view returns (bool);
+}
+
+
+
+pragma solidity ^0.5.9;
+
+/**
+    Note: The ERC-165 identifier for this interface is 0x4e2312e0.
+*/
+interface ERC1155TokenReceiver {
+    /**
+        @notice Handle the receipt of a single ERC1155 token type.
+        @dev An ERC1155-compliant smart contract MUST call this function on the token recipient contract, at the end of a `safeTransferFrom` after the balance has been updated.
+        This function MUST return `bytes4(keccak256(&quot;onERC1155Received(address,address,uint256,uint256,bytes)&quot;))` (i.e. 0xf23a6e61) if it accepts the transfer.
+        This function MUST revert if it rejects the transfer.
+        Return of any other value than the prescribed keccak256 generated value MUST result in the transaction being reverted by the caller.
+        @param _operator  The address which initiated the transfer (i.e. msg.sender)
+        @param _from      The address which previously owned the token
+        @param _id        The ID of the token being transferred
+        @param _value     The amount of tokens being transferred
+        @param _data      Additional data with no specified format
+        @return           `bytes4(keccak256(&quot;onERC1155Received(address,address,uint256,uint256,bytes)&quot;))`
+    */
+    function onERC1155Received(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data) external returns(bytes4);
+
+    /**
+        @notice Handle the receipt of multiple ERC1155 token types.
+        @dev An ERC1155-compliant smart contract MUST call this function on the token recipient contract, at the end of a `safeBatchTransferFrom` after the balances have been updated.
+        This function MUST return `bytes4(keccak256(&quot;onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)&quot;))` (i.e. 0xbc197c81) if it accepts the transfer(s).
+        This function MUST revert if it rejects the transfer(s).
+        Return of any other value than the prescribed keccak256 generated value MUST result in the transaction being reverted by the caller.
+        @param _operator  The address which initiated the batch transfer (i.e. msg.sender)
+        @param _from      The address which previously owned the token
+        @param _ids       An array containing ids of each token being transferred (order and length must match _values array)
+        @param _values    An array containing amounts of each token being transferred (order and length must match _ids array)
+        @param _data      Additional data with no specified format
+        @return           `bytes4(keccak256(&quot;onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)&quot;))`
+    */
+    function onERC1155BatchReceived(address _operator, address _from, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) external returns(bytes4);
+}
+
+
+
+// ERC1155TokenReceiver ERC-165 rules
+
+
+function supportsInterface(bytes4 interfaceID) external view returns (bool) {
+    return  interfaceID == 0x01ffc9a7 ||    // ERC-165 support (i.e. `bytes4(keccak256(&#39;supportsInterface(bytes4)&#39;))`).
+            interfaceID == 0x4e2312e0;      // ERC-1155 `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256(&quot;onERC1155Received(address,address,uint256,uint256,bytes)&quot;)) ^ bytes4(keccak256(&quot;onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)&quot;))`).
+}
+
+
+bytes4 constant public ERC1155_ERC165 = 0xd9b67a26; // ERC-165 identifier for the main token standard.
+bytes4 constant public ERC1155_ERC165_TOKENRECEIVER = 0x4e2312e0; // ERC-165 identifier for the `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256(&quot;onERC1155Received(address,address,uint256,uint256,bytes)&quot;)) ^ bytes4(keccak256(&quot;onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)&quot;))`).
+bytes4 constant public ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256(&quot;onERC1155Received(address,address,uint256,uint256,bytes)&quot;))`).
+bytes4 constant public ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256(&quot;onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)&quot;))`).
+
+
+
+
+pragma solidity ^0.5.9;
+
+/**
+    Note: The ERC-165 identifier for this interface is 0x0e89341c.
+*/
+interface ERC1155Metadata_URI {
+    /**
+        @notice A distinct Uniform Resource Identifier (URI) for a given token.
+        @dev URIs are defined in RFC 3986.
+        The URI MUST point to a JSON file that conforms to the &quot;ERC-1155 Metadata URI JSON Schema&quot;.
+        @return URI string
+    */
+    function uri(uint256 _id) external view returns (string memory);
+}
+
+
+
+uint256 baseTokenNFT = 12345 &lt;&lt; 128;
+uint128 indexNFT = 50;
+
+uint256 baseTokenFT = 54321 &lt;&lt; 128;
+
+balanceOf(baseTokenNFT, msg.sender); // Get balance of the base token for non-fungible set 12345 (this MAY be used to get balance of the user for all of this token set if the implementation wishes as a convenience).
+balanceOf(baseTokenNFT + indexNFT, msg.sender); // Get balance of the token at index 50 for non-fungible set 12345 (should be 1 if user owns the individual non-fungible token or 0 if they do not).
+balanceOf(baseTokenFT, msg.sender); // Get balance of the fungible base token 54321.
+</pre></div>
+
+<h2 id="erc-223">ERC-223<a class="headerlink" href="#erc-223" title="Permanent link"></a></h2>
+<h2 id="erc-998-nftcomposable-nfts-cnft">ERC-998 (可组合的 NFT，composable NFTs， CNFT)<a class="headerlink" href="#erc-998-nftcomposable-nfts-cnft" title="Permanent link"></a></h2>
+<p>它的结构设计是一个标准化延伸可以让任何一个NFT可以拥有其他NFT或FT。转移CNFT时，就是转移CNFT所拥有的整个层级结构和所属关系。简单来说就是ERC-998可以包含多个ERC-721和ERC-20形式的代币。</p>
+<p>ERC998ERC721 top-down:必须实现ERC721的接⼝</p>
+<p>ERC998ERC20 bottom-up:必须实现ERC20的接⼝</p>
+<p>ERC165标准必须适⽤用于所使⽤用的每个ERC998接⼝</p>
+<p><a href="http://192.168.10.146:6789">http://192.168.10.146:6789</a></p>
+<h2 id="erc-4907-nft">ERC-4907 (租赁NFT协议)<a class="headerlink" href="#erc-4907-nft" title="Permanent link"></a></h2>
+<h2 id="erc-672-ens">ERC-672 (逆向 ENS 伪自省)<a class="headerlink" href="#erc-672-ens" title="Permanent link"></a></h2>
+<div class="highlight"><pre>pragma solidity ^0.4.18;
+
+interface IENS {
+    function owner(bytes32 _node) public constant returns(address);
+    function resolver(bytes32 _node) public constant returns(address);
+    function ttl(bytes32 _node) public constant returns(uint64);
+    function setOwner(bytes32 _node, address _owner) public;
+    function setSubnodeOwner(bytes32 _node, bytes32 _label, address _owner) public;
+    function setResolver(bytes32 _node, address _resolver) public;
+    function setTTL(bytes32 _node, uint64 _ttl) public;
+}
+
+interface IReverseRegistrar {
+    function claimWithResolver(address _owner, address _resolver) public returns (bytes32 node);
+}
+
+interface IPublicResolver {
+    function addr(bytes32 _node) public constant returns (address ret);
+    function setAddr(bytes32 _node, address _addr) public;
+}
+
+// [functionSig or interfaceId].[address].addr.reverse
+
+// Base contract for any contract that uses EnsPseudoIntrospection
+contract EIP672 {
+    address constant ENS_MAIN = 0x314159265dD8dbb310642f98f50C066173C1259b;
+    address constant ENS_ROPSTEM = 0x112234455C3a32FD11230C42E7Bccd4A84e02010;
+    address constant ENS_RINKEBY = 0xe7410170f87102DF0055eB195163A03B7F2Bff4A;
+    address constant ENS_SIMULATOR = 0x8cDE56336E289c028C8f7CF5c20283fF02272182;
+    bytes32 constant public REVERSE_ROOT_NODE = keccak256(keccak256(bytes32(0), keccak256(&#39;reverse&#39;)), keccak256(&#39;addr&#39;));
+    bytes32 constant public PUBLICRESOLVE_ROOT_NODE = keccak256(keccak256(bytes32(0), keccak256(&#39;eth&#39;)), keccak256(&#39;resolver&#39;));
+    IENS public ens;
+
+    function EIP672() public {
+      if (isContract(ENS_MAIN)) {
+        ens = IENS(ENS_MAIN);
+      } else if (isContract(ENS_ROPSTEM)) {
+        ens = IENS(ENS_ROPSTEM);
+      } else if (isContract(ENS_RINKEBY)) {
+        ens = IENS(ENS_RINKEBY);
+      } else if (isContract(ENS_SIMULATOR)) {
+        ens = IENS(ENS_SIMULATOR);
+      } else {
+        assert(false);
+      }
+
+      IReverseRegistrar reverseRegistrar = IReverseRegistrar(ens.owner(REVERSE_ROOT_NODE));
+
+      IPublicResolver resolver = IPublicResolver(ens.resolver(PUBLICRESOLVE_ROOT_NODE));
+      IPublicResolver publicResolver = IPublicResolver(resolver.addr(PUBLICRESOLVE_ROOT_NODE));
+
+      reverseRegistrar.claimWithResolver(
+        address(this),
+        address(publicResolver));
+    }
+
+    function setInterfaceImplementation(string ifaceLabel, address impl) internal {
+
+        bytes32 node = rootNodeForAddress(address(this));
+        bytes32 ifaceLabelHash = keccak256(ifaceLabel);
+        bytes32 ifaceNode = keccak256(node, ifaceLabelHash);
+
+        ens.setSubnodeOwner(node, ifaceLabelHash, address(this));
+
+        IPublicResolver resolver = IPublicResolver(ens.resolver(PUBLICRESOLVE_ROOT_NODE));
+        IPublicResolver publicResolver = IPublicResolver(resolver.addr(PUBLICRESOLVE_ROOT_NODE));
+
+        ens.setResolver(ifaceNode, publicResolver);
+        publicResolver.setAddr(ifaceNode, impl);
+    }
+
+    function interfaceAddr(address addr, string ifaceLabel) internal constant returns(address) {
+        bytes32 node = rootNodeForAddress(address(addr));
+        bytes32 ifaceNode = keccak256(node, keccak256(ifaceLabel));
+        IPublicResolver resolver = IPublicResolver(ens.resolver(ifaceNode));
+        if (address(resolver) == 0) return 0;
+        return resolver.addr(ifaceNode);
+    }
+
+    function rootNodeForAddress(address addr) internal constant returns (bytes32) {
+        return keccak256(REVERSE_ROOT_NODE, keccak256HexAddress(addr));
+    }
+
+    function keccak256HexAddress(address addr) private constant returns (bytes32 ret) {
+        addr; ret; // Stop warning us about unused variables
+        assembly {
+            let lookup := 0x3031323334353637383961626364656600000000000000000000000000000000
+            let i := 40
+        loop:
+            i := sub(i, 1)
+            mstore8(i, byte(and(addr, 0xf), lookup))
+            addr := div(addr, 0x10)
+            i := sub(i, 1)
+            mstore8(i, byte(and(addr, 0xf), lookup))
+            addr := div(addr, 0x10)
+            jumpi(loop, i)
+            ret := keccak256(0, 40)
+        }
+    }
+
+    /// @dev Internal function to determine if an address is a contract
+    /// @param _addr The address being queried
+    /// @return True if `_addr` is a contract
+    function isContract(address _addr) constant internal returns(bool) {
+        uint size;
+        if (_addr == 0) return false;
+        assembly {
+            size := extcodesize(_addr)
+        }
+        return size&gt;0;
+    }
+}
+</pre></div>
+
+<h2 id="eip-191-eip-191presigned-message">EIP-191（关于如何在以太坊合约中处理签名数据） 为了与普通的交易信息区分开，EIP-191定义了presigned message标准<a class="headerlink" href="#eip-191-eip-191presigned-message" title="Permanent link"></a></h2>
+<div class="highlight"><pre>0x19 &lt;1 byte version&gt; &lt;version specific data&gt; &lt;data to sign&gt;
+
+
+注意： 选择0x19作为开始字段的原因是普通的交易信息采用RLP编码，而RLP编码中的0x19开头只能是代表一个值：0x19本身，无法去对后续信息编码。从而与普通的RLP编码的普通交易区分开。
+
+
+
+对于目前的Presigned message来讲，一共有三种不同的实现版本：
+
+| Version | Type    | EIP Desc | 
+|   ---   |   ---   |   ---   | 
+| 0x00    | EIP-191 | Data with intended validator | 
+| 0x01    | EIP-712 | Structured data | 
+| 0x45    | EIP-191 | personal_sign message | 
+
+
+
+对于version type = 0x00, 中存放的是32位的验证者地址
+
+对于version type = 0x45, 在中，将\x19Ethereum Signed Message:\n+len(message)添加到了的前面，然后在进行哈希，签名。
+
+在 Gnosis safe 中，我们主要关注version type = 0x01, 即EIP-712的实现：
+</pre></div>
+
+<h2 id="eip-712">EIP-712 大对象签名 (结构化数据的签名/验证)<a class="headerlink" href="#eip-712" title="Permanent link"></a></h2>
+<p>EIP712Domain
+顾名思义，是一个与域相关的结构体，总共包含五个字段：</p>
+<p>name，合约或者协议的名称
+version，合约的版本
+chainId，合约部署的链 Id，一般使用 block.chainid，即当前链 Id
+verifyingContract，签名的合约地址，一般使用 address(this)，即当前合约
+salt，随机数盐，一般不常用</p>
+<p><strong>domainSeparator 域对象</strong></p>
+<p>domainSeparator 是 EIP712 中非常重要的概念，它的作用主要是保证不同的合约和链上的签名是不同的、隔离的。 </p>
+<p>EIP712DOMAIN_TYPEHASH 是 EIP712 类型的Hash， </p>
+<div class="highlight"><pre>EIP712DOMAIN_TYPEHASH =  keccak256(
+    &quot;EIP712Domain(uint256 chainId,address verifyingContract)&quot;
+);
+
+
+bytes32 constant EIP712DOMAIN_TYPEHASH = keccak256(
+    &quot;EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)&quot;
+);
+</pre></div>
+
+<p>DOMAIN_SEPARATOR 是  EIP712Domain 数据的哈希值，即：</p>
+<div class="highlight"><pre>DOMAIN_SEPARATOR = keccak256(
+    abi.encode(
+        EIP712DOMAIN_TYPEHASH,
+        keccak256(name，即合约名称),
+        keccak256(version，即合约版本),
+        chainId,
+        verifyingContract
+    )
+);
+</pre></div>
+
+<p><strong>EIP712最终的可签名的hash生成公式</strong></p>
+<p>encode(domainSeparator : bytes32, message : Struct) = &ldquo;x19x01&rdquo; ‖ domainSeparator ‖ hashStruct(message)</p>
+<p><strong>hashStruct函数的定义为：</strong></p>
+<p>hashStruct(s : Struct) = keccak256(typeHash ‖ encodeData(s))</p>
+<h2 id="eip-1272">EIP-1272 合约校验签名方法 (合约签名/验证)<a class="headerlink" href="#eip-1272" title="Permanent link"></a></h2>
+<div class="highlight"><pre>外部拥有账户 (EOA) 可以使用其关联的私钥签署消息，但目前合约不能。我们为任何合约提出了一种标准方法来验证 【代表给定合约】 的签名是否有效。这可以通过在isValidSignature(hash, signature)签名合约上实现一个函数来实现，可以调用该函数来验证签名
+</pre></div>
+
+<h2 id="eip-2612">EIP-2612（授权签名）<a class="headerlink" href="#eip-2612" title="Permanent link"></a></h2>
+<h2 id="eip-4361-eip-4361">EIP-4361（以太坊登录）  使用同一个私钥实现 单点登录 ？？ EIP-4361 的目标是为中心化身份提供者提供一种自我托管的替代方案，提高基于以太坊身份验证的链下服务的互操作性，并为钱包供应商提供一致的机器可读消息格式，以实现更好的用户体验和同意管理。<a class="headerlink" href="#eip-4361-eip-4361" title="Permanent link"></a></h2>
+<h2 id="eip-86">EIP-86 里首次提出的 (抽象账户)，其目的是实现 “交易来源和签名的抽象”<a class="headerlink" href="#eip-86" title="Permanent link"></a></h2>
+<h2 id="eip-3074-auth-authcalleip-4337">EIP-3074：操作码 AUTH 和 AUTHCALL；EIP 4337 之前的提案<a class="headerlink" href="#eip-3074-auth-authcalleip-4337" title="Permanent link"></a></h2>
+<h2 id="eip-2938-nonce-paygaseip-4337">EIP-2938（账户抽象化）： 抽象账户交易需要增加两个新的操作码：NONCE 和 PAYGAS；账户类型仍然保持现有的两种（外部账户和合约账户）；EIP 4337 之前的提案<a class="headerlink" href="#eip-2938-nonce-paygaseip-4337" title="Permanent link"></a></h2>
+<div class="highlight"><pre>EOA的签名由三部分组成，R,S,v. 其中V值在EIP-155后的定义为：由{0,1}+27 -&gt; {0,1} + chian_id*2 + 35
+r: 0xbde0b9f486b1960454e326375d0b1680243e031fd4fb3f070d9a3ef9871ccfd5
+s: 0x7d1a653cffb6321f889169f08e548684e005f2b0c3a6c06fba4c4a68f5e00624 
+v: 0x1c
+=&gt; 编码后的签名为：
+bde0b9f486b1960454e326375d0b1680243e031fd4fb3f070d9a3ef9871ccfd5
+7d1a653cffb6321f889169f08e548684e005f2b0c3a6c06fba4c4a68f5e00624
+1c
+</pre></div>
+
+<h2 id="eip-1127">EIP-1127<a class="headerlink" href="#eip-1127" title="Permanent link"></a></h2>
+<div class="highlight"><pre>EIP 1127 提议对以太坊虚拟机 (EVM) 进行扩展，以允许创建可以执行复杂算术运算的新操作码。这些操作码旨在实现需要复杂数学计算的高级智能合约和去中心化应用程序 (dApp)。
+
+引入 EIP 1127 是为了解决 EVM 计算能力有限的问题，这可能导致难以在以太坊平台上实施某些类型的智能合约和 dApp。EIP 1127 引入的新操作码将允许开发人员执行更复杂的算术运算，从而可以更轻松地在以太坊上构建更高级、更强大的 dApp。
+
+EIP 1127 仍处于提案阶段，尚未在以太坊区块链上实施。如果它获得批准和实施，它可能会对以太坊生态系统和可以在该平台上构建的 dApp 类型产生重大影响。
+</pre></div>
+
+<h2 id="eip-1077-gas">EIP-1077  提供智能合约支付gas的抽象接口<a class="headerlink" href="#eip-1077-gas" title="Permanent link"></a></h2>
+<h2 id="eip-2771-recipientforwarder-recipient">EIP-2771 通过可信转发器接收元交易的合约接口， Recipient合约通过可信Forwarder合约接受元交易 (定义 Recipient 合约接口)<a class="headerlink" href="#eip-2771-recipientforwarder-recipient" title="Permanent link"></a></h2>
+<h2 id="eip-1474-jsonrpc">EIP-1474：远程过程调用规范 定义 jsonrpc 的返回状态码<a class="headerlink" href="#eip-1474-jsonrpc" title="Permanent link"></a></h2>
+<h2 id="eip-1167">EIP-1167  代理(部署)合约 供了一种低成本克隆合约的方法<a class="headerlink" href="#eip-1167" title="Permanent link"></a></h2>
+<div class="highlight"><pre>contract Deployer {
+    event InstanceDeployed(address instance);
+
+    /**
+     * @dev deploy
+     *      deploy new contract instance 
+     * @param _logic the logic contract address
+     * @return address of the new instance
+     */
+    function deploy(
+        address _logic
+    ) 
+      internal 
+      returns (address instance) 
+    {
+        bytes20 targetBytes = bytes20(_logic);
+        assembly {
+          let clone := mload(0x40)
+          mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
+          mstore(add(clone, 0x14), targetBytes)
+          mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
+          instance := create(0, clone, 0x37)
+        }
+        emit InstanceDeployed(address(instance));
+    }
+}
+
+
+
+
+/**
+
+执行：
+
+let clone := mload(0x40)
+mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
+mstore(add(clone, 0x14), targetBytes)
+mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
+
+将会得到 &#39;0x3d602d80600a3d3981f3363d3d373d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af43d82803e903d91602b57fd5bf3&#39;
+
+而 instance := create(0, clone, 0x37) 则是将 &#39;0x3d602d80600a3d3981f3363d3d373d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af43d82803e903d91602b57fd5bf3&#39; 丢到 go-ethereum 的 create() 函数中执行 [通过 opcreate() 进来]， 查看 go-ethereum 的源码可知 create() 如下：
+
+
+func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64, value *big.Int, address common.Address, typ OpCode) ([]byte, common.Address, uint64, error) {
+    // Depth check execution. Fail if we&#39;re trying to execute above the
+    // limit.
+    if evm.depth &gt; int(params.CallCreateDepth) {
+        return nil, common.Address{}, gas, ErrDepth
+    }
+    if !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) {
+        return nil, common.Address{}, gas, ErrInsufficientBalance
+    }
+    nonce := evm.StateDB.GetNonce(caller.Address())
+    if nonce+1 &lt; nonce {
+        return nil, common.Address{}, gas, ErrNonceUintOverflow
+    }
+    evm.StateDB.SetNonce(caller.Address(), nonce+1)
+    // We add this to the access list _before_ taking a snapshot. Even if the creation fails,
+    // the access-list change should not be rolled back
+    if evm.chainRules.IsBerlin {
+        evm.StateDB.AddAddressToAccessList(address)
+    }
+    // Ensure there&#39;s no existing contract already at the designated address
+    contractHash := evm.StateDB.GetCodeHash(address)
+    if evm.StateDB.GetNonce(address) != 0 || (contractHash != (common.Hash{}) &amp;&amp; contractHash != emptyCodeHash) {
+        return nil, common.Address{}, 0, ErrContractAddressCollision
+    }
+    // Create a new account on the state
+    snapshot := evm.StateDB.Snapshot()
+    evm.StateDB.CreateAccount(address)
+    if evm.chainRules.IsEIP158 {
+        evm.StateDB.SetNonce(address, 1)
+    }
+    evm.Context.Transfer(evm.StateDB, caller.Address(), address, value)
+
+    // Initialise a new contract and set the code that is to be used by the EVM.
+    // The contract is a scoped environment for this execution context only.
+    contract := NewContract(caller, AccountRef(address), value, gas)
+    contract.SetCodeOptionalHash(&amp;address, codeAndHash)
+
+    if evm.Config.Debug {
+        if evm.depth == 0 {
+            evm.Config.Tracer.CaptureStart(evm, caller.Address(), address, true, codeAndHash.code, gas, value)
+        } else {
+            evm.Config.Tracer.CaptureEnter(typ, caller.Address(), address, codeAndHash.code, gas, value)
+        }
+    }
+
+    start := time.Now()
+
+
+    ///
+    ///
+    ///
+    /// 这一行就是最终执行 &#39;0x3d602d80600a3d3981f3363d3d373d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af43d82803e903d91602b57fd5bf3&#39; 的入口
+    ///
+    /// ret 是最后得到的部署完成后的 contract code，但是使用 EIP 1167 得到的其实不是 contract code 而是 一串 runtime code &lt;后续执行该合约都会拉起的 delegatecall 的逻辑&gt;
+    /// 
+    /// ret 值为 &#39;363d3d373d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af43d82803e903d91602b57fd5bf3&#39;
+    ///
+    ret, err := evm.interpreter.Run(contract, nil, false)
+
+    // Check whether the max code size has been exceeded, assign err if the case.
+    if err == nil &amp;&amp; evm.chainRules.IsEIP158 &amp;&amp; len(ret) &gt; params.MaxCodeSize {
+        err = ErrMaxCodeSizeExceeded
+    }
+
+    // Reject code starting with 0xEF if EIP-3541 is enabled.
+    if err == nil &amp;&amp; len(ret) &gt;= 1 &amp;&amp; ret[0] == 0xEF &amp;&amp; evm.chainRules.IsLondon {
+        err = ErrInvalidCode
+    }
+
+    // if the contract creation ran successfully and no errors were returned
+    // calculate the gas required to store the code. If the code could not
+    // be stored due to not enough gas set an error and let it be handled
+    // by the error checking condition below.
+    if err == nil {
+        createDataGas := uint64(len(ret)) * params.CreateDataGas
+        if contract.UseGas(createDataGas) {
+            evm.StateDB.SetCode(address, ret)
+        } else {
+            err = ErrCodeStoreOutOfGas
+        }
+    }
+
+    // When an error was returned by the EVM or when setting the creation code
+    // above we revert to the snapshot and consume any gas remaining. Additionally
+    // when we&#39;re in homestead this also counts for code storage gas errors.
+    if err != nil &amp;&amp; (evm.chainRules.IsHomestead || err != ErrCodeStoreOutOfGas) {
+        evm.StateDB.RevertToSnapshot(snapshot)
+        if err != ErrExecutionReverted {
+            contract.UseGas(contract.Gas)
+        }
+    }
+
+    if evm.Config.Debug {
+        if evm.depth == 0 {
+            evm.Config.Tracer.CaptureEnd(ret, gas-contract.Gas, time.Since(start), err)
+        } else {
+            evm.Config.Tracer.CaptureExit(ret, gas-contract.Gas, err)
+        }
+    }
+    return ret, address, contract.Gas, err
+}
+
+
+
+通过 create() 将执行 前小段代码 &#39;3d602d80600a3d3981f3&#39;,其指令为：
+
+[00]    RETURNDATASIZE  
+[01]    PUSH1   2d
+[03]    DUP1    
+[04]    PUSH1   0a
+[06]    RETURNDATASIZE  
+[07]    CODECOPY    
+[08]    DUP2    
+[09]    RETURN   // 这行会结束部署
+
+最终得到 ret 为 &#39;363d3d373d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af43d82803e903d91602b57fd5bf3&#39;, 这里的含义就是，执行这段 code 时都是执行 delegatecall 逻辑，
+即 当EVM运行完上述代码后，go-ethereum客户端会把返回的字节码存储到ret变量中，通过evm.StateDB.SetCode(address, ret)将合约地址和合约代码保存到StateDB数据库中，在我们后期进行调用时，仅运行EVM返回的以下字节码 &#39;363d3d373d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af43d82803e903d91602b57fd5bf3&#39;
+
+
+【调用】
+
+在后续的调用中每次使用 ret 中的 &#39;363d3d37&#39; 进行获取 用户入参的 calldata ,其中 &#39;363d3d37&#39; 为：
+
+36  CALLDATASIZE    获得calldata的长度  
+3d  RETURNDATASIZE  如前文所述，一种向堆栈中推入0的廉价方式   
+3d  RETURNDATASIZE  同上  
+37  CALLDATACOPY    如前所述复制calldata到内存   
+
+
+最终吧用户的 calldata 复制到 memory 中，然后 &#39;3d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af4&#39; 为：
+
+3d  RETURNDATASIZE   
+3d  RETURNDATASIZE  
+3d  RETURNDATASIZE   
+36  CALLDATASIZE     
+3d  RETURNDATASIZE   
+73bebebebebebebebebebebebebebebebebebebebe  PUSH20 bebebebebebebebebebebebebebebebebebebebe 
+5a  GAS  
+f4  DELEGATECALL  
+
+意思为 进行 delegatecall 调用，被调用的合约为 0xbebebebebebebebebebebebebebebebebebebebe，调用参数为 上述获取的用户 calldata。
+
+最后使用 &#39;3d82803e&#39; 核心操作码为RETURNDATACOPY 读取 delegatecall 的结果 returndata 中的数据到 memory 中。
+
+3d  RETURNDATASIZE  rds success 0   [0-cds]Calldata
+82  DUP3    0 rds success 0 [0-cds]Calldata
+80  DUP1    0 0 rds success 0   [0-cds]Calldata
+3e  RETURNDATACOPY  success 0   [0-rds]Returndata
+
+
+(辅助操作码为DUPn(其中n∈[1, 16])，其主要为将堆栈中的第n个元素复制并推入堆栈, 如目前堆栈中存在0 1两个元素，使用DUP2后运行完后堆栈为1 0 1，即将第二个元素1复制并推入堆栈)
+
+
+最最后使用 &#39;903d91602b57fd5bf3&#39; 将结果返回给用户。
+
+|           0x00000024      90             swap1                 0 suc
+|           0x00000025      3d             returndatasize        rds 0 suc
+|           0x00000026      91             swap2                 success 0 rds
+|           0x00000027      602b           push1 0x2b            0x2b success 0 rds
+|       ,=&lt; 0x00000029      57             jumpi                 0 rds
+|       |   0x0000002a      fd             revert
+|       `-&gt; 0x0000002b      5b             jumpdest              0 rds
+\           0x0000002c      f3             return
+
+
+
+
+
+
+*/
+</pre></div>
+
+<h2 id="eip-897-proxy">EIP-897 (PROXY) 委托代理<a class="headerlink" href="#eip-897-proxy" title="Permanent link"></a></h2>
+<p>具体的做法是在 proxy 合约中内置 实现(逻辑)合约 地址，然后通过 代理合约的 fallback() 中实现 assambly delegatecall 统一调用 用户入参的  calldata。</p>
+<p>缺点：是可能出现 存储变量被覆盖问题。</p>
+<p>解决：使用代理合约与逻辑合约继承同一合约以避免逻辑合约地址存储冲突的解决方案。</p>
+<p><a href="https://hugo.wongssh.cf/posts/foundry-contract-upgrade-part1/">https://hugo.wongssh.cf/posts/foundry-contract-upgrade-part1/</a></p>
+<div class="highlight"><pre>// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.13;
+
+contract ProxyStorage {
+    address public otherContractAddress;
+
+    function setOtherAddressStorage(address _otherContract) internal {
+        otherContractAddress = _otherContract;
+    }
+}
+
+contract DataLayout is ProxyStorage {
+    uint256 public number;
+}
+
+contract NumberStorage is DataLayout { 
+    function setNumber(uint256 _uint) public {
+        number = _uint;
+    }
+
+    function getNumber() public view returns (uint256) {
+        return number;
+    }
+}
+
+contract NumberStorageUp is DataLayout {
+    function setNumber(uint256 _uint) public {
+        number = _uint;
+    }
+
+    function getNumber() public view returns (uint256) {
+        return number;
+    }
+
+    function addNumber() public {
+        number += 1;
+    }
+}
+
+contract ProxyEasy is ProxyStorage {
+    constructor(address _otherContract) {
+        setOtherAddress(_otherContract);
+    }
+
+    function setOtherAddress(address _otherContract) public {
+        super.setOtherAddressStorage(_otherContract);
+    }
+
+    fallback() external {
+        address _impl = otherContractAddress;
+
+        assembly {
+            let ptr := mload(0x40)
+            calldatacopy(ptr, 0, calldatasize())
+            let result := delegatecall(gas(), _impl, ptr, calldatasize(), 0, 0)
+            let size := returndatasize()
+            returndatacopy(ptr, 0, size)
+
+            switch result
+            case 0 {
+                revert(ptr, size)
+            }
+            default {
+                return(ptr, size)
+            }
+        }
+    }
+}
+</pre></div>
+
+<h2 id="eip-1822-universal-upgradeable-proxy-standard-uups">EIP-1822 Universal Upgradeable Proxy Standard (UUPS) 通用可升级代理标准<a class="headerlink" href="#eip-1822-universal-upgradeable-proxy-standard-uups" title="Permanent link"></a></h2>
+<p>类比EIP-897是使用了一个距0地址非常远的随机地址中存储逻辑合约地址</p>
+<div class="highlight"><pre>contract Proxy {
+    constructor(bytes memory constructData, address contractLogic) public {
+        assembly {
+            sstore(0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7, contractLogic)
+        }
+        (bool success, bytes memory _ ) = contractLogic.delegatecall(constructData);
+        require(success, &quot;Construction failed&quot;);
+    }
+
+    fallback() external payable {
+        assembly {
+            let contractLogic := sload(0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7)
+            calldatacopy(0x0, 0x0, calldatasize)
+            let success := delegatecall(sub(gas, 10000), contractLogic, 0x0, calldatasize, 0, 0)
+            let retSz := returndatasize
+            returndatacopy(0, 0, retSz)
+            switch success
+            case 0 {
+                revert(0, retSz)
+            }
+            default {
+                return(0, retSz)
+            }
+        }
+    }
+}
+
+
+
+/// 另一个标准   Proxiable Contract
+
+
+contract Proxiable {
+    // Code position in storage is keccak256(&quot;PROXIABLE&quot;) = &quot;0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7&quot;
+
+    function updateCodeAddress(address newAddress) internal {
+        require(
+            bytes32(
+                0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7
+            ) == Proxiable(newAddress).proxiableUUID(),
+            &quot;Not compatible&quot;
+        );
+        assembly {
+            sstore(
+                0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7,
+                newAddress
+            )
+        }
+    }
+
+    function proxiableUUID() public pure returns (bytes32) {
+        return
+            0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7;
+    }
+}
+</pre></div>
+
+<h2 id="eip-1967-eip-1822-uups">EIP-1967  代理存储槽  [EIP-1822 UUPS的进一步标准化版本]<a class="headerlink" href="#eip-1967-eip-1822-uups" title="Permanent link"></a></h2>
+<p>一个一致的位置，代理存储它们委托给的逻辑合约的地址，以及其他特定于代理的信息。</p>
+<p>由于EIP-1822较为古老，在其文档中仍存在大量的解释性内容由于解释合约运行的原理。但在EIP-1967中，由于其创建时间较晚，合约代理的基本原理已被智能合约开发者所熟知，所以在EIP-1967的文档中没有介绍代理合约的基本原理，主要是对存储槽、事件进行了标准化和解释。</p>
+<p><strong>与 EIP-1822 的不同点：</strong></p>
+<ol>
+<li>使用了 <code>keccak256('eip1967.proxy.implementation') - 1</code> 而不是使用 <code>keccak256("PROXIABLE")</code></li>
+</ol>
+<p>在EIP-1822中我们一般采用keccak256(&ldquo;PROXIABLE&rdquo;)值，即0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7，该值其实可以有开发者自行决定。</p>
+<p>但在EIP-1967中，为了方便区块链浏览器的访问，该地址被标准化为 keccak256(&lsquo;eip1967.proxy.implementation&rsquo;) - 1，即0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc。</p>
+<p>使用 keccak256(&lsquo;eip1967.proxy.implementation&rsquo;) - 1 而不是 keccak256(&lsquo;eip1967.proxy.implementation&rsquo;) 的做法是【避免潜在的攻击】。</p>
+<p>首先我们为什么使用 <code>bytes32 internal constant _IMPLEMENTATION_SLOT = keccak256('eip1967.proxy.implementation');</code> ? 假设 代理合约&lt;存储所在&gt; 和 逻辑合约中可能出现在同一个 slot 处出现不一样的key，最终可能导致原本在代理合约内部用来存储 逻辑合约实例地址的 slot 被逻辑合约的某个 状态值覆盖了 【原因： slot 一样，而通过 delegatecall 最终导致 代理合约中的 slot 上的值被修改】。EIP-1967 使用了【非结构化存储】选择一个远离 0 slot 的slot存储 逻辑合约地址。然而直接使用 <code>keccak256('eip1967.proxy.implementation')</code> 会导致上述问题没有从根源解决，因为假设 代理合约 和 逻辑合约的 代码都是开源的，且 逻辑合约中存在 mapping 类型的属性，我们知道 mapping 的存储 slot 为 <code>keccak256(key, slot)</code> 即为 mapping中某个key的存储 slot，而我们知道 mapping 属性的位置slot那么我们可以构造出一个key满足 <code>keccak256(key, slot) == keccak256('eip1967.proxy.implementation')</code> 即 构造出 <code>key, slot == 'eip1967.proxy.implementation'</code>, 从而最终将 代理合约中存储逻辑合约实例地址的 slot 覆盖。而使用 <code>keccak256('eip1967.proxy.implementation') - 1</code>, 则 攻击者需要有 <code>keccak256('eip1967.proxy.implementation') - 1 == keccak256(X) == keccak256(key, slot)</code>, 而该等式中的 X 此处无法推算出来 (是个未知数了)，则无法伪造一个满足 <code>keccak256(X) == keccak256(key, slot)</code> 的key。</p>
+<ol start="2">
+<li>当[信标代理合约]地址不为空时，逻辑合约地址可以为空</li>
+</ol>
+<p>ERC标准规定信标代理的地址存储在 <code>bytes32(uint256(keccak256('eip1967.proxy.beacon')) - 1)</code> 中，其值为 <code>0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50</code>。</p>
+<p>信标代理的作用是[同一逻辑合约]可以实现[多个代理合约]共同代理。<strong>这里类似最小代理合约使用的代理部署的代理架构</strong></p>
+<p>EIP-1967也规定了合约拥有者的地址存储位置(Admin address)，该存储操位于bytes32(uint256(keccak256(&lsquo;eip1967.proxy.admin&rsquo;)) - 1)，即 <code>0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103</code>。</p>
+<p><strong>EIP-1967 的插槽位置：</strong></p>
+<table>
+<thead>
+<tr>
+<th>插槽名称</th>
+<th>计算公式</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>逻辑合约地址</td>
+<td>bytes32(uint256(keccak256(’eip1967.proxy.implementation’)) - 1)</td>
+<td>0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc</td>
+</tr>
+<tr>
+<td>信标代理合约地址</td>
+<td>bytes32(uint256(keccak256(’eip1967.proxy.beacon’)) - 1)</td>
+<td>0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50</td>
+</tr>
+<tr>
+<td>代理合约拥有者</td>
+<td>bytes32(uint256(keccak256(’eip1967.proxy.admin’)) - 1)</td>
+<td>0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103</td>
+</tr>
+</tbody>
+</table>
+<p><strong>EIP-1967 的主要事件：</strong></p>
+<table>
+<thead>
+<tr>
+<th>事件名称</th>
+<th>代码</th>
+<th>触发条件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Upgraded</td>
+<td><code>event Upgraded(address indexed implementation);</code></td>
+<td>逻辑合约地址升级</td>
+</tr>
+<tr>
+<td>BeaconUpgraded</td>
+<td><code>event BeaconUpgraded(address indexed beacon);</code></td>
+<td>信标代理合约升级</td>
+</tr>
+<tr>
+<td>AdminChanged</td>
+<td><code>event AdminChanged(address previousAdmin, address newAdmin);</code></td>
+<td>合约拥有者改变</td>
+</tr>
+</tbody>
+</table>
+<p><strong>EIP-1967 合约图解：</strong></p>
+<p>代理合约的结构</p>
+<p><img alt="" src="/D:/%E6%96%87%E6%A1%A3/blockchain-study/EIP%E5%AD%A6%E4%B9%A0/img/mermaid-diagram-2022-07-25-195542.svg" /></p>
+<p>UML</p>
+<p><img alt="" src="/D:/%E6%96%87%E6%A1%A3/blockchain-study/EIP%E5%AD%A6%E4%B9%A0/img/mermaid-diagram-2022-07-25-210049.svg" /></p>
+<p>在UML图中，以#开头的函数代表此函数仅能在合约内调用internal; +开头的函数或变量代表public; -开头的函数或变量代表private，即不能在合约外调用; 斜体函数名为抽象函数，即在当前合约内仅注明了函数名，我们需要在继承合约内实现。</p>
+<h2 id="eip-2535">EIP-2535  (钻石模型, 多面代理)   创建可在部署后扩展的模块化智能合约系统<a class="headerlink" href="#eip-2535" title="Permanent link"></a></h2>
+<p><strong>该标准是对 EIP-1538 的改进。该标准的相同动机适用于该标准。</strong>原来的 EIP-1538 (<a href="https://eips.ethereum.org/EIPS/eip-1538">https://eips.ethereum.org/EIPS/eip-1538</a>) 已经被撤回，不做讨论。</p>
+<blockquote>
+<p>该提案将钻石标准化，钻石是模块化的智能合约系统，部署后可以升级/扩展，几乎没有大小限制。从技术上讲，菱形是一种具有外部功能的合约，这些功能由称为facets的合约提供。Facets 是单独的、独立的合约，可以共享内部函数、库和状态变量。</p>
+</blockquote>
+<p>动机：</p>
+<p>1.无限合同功能的单一地址。</p>
+<blockquote>
+<p>为合约功能使用单一地址使得部署、测试以及与其他智能合约、软件和用户界面的集成变得更加容易。</p>
+</blockquote>
+<ol start="2">
+<li>合约超过了 24KB 的最大合约大小。</li>
+</ol>
+<blockquote>
+<p>可能拥有将其保留在单个合约或单个合约地址中的相关功能。钻石没有最大合约大小。</p>
+</blockquote>
+<ol start="3">
+<li>菱形提供了一种组织合约代码和数据的方法。</li>
+</ol>
+<blockquote>
+<p>可能想要构建一个具有很多功能的合约系统。菱形提供了一种系统的方法来隔离不同的功能并将它们连接在一起，并根据需要以节省气体的方式在它们之间共享数据。</p>
+</blockquote>
+<ol start="4">
+<li>钻石提供了一种升级功能的方法。</li>
+</ol>
+<blockquote>
+<p>可升级钻石可以升级以添加/替换/删除功能。因为钻石没有最大合同大小，所以随着时间的推移可以添加到钻石的功能数量没有限制。无需重新部署现有功能即可升级钻石。可以添加/替换/移除钻石的某些部分，同时保留其他部分。</p>
+</blockquote>
+<ol start="5">
+<li>钻石可以是不变的。</li>
+</ol>
+<blockquote>
+<p>可以在以后部署不可变钻石或使可升级钻石不可变。</p>
+</blockquote>
+<ol start="6">
+<li>钻石可以重用已部署的合约。</li>
+</ol>
+<blockquote>
+<p>链上合约可用于创建钻石，而不是将合约部署到已经部署的现有区块链。可以从现有部署的合约创建自定义钻石。这使得创建链上智能合约平台和库成为可能。</p>
+</blockquote>
+<p>基本功能：</p>
+<ol>
+<li>在合约中原子性的增加、减少或替换函数</li>
+<li>将合约内函数的增加、减少、替换通过约定的event给出</li>
+<li>通过提供合约查询公开函数的信息</li>
+<li>解决以太坊合约最大24KB的限制</li>
+<li>允许可升级函数在未来更改为不可升级函数</li>
+</ol>
+<p><strong>和 EIP-1967 区别</strong></p>
+<p>此模型与我们之前介绍的EIP-1967等传统代理模型不同，此模型没有采用无序存储合约地址的方法，而是在通过映射约定不同的函数和对应的合约地址，此方法属于有序存储。</p>
+<p>我们之前一直强调代理合约的关键在于逻辑合约地址存储和合约数据存储，在此之前我们介绍了通过继承解决合约存储问题和通过随机地址槽存储数据解决数据冲突问题。</p>
+<p>相对于 EIP-897 的继承存储，和 EIP-1967 的非结构化存储 来说，EIP-2535 使用了 <code>Diamond Storage</code> 和 <code>AppStorage</code>，即：依旧是选择随机存储槽存储逻辑合约所需要的数据，此方案通常被称为Diamond Storage。与之前仅提供随机数据存储槽存储代理合约地址不同，在EIP2535中，我们需要为不同类型的逻辑合约设计存储地址以保证其数据存储不会与其他逻辑合约冲突。</p>
+<p><img alt="" src="/D:/%E6%96%87%E6%A1%A3/blockchain-study/EIP%E5%AD%A6%E4%B9%A0/img/EIP-2535_DiamondStorage.png" /></p>
+<p>如: 两个代理合约调用两个逻辑合约。 类比下图显示了使用相同两个刻面的两颗钻石：</p>
+<p><img alt="" src="/D:/%E6%96%87%E6%A1%A3/blockchain-study/EIP%E5%AD%A6%E4%B9%A0/.img/EIP-2535_facetreuse.png" /></p>
+<ol>
+<li>Diamond Storage 代码示例：</li>
+</ol>
+<div class="highlight"><pre>library MyStructStorage {
+  bytes32 constant MYSTRUCT_POSITION = 
+    keccak256(&quot;com.mycompany.projectx.mystruct&quot;);
+
+  struct MyStruct {
+    uint var1;
+    bytes var2;
+    mapping (address =&gt; uint) var3;
+  }
+
+  function myStructStorage()
+    internal 
+    pure 
+    returns (MyStruct storage mystruct) 
+  {
+    bytes32 position = MYSTRUCT_POSITION;
+    assembly {
+      mystruct.slot := position
+    }
+  }
+}
+
+
+
+contract TestStruct {
+    function myFunction(uint256 inputUint) external {
+
+        // library的调动默认用了 (只能) delegatecall (库合约的调用是不需要使用delegatecall关键词的), 我们可以使用 `LibraryName.functionName()` 的形式直接调用库中的函数。
+        MyStructStorage.MyStruct storage mystruct = MyStructStorage.myStructStorage();
+
+        mystruct.var1 = inputUint;
+    }
+}
+
+
+
+缺点： 
+
+此方案的问题在于我们每次进行数据调用都需要调用一次MyStructStorage.MyStruct storage mystruct = MyStructStorage.myStructStorage();代码获得mystruct对象再进行数据修改，这是麻烦和乏味的。
+</pre></div>
+
+<ol start="2">
+<li>AppStorage 代码示例：</li>
+</ol>
+<p>或者 我们通过合约的internal标识避免变量名冲突问题 (AppSotrage)。</p>
+<p>如：</p>
+<div class="highlight"><pre>第一步，在AppStorage.sol文件中把所有需要的存储变量到AppStorage结构体中，如下代码:
+
+struct AppStorage {
+  uint256 secondVar;
+  uint256 firstVar;
+  uint256 lastVar;
+}
+
+
+第二步，在需要使用变量的切面函数使用AppStorage internal s声明结构体。
+
+
+import &quot;./AppStorage.sol&quot;
+
+contract StakingFacet {
+  AppStorage internal s;
+
+  function myFacetFunction() external {
+    s.lastVar = s.firstVar + s.secondVar;
+  }
+}
+
+
+如果读者后期需要升级合约，需要在struct AppStorage结构体后增加变量，不可以打乱变量排列顺序，这与继承存储方案是一致的。
+</pre></div>
+
+<ol start="3">
+<li>混用 Diamond Storage 和 AppStorage</li>
+</ol>
+<div class="highlight"><pre>需要在AppStorage.sol加入以下代码
+
+
+library LibAppStorage {
+
+    function diamondStorage() internal pure returns (AppStorage storage ds) {
+        assembly {
+            ds.slot := 0
+        }
+    }
+}
+</pre></div>
+
+<p><strong>名词</strong></p>
+<ol>
+<li>钻石合约(Diamond)</li>
+</ol>
+<blockquote>
+<p>即直接与用户交互的代理合约，是delegatecall的发起者和状态变量的存储者</p>
+</blockquote>
+<ol start="2">
+<li>切面合约(Facet)，即逻辑合约</li>
+</ol>
+<blockquote>
+<p>用于编写操作状态变量的函数</p>
+</blockquote>
+<ol start="3">
+<li>放大镜合约(loupe)。</li>
+</ol>
+<blockquote>
+<p>一个特殊的切面合约，用于返回钻石中各个切面合约的具体内容，包括切面合约地址、切面合约中的函数选择器等内容。</p>
+</blockquote>
+<p>在EIP-2535中，最重要的函数就是 <code>diamondCut()</code>，该函数的功能是增加、修改或替换钻石合约中函数和切面合约。如果钻石合约为不可变合约，则可以不实现此函数。该函数运行后会抛出 事件。此函数的接口如下:</p></article></body></html>

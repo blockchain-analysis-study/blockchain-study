@@ -656,6 +656,9 @@ library Clones {
 ```
 
 
+## EIP-173 (合约所有权标准)
+
+
 ## ERC-165  (标准接口检测)
 
 
@@ -1202,6 +1205,64 @@ hashStruct(s : Struct) = keccak256(typeHash ‖ encodeData(s))
 
 ```
 
+**EIP1271的流程:**
+
+
+
+1. 合约钱包拥有者使用自己的私钥进行签名;
+2. 向目标合约提交合约钱包拥有者的签名
+3. 目标合约使用此签名向合约钱包进行isValidSignature方法。
+4. 合约钱包中的isValidSignature方法会检查签名是否属于合约拥有者。如果属于，合约钱包返回0x1626ba7e，否则返回0xffffffff
+5. 目标合约接受返回值，通过签名正误决定下一步操作
+
+
+和 EIP-712 的区别是，限定了 (如：钱包合约)合约的签名交由 特定的用户EOA 代做，校验签名则需要  (如：钱包合约)合约来做。
+
+
+
+**代码示例**
+
+
+```
+
+
+用户合约：
+
+
+function callERC1271isValidSignature(
+    address _addr,
+    bytes32 _hash,
+    bytes calldata _signature
+) external view {
+
+    // 将 交易签名的校验交给 钱包合约 (证明该交易确实是 钱包合约 发出的)
+    bytes4 result = IERC1271Wallet(_addr).isValidSignature(_hash, _signature);
+    require(result == 0x1626ba7e, "INVALID_SIGNATURE");
+}
+
+
+
+
+钱包合约：
+
+
+function isValidSignature(
+    bytes32 _hash,
+    bytes calldata _signature
+) external override view returns (bytes4) {
+    // Validate signatures
+    if (recoverSigner(_hash, _signature) == owner) {
+        return 0x1626ba7e;
+    } else {
+        return 0xffffffff;
+    }
+}
+
+其中对于 recoverSigner 需要根据具体的签名类型由用户自行编写，较为简单的方法是使用 ecrecover，(用户自行实现自己的钱包合约逻辑)
+
+
+```
+
 
 
 ## EIP-2612（授权签名）
@@ -1488,19 +1549,456 @@ f4  DELEGATECALL
 
 
 
-## EIP-1967  代理存储槽
+## EIP-897 (PROXY) 委托代理
+
+具体的做法是在 proxy 合约中内置 实现(逻辑)合约 地址，然后通过 代理合约的 fallback() 中实现 assambly delegatecall 统一调用 用户入参的  calldata。
+
+缺点：是可能出现 存储变量被覆盖问题。
+
+解决：使用代理合约与逻辑合约继承同一合约以避免逻辑合约地址存储冲突的解决方案。
+
+https://hugo.wongssh.cf/posts/foundry-contract-upgrade-part1/
+
+
+```
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.13;
+
+contract ProxyStorage {
+    address public otherContractAddress;
+
+    function setOtherAddressStorage(address _otherContract) internal {
+        otherContractAddress = _otherContract;
+    }
+}
+
+contract DataLayout is ProxyStorage {
+    uint256 public number;
+}
+
+contract NumberStorage is DataLayout { 
+    function setNumber(uint256 _uint) public {
+        number = _uint;
+    }
+
+    function getNumber() public view returns (uint256) {
+        return number;
+    }
+}
+
+contract NumberStorageUp is DataLayout {
+    function setNumber(uint256 _uint) public {
+        number = _uint;
+    }
+
+    function getNumber() public view returns (uint256) {
+        return number;
+    }
+
+    function addNumber() public {
+        number += 1;
+    }
+}
+
+contract ProxyEasy is ProxyStorage {
+    constructor(address _otherContract) {
+        setOtherAddress(_otherContract);
+    }
+
+    function setOtherAddress(address _otherContract) public {
+        super.setOtherAddressStorage(_otherContract);
+    }
+
+    fallback() external {
+        address _impl = otherContractAddress;
+
+        assembly {
+            let ptr := mload(0x40)
+            calldatacopy(ptr, 0, calldatasize())
+            let result := delegatecall(gas(), _impl, ptr, calldatasize(), 0, 0)
+            let size := returndatasize()
+            returndatacopy(ptr, 0, size)
+
+            switch result
+            case 0 {
+                revert(ptr, size)
+            }
+            default {
+                return(ptr, size)
+            }
+        }
+    }
+}
+
+
+```
+
+
+
+## EIP-1822 Universal Upgradeable Proxy Standard (UUPS) 通用可升级代理标准
+
+类比EIP-897是使用了一个距0地址非常远的随机地址中存储逻辑合约地址
+
+```
+contract Proxy {
+    constructor(bytes memory constructData, address contractLogic) public {
+        assembly {
+            sstore(0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7, contractLogic)
+        }
+        (bool success, bytes memory _ ) = contractLogic.delegatecall(constructData);
+        require(success, "Construction failed");
+    }
+
+    fallback() external payable {
+        assembly {
+            let contractLogic := sload(0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7)
+            calldatacopy(0x0, 0x0, calldatasize)
+            let success := delegatecall(sub(gas, 10000), contractLogic, 0x0, calldatasize, 0, 0)
+            let retSz := returndatasize
+            returndatacopy(0, 0, retSz)
+            switch success
+            case 0 {
+                revert(0, retSz)
+            }
+            default {
+                return(0, retSz)
+            }
+        }
+    }
+}
+
+
+
+/// 另一个标准   Proxiable Contract
+
+
+contract Proxiable {
+    // Code position in storage is keccak256("PROXIABLE") = "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7"
+
+    function updateCodeAddress(address newAddress) internal {
+        require(
+            bytes32(
+                0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7
+            ) == Proxiable(newAddress).proxiableUUID(),
+            "Not compatible"
+        );
+        assembly {
+            sstore(
+                0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7,
+                newAddress
+            )
+        }
+    }
+
+    function proxiableUUID() public pure returns (bytes32) {
+        return
+            0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7;
+    }
+}
+
+
+```
+
+
+
+
+## EIP-1967  代理存储槽  [EIP-1822 UUPS的进一步标准化版本]
 
 
 一个一致的位置，代理存储它们委托给的逻辑合约的地址，以及其他特定于代理的信息。
 
 
-## EIP-897 (PROXY) 委托代理
-
-具体的做法是在 proxy 合约中内置 实现(逻辑)合约 地址，然后通过 代理合约的 fallback() 中实现 assambly delegatecall 统一调用 用户入参的  calldata。
-
-缺点是可能出现 存储变量被覆盖问题。
+由于EIP-1822较为古老，在其文档中仍存在大量的解释性内容由于解释合约运行的原理。但在EIP-1967中，由于其创建时间较晚，合约代理的基本原理已被智能合约开发者所熟知，所以在EIP-1967的文档中没有介绍代理合约的基本原理，主要是对存储槽、事件进行了标准化和解释。
 
 
+**与 EIP-1822 的不同点：**
 
-## EIP-1822 Universal Upgradeable Proxy Standard (UUPS) 通用可升级代理标准
+
+1. 使用了 `keccak256('eip1967.proxy.implementation') - 1` 而不是使用 `keccak256("PROXIABLE")`
+
+在EIP-1822中我们一般采用keccak256("PROXIABLE")值，即0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7，该值其实可以有开发者自行决定。
+
+但在EIP-1967中，为了方便区块链浏览器的访问，该地址被标准化为 keccak256('eip1967.proxy.implementation') - 1，即0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc。
+
+使用 keccak256('eip1967.proxy.implementation') - 1 而不是 keccak256('eip1967.proxy.implementation') 的做法是【避免潜在的攻击】。
+
+首先我们为什么使用 `bytes32 internal constant _IMPLEMENTATION_SLOT = keccak256('eip1967.proxy.implementation');` ? 假设 代理合约<存储所在> 和 逻辑合约中可能出现在同一个 slot 处出现不一样的key，最终可能导致原本在代理合约内部用来存储 逻辑合约实例地址的 slot 被逻辑合约的某个 状态值覆盖了 【原因： slot 一样，而通过 delegatecall 最终导致 代理合约中的 slot 上的值被修改】。EIP-1967 使用了【非结构化存储】选择一个远离 0 slot 的slot存储 逻辑合约地址。然而直接使用 `keccak256('eip1967.proxy.implementation')` 会导致上述问题没有从根源解决，因为假设 代理合约 和 逻辑合约的 代码都是开源的，且 逻辑合约中存在 mapping 类型的属性，我们知道 mapping 的存储 slot 为 `keccak256(key, slot)` 即为 mapping中某个key的存储 slot，而我们知道 mapping 属性的位置slot那么我们可以构造出一个key满足 `keccak256(key, slot) == keccak256('eip1967.proxy.implementation')` 即 构造出 `key, slot == 'eip1967.proxy.implementation'`, 从而最终将 代理合约中存储逻辑合约实例地址的 slot 覆盖。而使用 `keccak256('eip1967.proxy.implementation') - 1`, 则 攻击者需要有 `keccak256('eip1967.proxy.implementation') - 1 == keccak256(X) == keccak256(key, slot)`, 而该等式中的 X 此处无法推算出来 (是个未知数了)，则无法伪造一个满足 `keccak256(X) == keccak256(key, slot)` 的key。
+
+
+2. 当[信标代理合约]地址不为空时，逻辑合约地址可以为空
+
+
+ERC标准规定信标代理的地址存储在 `bytes32(uint256(keccak256('eip1967.proxy.beacon')) - 1)` 中，其值为 `0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50`。
+
+
+信标代理的作用是[同一逻辑合约]可以实现[多个代理合约]共同代理。**这里类似最小代理合约使用的代理部署的代理架构**
+
+
+
+EIP-1967也规定了合约拥有者的地址存储位置(Admin address)，该存储操位于bytes32(uint256(keccak256('eip1967.proxy.admin')) - 1)，即 `0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103`。
+
+
+**EIP-1967 的插槽位置：**
+
+
+|插槽名称|计算公式|值|
+|---|---|---|
+|逻辑合约地址|bytes32(uint256(keccak256(’eip1967.proxy.implementation’)) - 1)|0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc|
+|信标代理合约地址|bytes32(uint256(keccak256(’eip1967.proxy.beacon’)) - 1)|0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50|
+|代理合约拥有者|bytes32(uint256(keccak256(’eip1967.proxy.admin’)) - 1)|0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103|
+
+
+
+**EIP-1967 的主要事件：**
+
+|事件名称|代码|触发条件|
+|---|---|---|
+|Upgraded|`event Upgraded(address indexed implementation);`|逻辑合约地址升级|
+|BeaconUpgraded|`event BeaconUpgraded(address indexed beacon);`|信标代理合约升级|
+|AdminChanged|`event AdminChanged(address previousAdmin, address newAdmin);`|合约拥有者改变|
+
+
+**EIP-1967 合约图解：**
+
+
+代理合约的结构
+
+
+![](./img/mermaid-diagram-2022-07-25-195542.svg)
+
+UML
+
+![](./img/mermaid-diagram-2022-07-25-210049.svg)
+
+
+在UML图中，以#开头的函数代表此函数仅能在合约内调用internal; +开头的函数或变量代表public; -开头的函数或变量代表private，即不能在合约外调用; 斜体函数名为抽象函数，即在当前合约内仅注明了函数名，我们需要在继承合约内实现。
+
+
+
+## EIP-2535  (钻石模型, 多面代理)   创建可在部署后扩展的模块化智能合约系统
+
+
+**该标准是对 EIP-1538 的改进。该标准的相同动机适用于该标准。**原来的 EIP-1538 (https://eips.ethereum.org/EIPS/eip-1538) 已经被撤回，不做讨论。
+
+
+
+>该提案将钻石标准化，钻石是模块化的智能合约系统，部署后可以升级/扩展，几乎没有大小限制。从技术上讲，菱形是一种具有外部功能的合约，这些功能由称为facets的合约提供。Facets 是单独的、独立的合约，可以共享内部函数、库和状态变量。
+
+
+动机：
+
+1.无限合同功能的单一地址。
+
+>为合约功能使用单一地址使得部署、测试以及与其他智能合约、软件和用户界面的集成变得更加容易。
+
+2. 合约超过了 24KB 的最大合约大小。
+
+>可能拥有将其保留在单个合约或单个合约地址中的相关功能。钻石没有最大合约大小。
+
+3. 菱形提供了一种组织合约代码和数据的方法。
+
+>可能想要构建一个具有很多功能的合约系统。菱形提供了一种系统的方法来隔离不同的功能并将它们连接在一起，并根据需要以节省气体的方式在它们之间共享数据。
+
+4. 钻石提供了一种升级功能的方法。
+
+>可升级钻石可以升级以添加/替换/删除功能。因为钻石没有最大合同大小，所以随着时间的推移可以添加到钻石的功能数量没有限制。无需重新部署现有功能即可升级钻石。可以添加/替换/移除钻石的某些部分，同时保留其他部分。
+
+
+5. 钻石可以是不变的。
+
+>可以在以后部署不可变钻石或使可升级钻石不可变。
+
+6. 钻石可以重用已部署的合约。
+
+>链上合约可用于创建钻石，而不是将合约部署到已经部署的现有区块链。可以从现有部署的合约创建自定义钻石。这使得创建链上智能合约平台和库成为可能。
+
+
+
+基本功能：
+
+
+1. 在合约中原子性的增加、减少或替换函数
+2. 将合约内函数的增加、减少、替换通过约定的event给出
+3. 通过提供合约查询公开函数的信息
+4. 解决以太坊合约最大24KB的限制
+5. 允许可升级函数在未来更改为不可升级函数
+
+
+
+**和 EIP-1967 区别**
+
+此模型与我们之前介绍的EIP-1967等传统代理模型不同，此模型没有采用无序存储合约地址的方法，而是在通过映射约定不同的函数和对应的合约地址，此方法属于有序存储。
+
+我们之前一直强调代理合约的关键在于逻辑合约地址存储和合约数据存储，在此之前我们介绍了通过继承解决合约存储问题和通过随机地址槽存储数据解决数据冲突问题。
+
+
+相对于 EIP-897 的继承存储，和 EIP-1967 的非结构化存储 来说，EIP-2535 使用了 `Diamond Storage` 和 `AppStorage`，即：依旧是选择随机存储槽存储逻辑合约所需要的数据，此方案通常被称为Diamond Storage。与之前仅提供随机数据存储槽存储代理合约地址不同，在EIP2535中，我们需要为不同类型的逻辑合约设计存储地址以保证其数据存储不会与其他逻辑合约冲突。
+
+![](./img/EIP-2535_DiamondStorage.png)
+
+
+
+如: 两个代理合约调用两个逻辑合约。 类比下图显示了使用相同两个刻面的两颗钻石：
+
+![](.img/EIP-2535_facetreuse.png)
+
+
+1. Diamond Storage 代码示例：
+
+```
+library MyStructStorage {
+  bytes32 constant MYSTRUCT_POSITION = 
+    keccak256("com.mycompany.projectx.mystruct");
+
+  struct MyStruct {
+    uint var1;
+    bytes var2;
+    mapping (address => uint) var3;
+  }
+
+  function myStructStorage()
+    internal 
+    pure 
+    returns (MyStruct storage mystruct) 
+  {
+    bytes32 position = MYSTRUCT_POSITION;
+    assembly {
+      mystruct.slot := position
+    }
+  }
+}
+
+
+
+contract TestStruct {
+    function myFunction(uint256 inputUint) external {
+
+        // library的调动默认用了 (只能) delegatecall (库合约的调用是不需要使用delegatecall关键词的), 我们可以使用 `LibraryName.functionName()` 的形式直接调用库中的函数。
+        MyStructStorage.MyStruct storage mystruct = MyStructStorage.myStructStorage();
+
+        mystruct.var1 = inputUint;
+    }
+}
+
+
+
+缺点： 
+
+此方案的问题在于我们每次进行数据调用都需要调用一次MyStructStorage.MyStruct storage mystruct = MyStructStorage.myStructStorage();代码获得mystruct对象再进行数据修改，这是麻烦和乏味的。
+
+```
+
+
+
+2. AppStorage 代码示例：
+
+
+或者 我们通过合约的internal标识避免变量名冲突问题 (AppSotrage)。
+
+如：
+
+```
+
+第一步，在AppStorage.sol文件中把所有需要的存储变量到AppStorage结构体中，如下代码:
+
+struct AppStorage {
+  uint256 secondVar;
+  uint256 firstVar;
+  uint256 lastVar;
+}
+
+
+第二步，在需要使用变量的切面函数使用AppStorage internal s声明结构体。
+
+
+import "./AppStorage.sol"
+
+contract StakingFacet {
+  AppStorage internal s;
+
+  function myFacetFunction() external {
+    s.lastVar = s.firstVar + s.secondVar;
+  }
+}
+
+
+如果读者后期需要升级合约，需要在struct AppStorage结构体后增加变量，不可以打乱变量排列顺序，这与继承存储方案是一致的。
+
+
+```
+
+
+3. 混用 Diamond Storage 和 AppStorage
+
+
+```
+
+需要在AppStorage.sol加入以下代码
+
+
+library LibAppStorage {
+
+    function diamondStorage() internal pure returns (AppStorage storage ds) {
+        assembly {
+            ds.slot := 0
+        }
+    }
+}
+
+
+
+```
+
+
+**名词**
+
+
+1. 钻石合约(Diamond)
+
+>即直接与用户交互的代理合约，是delegatecall的发起者和状态变量的存储者
+
+2. 切面合约(Facet)，即逻辑合约
+
+>用于编写操作状态变量的函数
+
+3. 放大镜合约(loupe)。
+
+>一个特殊的切面合约，用于返回钻石中各个切面合约的具体内容，包括切面合约地址、切面合约中的函数选择器等内容。
+
+
+在EIP-2535中，最重要的函数就是 `diamondCut()`，该函数的功能是[增加、修改或替换]钻石合约中[函数和切面合约]。如果钻石合约为不可变合约，则可以不实现此函数。该函数运行后会抛出 `DiamondCut` 事件。此函数的接口如下:
+
+```
+interface IDiamondCut {
+
+    enum FacetCutAction {Add, Replace, Remove}
+    // Add=0, Replace=1, Remove=2
+
+    struct FacetCut {
+        address facetAddress;
+        FacetCutAction action;
+        bytes4[] functionSelectors;
+    }
+
+    /// @notice Add/replace/remove any number of functions and optionally execute
+    ///         a function with delegatecall
+    /// @param _diamondCut Contains the facet addresses and function selectors
+    /// @param _init The address of the contract or facet to execute _calldata
+    /// @param _calldata A function call, including function selector and arguments
+    ///                  _calldata is executed with delegatecall on _init
+    function diamondCut(
+        FacetCut[] calldata _diamondCut,
+        address _init,
+        bytes calldata _calldata
+    ) external;
+
+    event DiamondCut(FacetCut[] _diamondCut, address _init, bytes _calldata);
+}
+
+
+```
+
+说白了就是将一些逻辑合约的地址和逻辑合约的 finction sig 进行映射，存到代理合约中，用来实现 modules 功能。
+
+
 
