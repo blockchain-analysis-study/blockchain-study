@@ -214,6 +214,458 @@ interface ERC721Enumerable {
 
 ```
 
+
+
+
+## ERC-4907 (租赁NFT协议)  作为 EIP-721 的拓展
+
+
+他作为 ERC-721 的扩展， EIP-4907 增加了一个变量UserInfo，让应用可以查询此NFT当前被租出去的目标地址“user”和出租时间”expires"。如果发现已经超出出租时间，则租赁关系宣告失效。
+
+代码极为简单仅有72行，使用这个标准，就是在原来的ERC721之上新增
+
+1个事件（用于通知链下应用称为事件）
+
+3个方法（用于实现链上数据管理功能）
+
+分别是
+
+UpdateUser 事件：当NFT转移，租赁校色设置时，发出租赁用户改变的通知
+
+setUser 方法：NFT所有者授权者可用，设置此NFTID的出租用户和过期时间
+
+userOf 方法：任何人可用，查询此NFTID的出租用户
+
+userExpires 方法：任何人可用，查询此NFTID的过期时间
+
+
+传统的 EIP-721 NFT只是通过2个映射 owners 、balances, 即一种字典形式的key-value对应关系的存储结构去记录数据。
+
+```
+mapping(uint256 => address)  _owners;// 记录每一个NFTID当前对应的所有者地址
+mapping(address => uint256)  _balances; //记录了当前所有者总计持有的NFT数量
+```
+
+
+而 EIP-4907 则是新增了一个数据对象 UserInfo 在所有权的概念之外增加[用户]的维度。
+
+```
+struct UserInfo {
+        address user;   // 用户地址
+        uint64 expires; //用户到期时间
+}
+```
+
+
+主要函数：
+
+
+```
+
+function setUser(uint256 tokenId, address user, uint64 expires) public virtual{
+
+  require(_isApprovedOrOwner(msg.sender, tokenId),"ERC721: transfer caller is not owner nor approved");
+
+  UserInfo storage info =  _users[tokenId];//新增存储登记信息
+
+  info.user = user;   
+  info.expires = expires;
+
+  emit UpdateUser(tokenId,user,expires); //发出事件通知链下应用
+}
+
+
+
+function userOf(uint256 tokenId)public view virtual returns(address){
+
+
+  if( uint256(_users[tokenId].expires) >=  block.timestamp){ 
+
+    //执行此函数，在未到期的情况下，返回此ID的当前用户地址
+    return  _users[tokenId].user; 
+  } else {
+
+    //到期情况下，则返回0地址，意未占用
+    return address(0);
+  }
+}
+
+
+
+function userExpires(uint256 tokenId) public view virtual returns(uint256){
+        return _users[tokenId].expires; //执行此函数，返回此ID的用户过期时间
+}
+
+
+
+/// 此外， EIP-4907 对标准交易方法 Transfer 增加了一部分内容，通过 _beforeTokenTransfer 实现，就是强制在进行 Transfer 交易转移后就删除掉这部分对用户的信息 (删掉旧的 user 信息)，并且发出事件通知已经用户失效了。
+
+function _beforeTokenTransfer(address from,address to,uint256 tokenId
+) internal virtual override{
+        super._beforeTokenTransfer(from, to, tokenId);
+        //当交易不是自己转自己的情况下，如果有设置“用户”则删除他
+        if (from != to && _users[tokenId].user != address(0)) {
+            delete _users[tokenId];// 删除用户信息
+            emit UpdateUser(tokenId, address(0), 0);// 发出事件通知已删除
+        }
+}
+
+```
+
+
+## EIP-5006 (租赁NFT)  针对 EIP-1155 的NFT租赁标准
+
+EIP-5006 的核心价值则是将进一步强化围绕用户创作应用场景上所有权和使用权的分离，明确NFT扩大应用价值的方向。
+
+
+该标准是EIP-1155的扩展。它提出了一个额外的角色 ( user)，可以授予代表user资产的地址而不是owner.
+
+
+```
+
+/ SPDX-License-Identifier: CC0-1.0
+
+pragma solidity ^0.8.0;
+
+interface IERC5006 {
+
+
+    struct UserRecord {
+        uint256 tokenId;
+        address owner;
+        uint64 amount;
+        address user;
+        uint64 expiry;
+    }
+    
+    /**
+     * @dev Emitted when permission for `user` to use `amount` of `tokenId` token owned by `owner`
+     * until `expiry` are given.
+     */
+    event CreateUserRecord(
+        uint256 recordId,
+        uint256 tokenId,
+        uint64  amount,
+        address owner,
+        address user,
+        uint64  expiry
+    );
+
+    /**
+     * @dev Emitted when record of `recordId` are deleted. 
+     */
+    event DeleteUserRecord(uint256 recordId);
+
+    /**
+     * @dev Returns the usable amount of `tokenId` tokens  by `account`.
+     */
+    function usableBalanceOf(address account, uint256 tokenId)
+        external
+        view
+        returns (uint256);
+
+    /**
+     * @dev Returns the amount of frozen tokens of token type `id` by `account`.
+     */
+    function frozenBalanceOf(address account, uint256 tokenId)
+        external
+        view
+        returns (uint256);
+
+    /**
+     * @dev Returns the `UserRecord` of `recordId`.
+     */
+    function userRecordOf(uint256 recordId)
+        external
+        view
+        returns (UserRecord memory);
+
+    /**
+     * @dev Gives permission to `user` to use `amount` of `tokenId` token owned by `owner` until `expiry`.
+     *
+     * Emits a {CreateUserRecord} event.
+     *
+     * Requirements:
+     *
+     * - If the caller is not `owner`, it must be have been approved to spend ``owner``'s tokens
+     * via {setApprovalForAll}.
+     * - `owner` must have a balance of tokens of type `id` of at least `amount`.
+     * - `user` cannot be the zero address.
+     * - `amount` must be greater than 0.
+     * - `expiry` must after the block timestamp.
+     */
+    function createUserRecord(
+        address owner,
+        address user,
+        uint256 tokenId,
+        uint64 amount,
+        uint64 expiry
+    ) external returns (uint256);
+
+    /**
+     * @dev Atomically delete `record` of `recordId` by the caller.
+     *
+     * Emits a {DeleteUserRecord} event.
+     *
+     * Requirements:
+     *
+     * - the caller must have allowance.
+     */
+    function deleteUserRecord(uint256 recordId) external;
+}
+
+
+为了使用，提供了4个接口来管理1155的租赁关系
+
+setUser：设置某个NFT-id下的某个所有者，设置多少个token数量给某个用户
+
+balanceOfUser ：查询哪个NFT-ID的哪个用户租赁到多少
+
+balanceOfUserFromOwner：查询某个NFT-ID的某所有者下的某个用户租赁到多少个
+
+frozenAmountOfOwner：查询某个NFT-ID的所有者其持有的token，已经被租出去多少个了（要冻结掉防止重复出租）
+
+
+```
+
+
+
+EIP-4907 的核心价值是为链上 [原生租赁] 提供了技术支撑，实现了 NFT 的所有权和使用权的分离，是解决NFT流动性短缺问题的重要基础设施。
+
+EIP-5006 的核心价值则是将进一步强化围绕 [用户创作应用场景上] 所有权和使用权的分离，明确NFT扩大应用价值的方向，将会涌现更多丰富的玩法、应用场景和衍生品。
+
+
+
+
+## EIP-5058 (可锁定的 NFT代币) 该协议海贼审核中，不建议使用
+
+
+
+
+
+本质上他是 ERC721 的拓展，让项目方可以对NFT资产，执行 [锁定] 而不是转移，他新增函数setLockApprovalForAll()以及lockApprove()，这样一来在锁定期结束之前被锁定的 NFT 不能转移。
+
+
+>有些类似 ERC-721R 提案 (可退款的 NFT) 的做法一样，先将 资金锁定。
+
+
+```
+
+// SPDX-License-Identifier: CC0-1.0
+
+pragma solidity ^0.8.8;
+
+/**
+ * @dev EIP-721 Non-Fungible Token Standard, optional lockable extension
+ * ERC721 Token that can be locked for a certain period and cannot be transferred.
+ * This is designed for a non-escrow staking contract that comes later to lock a user's NFT
+ * while still letting them keep it in their wallet.
+ * This extension can ensure the security of user tokens during the staking period.
+ * If the nft lending protocol is compatible with this extension, the trouble caused by the NFT
+ * airdrop can be avoided, because the airdrop is still in the user's wallet
+ */
+interface IERC5058 {
+    /**
+     * @dev Emitted when `tokenId` token is locked by `operator` from `from`.
+     */
+    event Locked(address indexed operator, address indexed from, uint256 indexed tokenId, uint256 expired);
+
+    /**
+     * @dev Emitted when `tokenId` token is unlocked by `operator` from `from`.
+     */
+    event Unlocked(address indexed operator, address indexed from, uint256 indexed tokenId);
+
+    /**
+     * @dev Emitted when `owner` enables `approved` to lock the `tokenId` token.
+     */
+    event LockApproval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+
+    /**
+     * @dev Emitted when `owner` enables or disables (`approved`) `operator` to lock all of its tokens.
+     */
+    event LockApprovalForAll(address indexed owner, address indexed operator, bool approved);
+
+    /**
+     * @dev Returns the locker who is locking the `tokenId` token.
+     *
+     * Requirements:
+     *
+     * - `tokenId` must exist.
+     */
+    function lockerOf(uint256 tokenId) external view returns (address locker);
+
+    /**
+     * @dev Lock `tokenId` token until the block number is greater than `expired` to be unlocked.
+     *
+     * Requirements:
+     *
+     * - `tokenId` token must be owned by `owner`.
+     * - `expired` must be greater than block.number
+     * - If the caller is not `owner`, it must be approved to lock this token
+     * by either {lockApprove} or {setLockApprovalForAll}.
+     *
+     * Emits a {Locked} event.
+     */
+    function lock(uint256 tokenId, uint256 expired) external;
+
+    /**
+     * @dev Unlock `tokenId` token.
+     *
+     * Requirements:
+     *
+     * - `tokenId` token must be owned by `owner`.
+     * - the caller must be the operator who locks the token by {lock}
+     *
+     * Emits a {Unlocked} event.
+     */
+    function unlock(uint256 tokenId) external;
+
+    /**
+     * @dev Gives permission to `to` to lock `tokenId` token.
+     *
+     * Requirements:
+     *
+     * - The caller must own the token or be an approved lock operator.
+     * - `tokenId` must exist.
+     *
+     * Emits an {LockApproval} event.
+     */
+    function lockApprove(address to, uint256 tokenId) external;
+
+    /**
+     * @dev Approve or remove `operator` as an lock operator for the caller.
+     * Operators can call {lock} for any token owned by the caller.
+     *
+     * Requirements:
+     *
+     * - The `operator` cannot be the caller.
+     *
+     * Emits an {LockApprovalForAll} event.
+     */
+    function setLockApprovalForAll(address operator, bool approved) external;
+
+    /**
+     * @dev Returns the account lock approved for `tokenId` token.
+     *
+     * Requirements:
+     *
+     * - `tokenId` must exist.
+     */
+    function getLockApproved(uint256 tokenId) external view returns (address operator);
+
+    /**
+     * @dev Returns if the `operator` is allowed to lock all of the assets of `owner`.
+     *
+     * See {setLockApprovalForAll}
+     */
+    function isLockApprovedForAll(address owner, address operator) external view returns (bool);
+
+    /**
+     * @dev Returns if the `tokenId` token is locked.
+     */
+    function isLocked(uint256 tokenId) external view returns (bool);
+
+    /**
+     * @dev Returns the `tokenId` token lock expired time.
+     */
+    function lockExpiredTime(uint256 tokenId) external view returns (uint256);
+}
+
+```
+
+
+用户授权项目方：lockApprove（许可锁定单个NFT），setLockApprovalForAll（许可锁定该地址下全部NFT）
+
+项目方合约调用：lockFrom（锁定用户的NFT），unlockFrom（解锁用户的NFT）
+
+
+
+设定锁定期：
+
+    项目方（第三方）锁定 NFT 时，
+
+    需要指定锁定过期的区块高度，该高度必须大于当前区块高度。
+
+    锁到期后，NFT 自动释放，才可以进行转移。
+
+
+
+## EIP-2981 (NFT 版税标准)
+
+
+该标准允许合约（例如支持ERC-721和ERC-1155接口的 NFT）在每次出售或转售 NFT 时发出要支付给 [NFT 创建者] 或 [权利持有人] 的特许权使用费金额。这适用于希望支持艺术家和其他 NFT 创作者持续资助的 NFT 市场。
+
+特许权使用费必须是自愿的，因为 transferFrom() 包括钱包之间的 NFT 转移在内的转移机制并不总是意味着发生了销售。
+
+市场和个人通过检索特许权使用费支付信息来实施此标准 royaltyInfo()，它指定为给定的销售价格向哪个地址支付多少。支付和通知接收者的确切机制将在未来的 EIP 中定义。该 ERC 应被视为 NFT 版税支付进一步创新的最小、节省 gas 的构建块。
+
+
+EIP-2981 合约必须支持 EIP-165 
+
+
+```
+pragma solidity ^0.6.0;
+import "./IERC165.sol";
+
+///
+/// @dev Interface for the NFT Royalty Standard
+///
+interface IERC2981 is IERC165 {
+
+    /// ERC165 bytes to add to interface array - set in parent contract
+    /// implementing this standard
+    ///
+    /// bytes4(keccak256("royaltyInfo(uint256,uint256)")) == 0x2a55205a
+    /// bytes4 private constant _INTERFACE_ID_ERC2981 = 0x2a55205a;
+    /// _registerInterface(_INTERFACE_ID_ERC2981);
+
+    /// @notice Called with the sale price to determine how much royalty
+    //          is owed and to whom.
+    /// @param _tokenId - the NFT asset queried for royalty information
+    /// @param _salePrice - the sale price of the NFT asset specified by _tokenId
+    /// @return receiver - address of who should be sent the royalty payment
+    /// @return royaltyAmount - the royalty payment amount for _salePrice
+    function royaltyInfo(
+        uint256 _tokenId,
+        uint256 _salePrice
+    ) external view returns (
+        address receiver,
+        uint256 royaltyAmount
+    );
+}
+
+interface IERC165 {
+    /// @notice Query if a contract implements an interface
+    /// @param interfaceID The interface identifier, as specified in ERC-165
+    /// @dev Interface identification is specified in ERC-165. This function
+    ///  uses less than 30,000 gas.
+    /// @return `true` if the contract implements `interfaceID` and
+    ///  `interfaceID` is not 0xffffffff, `false` otherwise
+    function supportsInterface(bytes4 interfaceID) external view returns (bool);
+}
+
+
+
+/// 必须检查是否实现了  'royaltyInfo(uint256,uint256)'
+
+/// bytes4(keccak256("royaltyInfo(uint256,uint256)")) == 0x2a55205a
+
+bytes4 private constant _INTERFACE_ID_ERC2981 = 0x2a55205a;
+
+function checkRoyalties(address _contract) internal returns (bool) {
+    (bool success) = IERC165(_contract).supportsInterface(_INTERFACE_ID_ERC2981);
+    return success;
+ }
+
+
+```
+
+
+**EIP-2981 是可选的**
+
+不可能知道哪些 [ NFT 转移] 是销售的结果，哪些只是钱包移动或合并他们的 NFT。因此，我们不能强制每个转账功能（例如transferFrom()在 ERC-721 中）都涉及特许权使用费，因为并非每个转账都是需要此类付款的销售。我们相信 NFT 市场生态系统将自愿实施这一版税支付标准，为艺术家/创作者提供持续的资金。NFT 购买者在做出 NFT 购买决定时会将特许权使用费作为评估因素。
+
+
 ## ERC-1820 (伪自省注册表合约)  比对 ERC-165 和 ERC-672
 
 ERC1820标准向后兼容 ERC165, ERC1820标准定义了一个通用注册表合约，任何地址（合约或普通用户帐户）都可以注册它支持的接口以及哪个智能合约负责接口实现。
@@ -765,6 +1217,264 @@ contract Homer is ERC165, Simpson {
 ## ERC-4626 (代币化资金库标准)
 
 
+
+
+EIP-4626 提供了一种将代币投资到投资池 ( 通常称为金库 ) 的标准方法。
+
+主要针对 Vault 进行优化，旨在将所有的 DeFi Vault 标准化，统一变成 ERC-20 形式的交易合约，提供铸造、 存取、查询余额等功能;降低 Vault 的工作量，提高运作效率。
+
+允许为代表单个基础EIP-20 代币份额的代币化保险库实施标准 API。该标准是 EIP-20 代币的扩展，提供了存取代币和读取余额的基本功能。
+
+
+**动机**
+
+当前的 Vault 缺乏标准化，借贷、聚合器等利息代币有着不一样的实施细节，这使得许多协议在聚合器或插件层的集成变得困难，协议开发者需要实现自己的适配器，这一过程容易出错并且浪费开发资源。
+
+
+**做法**
+
+所有的 ERC-4626 代币 Vault 都必须先实现 ERC-20 来作为股权代币。 如果一个 Vault 是不可转账的，它需要为 transfer 和 transferFrom 方法实现回滚 Revert 操作。 和 ERC-20 代币有关的操作如 balanceOf、 transfer、totalSupply 将在 Vault 的股份上进行操作，这代表了对 Vault 基础持有量对一小部分的所有权需求。
+
+所有的 ERC-4626 代币 Vault 必须实现 ERC-20 的元数据拓展功能，name 和 symbol 需要反映出底层代币的相关数据。
+
+
+**方法**
+
+
+```
+asset
+totalAssets
+convertToShares
+convertToAssets
+maxDeposit
+previewDeposit：允许用户去模拟在当前区块下存入资产后 Vault 发生的变化
+deposit：存入底层资产，铸造股权代币
+maxMint
+previewMint
+mint
+maxWithdraw
+previewWithdraw
+withdraw：烧掉股权代币，取回底层资产
+maxRedeem
+previewRedeem
+redeem
+```
+
+
+
+**事件**
+
+
+```
+// Deposit
+
+event Deposit(address indexed caller, address indexed owner, uint256 assets, uint256 shares);
+
+
+
+// Withdraw
+
+event Withdraw(
+        address indexed caller,
+        address indexed receiver,
+        address indexed owner,
+        uint256 assets,
+        uint256 shares
+);
+
+
+```
+
+
+**IMMUTABLES**
+
+
+```
+ERC20 public immutable asset;
+
+constructor(
+    ERC20 _asset,
+    string memory _name,
+    string memory _symbol
+) ERC20(_name, _symbol, _asset.decimals()) {
+    asset = _asset;
+}
+
+```
+
+
+**主逻辑**
+
+
+```
+
+// Deposit函数：
+
+function deposit(uint256 assets, address receiver) public virtual returns (uint256 shares) {
+    
+    // Check for rounding error since we round down in previewDeposit.
+    require((shares = previewDeposit(assets)) != 0, "ZERO_SHARES");
+
+    // Need to transfer before minting or ERC777s could reenter.
+    asset.safeTransferFrom(msg.sender, address(this), assets);
+
+    _mint(receiver, shares);
+
+    emit Deposit(msg.sender, receiver, assets, shares);
+
+    afterDeposit(assets, shares);
+}
+
+
+// Mint函数：
+
+function mint(uint256 shares, address receiver) public virtual returns (uint256 assets) {
+    assets = previewMint(shares); // No need to check for rounding error, previewMint rounds up.
+
+    // Need to transfer before minting or ERC777s could reenter.
+    asset.safeTransferFrom(msg.sender, address(this), assets);
+
+    _mint(receiver, shares);
+
+    emit Deposit(msg.sender, receiver, assets, shares);
+
+    afterDeposit(assets, shares);
+}
+
+
+// Withdraw函数：
+
+
+function withdraw(
+    uint256 assets,
+    address receiver,
+    address owner
+) public virtual returns (uint256 shares) {
+    
+    shares = previewWithdraw(assets); // No need to check for rounding error, previewWithdraw rounds up.
+
+    if (msg.sender != owner) {
+        uint256 allowed = allowance[owner][msg.sender]; // Saves gas for limited approvals.
+
+        if (allowed != type(uint256).max) allowance[owner][msg.sender] = allowed - shares;
+    }
+
+    beforeWithdraw(assets, shares);
+
+    _burn(owner, shares);
+
+    emit Withdraw(msg.sender, receiver, owner, assets, shares);
+
+    asset.safeTransfer(receiver, assets);
+}
+
+
+// Redeem函数：
+
+function redeem(
+    uint256 shares,
+    address receiver,
+    address owner
+) public virtual returns (uint256 assets) {
+    
+    if (msg.sender != owner) {
+        uint256 allowed = allowance[owner][msg.sender]; // Saves gas for limited approvals.
+
+        if (allowed != type(uint256).max) allowance[owner][msg.sender] = allowed - shares;
+    }
+
+    // Check for rounding error since we round down in previewRedeem.
+    require((assets = previewRedeem(shares)) != 0, "ZERO_ASSETS");
+
+    beforeWithdraw(assets, shares);
+
+    _burn(owner, shares);
+
+    emit Withdraw(msg.sender, receiver, owner, assets, shares);
+
+    asset.safeTransfer(receiver, assets);
+}
+
+
+```
+
+
+**账户逻辑**
+
+
+```
+
+function totalAssets() public view virtual returns (uint256);
+
+function convertToShares(uint256 assets) public view returns (uint256) {
+    uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+
+    return supply == 0 ? assets : assets.mulDivDown(supply, totalAssets());
+}
+
+function convertToAssets(uint256 shares) public view returns (uint256) {
+    uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+
+    return supply == 0 ? shares : shares.mulDivDown(totalAssets(), supply);
+}
+
+function previewDeposit(uint256 assets) public view virtual returns (uint256) {
+    return convertToShares(assets);
+}
+
+function previewMint(uint256 shares) public view virtual returns (uint256) {
+    uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+
+    return supply == 0 ? shares : shares.mulDivUp(totalAssets(), supply);
+}
+
+function previewWithdraw(uint256 assets) public view virtual returns (uint256) {
+    uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+
+    return supply == 0 ? assets : assets.mulDivUp(supply, totalAssets());
+}
+
+function previewRedeem(uint256 shares) public view virtual returns (uint256) {
+    return convertToAssets(shares);
+}
+
+/*///////////////////////////////////////////////////////////////
+                 DEPOSIT/WITHDRAWAL LIMIT LOGIC
+//////////////////////////////////////////////////////////////*/
+
+function maxDeposit(address) public view virtual returns (uint256) {
+    return type(uint256).max;
+}
+
+function maxMint(address) public view virtual returns (uint256) {
+    return type(uint256).max;
+}
+
+function maxWithdraw(address owner) public view virtual returns (uint256) {
+    return convertToAssets(balanceOf[owner]);
+}
+
+function maxRedeem(address owner) public view virtual returns (uint256) {
+    return balanceOf[owner];
+}
+
+```
+
+
+**钩子逻辑**
+
+```
+
+function beforeWithdraw(uint256 assets, uint256 shares) internal virtual {}
+
+function afterDeposit(uint256 assets, uint256 shares) internal virtual {}
+
+```
+
+
+Vault 的接口是为聚合器设计的。
+
+
 ## ERC-1155 (多代币标准)
 
 
@@ -989,7 +1699,6 @@ ERC165标准必须适⽤用于所使⽤用的每个ERC998接⼝
 http://192.168.10.146:6789
 
 
-## ERC-4907 (租赁NFT协议)
 
 
 ## ERC-672 (逆向 ENS 伪自省)
@@ -1389,7 +2098,93 @@ EIP 1127 仍处于提案阶段，尚未在以太坊区块链上实施。如果�
 ```
 
 
-## EIP-1077  提供智能合约支付gas的抽象接口
+## EIP-1077  (提供智能合约支付gas的抽象接口) 是一个比 EIP-4337 更早提出的提案
+
+
+
+采用 DApp 的主要障碍是需要多个 token 来执行链式操作。允许用户签名消息以显示执行意图，但允许第三方中继器执行消息可以避免此问题，尽管以太坊交易始终需要 ETH，但智能合约可以采用 EIP-191 签名并转发付款激励具有 ETH 的不受信任方执行交易。可以标准化它们的通用格式，以及用户允许以代币支付交易的方式，为应用程序开发人员提供了很大的灵活性，并且可以成为应用程序用户与区块链交互的主要方式。
+
+
+实现函数：
+
+```
+
+function executeGasRelay(bytes calldata _execData, uint256 _gasPrice, uint256 _gasLimit, address _gasToken, address _gasRelayer, bytes calldata _signature) external;   
+
+
+function executeGasRelayMsg(uint256 _nonce, bytes memory _execData, uint256 _gasPrice, uint256 _gasLimit, address _gasToken, address _gasRelayer) public pure returns (bytes memory);
+
+
+function executeGasRelayERC191Msg(uint256 _nonce, bytes memory _execData, uint256 _gasPrice, uint256 _gasLimit, address _gasToken, address _gasRelayer) public view returns (bytes memory);
+
+
+function lastNonce() public returns (uint nonce);
+
+
+
+签名消息需要以下字段：
+
+Nonce：随机数或时间戳；
+Execute Data：账户合约要执行的字节码；
+Gas Price：gas价格（以所选代币支付）；
+Gas Limit：为中继执行预留的gas；
+Gas Token：支付gas的代币（以太币为0）；
+Gas Relayer：本次调用的gas返还受益人（留0 block.coinbase）
+
+
+```
+
+
+**消息签名**
+
+
+消息必须按照EIP-191标准进行签名，被调用的合约也必须实现EIP-1271，EIP-1271 必须验证签名的消息。
+
+消息必须由正在执行的帐户合约的所有者签名。如果所有者是合约，它必须实现EIP-1271接口并将验证转发给它。
+
+
+
+如： 
+
+为了合规，交易必须请求签署一个“messageHash”，它是多个字段的串联。
+
+字段必须构造为此方法：
+
+第一个和第二个字段是为了使其符合EIP-191。
+
+开始交易以byte(0x19)确保签名数据不是有效的以太坊交易。
+
+第二个参数是版本控制字节。
+
+第三个是根据EIP-191版本 0 的验证者地址（账户合约地址） 。
+
+其余参数是 gas 中继的应用程序特定数据：根据EIP-1344 的chainID 、执行随机数、执行数据、约定的 gas 价格、gas 中继调用的 gas 限制、要偿还的 gas 代币和授权接收奖励的 gas 中继器。
+
+
+```
+
+EIP-191消息必须构造如下：
+
+keccak256(
+    abi.encodePacked(
+        byte(0x19), //ERC-191 - the initial 0x19 byte
+        byte(0x0), //ERC-191 - the version byte
+        address(this), //ERC-191 - version data (validator address)
+        chainID,
+        bytes4(
+            keccak256("executeGasRelay(uint256,bytes,uint256,uint256,address,address)")
+        ),
+        _nonce, 
+        _execData,
+        _gasPrice,
+        _gasLimit,
+        _gasToken,
+        _gasRelayer
+    )
+)
+
+```
+
 
 
 
@@ -1397,7 +2192,88 @@ EIP 1127 仍处于提案阶段，尚未在以太坊区块链上实施。如果�
 
 
 
-## EIP-1474：远程过程调用规范 定义 jsonrpc 的返回状态码
+该 EIP 定义了合约级协议，用于Recipient合约通过可信Forwarder合约接受元交易。没有进行任何协议更改。Recipient合同通过附加额外的调用数据发送有效msg.sender (称为 msgSender()) 和msg.data (称为 msgData())。
+
+
+**几个概念**
+
+
+1. 交易签名者
+
+>签署交易并将交易发送到 Gas Relay
+
+2. Gas Relay
+
+>接收来自交易签名者的链下签名请求并支付 gas 以将其转化为通过 Trusted Forwarder 的有效交易
+
+3. Trusted ForwarderRecipient
+
+>在转发来自交易签名者的请求之前，受信任的合约可以正确验证签名和随机数
+
+4. Recipient
+
+>通过 Trusted Forwarder 接受元交易的合约
+
+
+![](./img/EIP-2771_using_flow.jpg)
+
+
+1. 用户先对交易做链下签名
+2. 用户将签名好的链下交易发送给  Gas Relay
+3. Gas Relay 接收来自交易签名者的链下签名请求并支付 gas 以将其转化为通过 Trusted Forwarder 的有效交易
+4. 在转发来自交易签名者的请求之前，受信任的合约 (Trusted Forwarder) 可以正确验证签名和随机数。Trusted Forwarder负责调用Recipient合约，并且必须将[Transaction Signer的地址]（20 字节数据）附加到调用数据的末尾。
+5. Trusted Forwarder 将交易转发给 Recipient 合约
+6. Recipient 合约然后可以通过执行 3 个操作来提取交易签名者地址：
+
+    - 检查 Gas Relay 是否可信。如何实施不在本提案的范围内。
+    - 从调用数据的最后 20 个字节中提取[Transaction Signer的地址]，并将其用作sender交易的原始地址（而不是msg.sender, 因为 msg.sender 是 Gas Relay ）
+    - 如果 msg.sender 不是 受信任的Gas Relay（或者如果msg.data短于 20 个字节），则按原样返回原件msg.sender。
+(Recipient 必须检查它是否 信任转发方 (Trusted Forwarder) 以防止它提取从不受信任的合约附加的地址数据。这可能导致伪造地址)
+
+
+
+```
+
+
+Recipient 合约必须实现这个功能：
+
+function isTrustedForwarder(address forwarder) external view returns(bool);
+
+
+如：
+
+
+contract RecipientExample {
+
+    function purchaseItem(uint256 itemId) external {
+        address sender = _msgSender();
+        // ... perform the purchase for sender
+    }
+
+    address immutable _trustedForwarder;
+    constructor(address trustedForwarder) internal {
+        _trustedForwarder = trustedForwarder;
+    }
+
+    function isTrustedForwarder(address forwarder) public returns(bool) {
+        return forwarder == _trustedForwarder;
+    }
+
+    function _msgSender() internal view returns (address payable signer) {
+        signer = msg.sender;
+        if (msg.data.length>=20 && isTrustedForwarder(signer)) {
+            assembly {
+                signer := shr(96,calldataload(sub(calldatasize(),20)))
+            }
+        }    
+    }
+
+}
+
+```
+
+
+## EIP-1474  远程过程调用规范 定义 jsonrpc 的返回状态码
 
 
 ## EIP-1167  代理(部署)合约 供了一种低成本克隆合约的方法
@@ -1405,6 +2281,8 @@ EIP 1127 仍处于提案阶段，尚未在以太坊区块链上实施。如果�
 ```
 
 contract Deployer {
+
+
     event InstanceDeployed(address instance);
     
     /**
@@ -1429,6 +2307,7 @@ contract Deployer {
         }
         emit InstanceDeployed(address(instance));
     }
+
 }
 
 
@@ -1577,7 +2456,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 37  CALLDATACOPY    如前所述复制calldata到内存   
 
 
-最终吧用户的 calldata 复制到 memory 中，然后 '3d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af4' 为：
+最终把用户的 calldata 复制到 memory 中，然后 '3d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af4' 为：
 
 3d  RETURNDATASIZE   
 3d  RETURNDATASIZE  
