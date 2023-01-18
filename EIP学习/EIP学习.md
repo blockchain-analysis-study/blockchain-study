@@ -50,7 +50,10 @@ event Approval(address indexed _owner, address indexed _spender, uint256 _value)
 
 ```
 
-## ERC 721 (非同质代币)
+## EIP-721 (非同质代币, ERC-721)
+
+
+ 【注意】：每个符合ERC721的智能合约必须同时符合ERC721和ERC165。ERC165是智能合约定义自己支持哪些接口的一种方式。
 
 
 ```
@@ -61,8 +64,11 @@ event ApprovalForAll(address indexed _owner, address indexed _operator, bool _ap
 
 
 
-
-必备函数
+######################
+#####            #####
+#####  必备函数   #####
+#####            #####
+######################
 
 function balanceOf(address _owner) external view returns (uint256);
 function ownerOf(uint256 _tokenId) external view returns (address);
@@ -82,7 +88,14 @@ function isApprovedForAll(address _owner, address _operator) external view retur
 pragma solidity ^0.4.20;
 
 
-interface ERC721 {
+
+######################
+#####            #####
+#####   721合约  #####
+#####            #####
+######################
+
+interface ERC721 /* is ERC165 */ {
     /// @dev 当任何NFT的所有权更改时（不管哪种方式），就会触发此事件。
     ///  包括在创建时（`from` == 0）和销毁时(`to` == 0), 合约创建时除外。
     event Transfer(address indexed _from, address indexed _to, uint256 indexed _tokenId);
@@ -151,6 +164,17 @@ interface ERC721 {
 }
 
 
+
+######################
+#####            #####
+#####   165提案  #####
+#####            #####
+######################
+
+
+/// 一般要求 721 满足 165
+///
+
 interface ERC165 {
     /// @notice 是否合约实现了接口
     /// @param interfaceID  ERC-165定义的接口id
@@ -160,6 +184,18 @@ interface ERC165 {
 }
 
 
+/// 【注意】：每个符合ERC721的智能合约必须同时符合ERC721和ERC165。ERC165是智能合约定义自己支持哪些接口的一种方式。
+
+
+
+######################
+#####            #####
+#####   钱包实现  #####
+#####            #####
+######################
+
+
+/// 钱包等应用要接受NFT的安全转账，则必须实现如下接口
 
 interface ERC721TokenReceiver {
     /// @notice 处理接收NFT
@@ -175,6 +211,37 @@ interface ERC721TokenReceiver {
 }
 
 
+######################
+#####            #####
+#####   可选接口  #####
+#####            #####
+######################
+
+/// 
+、、、
+
+{
+    "title": "Asset Metadata",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Identifies the asset to which this NFT represents"
+        },
+        "description": {
+            "type": "string",
+            "description": "Describes the asset to which this NFT represents"
+        },
+        "image": {
+            "type": "string",
+            "description": "A URI pointing to a resource with mime type image/* representing the asset to which this NFT represents. Consider making any images at a width between 320 and 1080 pixels and aspect ratio between 1.91:1 and 4:5 inclusive."
+        }
+    }
+}
+
+、、、
+
+/// 【注意】： 由于NFT最早面向艺术品，ERC-721可选Metadata接口“ERC721 Metadata JSON Schema”只指定了name、description、image三个属性（且不可修改）。但对于游戏而言，这些属性远远不够，因此我们下一节要介绍的另一个NFT标准EIP-1155将name、description、image属性转移到了URI的json里面，而不规定URI接口返回的JSON Schema。
 
 interface ERC721Metadata {
     /// @notice NFTs 集合的名字
@@ -185,11 +252,13 @@ interface ERC721Metadata {
 
     /// @notice 一个给定资产的唯一的统一资源标识符(URI)
     /// @dev 如果 `_tokenId` 无效，抛出异常. URIs在 RFC 3986 定义，
-    /// URI 也许指向一个 符合 "ERC721 元数据 JSON Schema" 的 JSON 文件
+    /// URIs在 RFC 3986 定义。ERC721 URI 可指向一个符合 "ERC721 URI JSON Schema" 的 JSON 文件。
     function tokenURI(uint256 _tokenId) external view returns (string);
 }
 
 
+
+/// 枚举接口包含了按索引获取到对应的代币，可以提供NFTs的完整列表，以便NFT可被发现。
 
 interface ERC721Enumerable {
     /// @notice  NFTs 计数
@@ -1214,7 +1283,7 @@ contract Homer is ERC165, Simpson {
 ```
 
 
-## ERC-4626 (代币化资金库标准)
+## EIP-4626  (代币化资金库标准) ERC-4626
 
 
 
@@ -1475,9 +1544,9 @@ function afterDeposit(uint256 assets, uint256 shares) internal virtual {}
 Vault 的接口是为聚合器设计的。
 
 
-## ERC-1155 (多代币标准)
+## ERC-1155 (多代币标准, 多重通证标准)
 
-
+【注意】： 实现ERC-1155标准的智能合约必须实现ERC-165标准中的supportsInterface接口函数，并当其参数interfaceID传入值为0xd9b67a26时，返回true
 
 ```
 pragma solidity ^0.5.9;
@@ -1593,7 +1662,13 @@ interface ERC1155 /* is ERC165 */ {
 
 
 
-pragma solidity ^0.5.9;
+
+/// ERC-1155通证接收者:
+///
+/// ERC-1155通证接受者 必须实现 ERC1155TokenReceiver 接口中所有定义的函数。更多细节请参看 "Safe Transfer Rules"。
+/// ERC-1155通证接收者 必须实现 ERC-165 标准中的 supportsInterface 接口函数，并支持 ERC1155TokenReceiver 接口。更多细节请参看 "ERC1155TokenReceiver ERC-165 rules"。
+
+
 
 /**
     Note: The ERC-165 identifier for this interface is 0x4e2312e0.
@@ -1631,8 +1706,91 @@ interface ERC1155TokenReceiver {
 }
 
 
+#################################
+######                     ######
+###### Safe Transfer Rules ######
+######                     ######
+#################################
 
-// ERC1155TokenReceiver ERC-165 rules
+当涉及ERC1155TokenReceiver中的接口函数时，标准函数 safeTransferFrom 和 safeBatchTransferFrom 的执行方式严格遵循下列规则:  
+
+
+
+场景1：接收者不是智能合约
+
+onERC1155Received 和 onERC1155BatchReceived 不应该被外部账户（Externally Owned Account简称EOA）调用。 只能是合约接收。
+
+
+
+
+场景2：交易不是挖矿或转账
+
+onERC1155Received 和 onERC1155BatchReceived 不应该在除挖矿或转账之外的其它操作中被调用。
+
+
+
+场景3：作为接收者的合约没有实现ERC1155TokenReceiver接口中相应的函数
+
+该笔交易必须被回滚并给出下面的警告信息 "如果交易的通证是用其它合约标准实现的并且通证的实现代码中包含标准和非标准函数，则该交易可以遵循该通证的合约标准而不是ERC1155标准。详细信息请参看 [Compatibility with other standards]。"
+
+
+
+场景4：接收合约实现了ERC1155TokenReceiver中相应的接口函数但返回一个未知值。
+
+该笔交易必须被回滚。
+
+
+
+场景5：接收合约实现了ERC1155TokenReceiver中相应的接口函数但抛出错误。
+
+该笔交易必须被回滚。
+
+
+
+场景6：接收合约实现了ERC1155TokenReceiver接口函数，并且接收者有且仅有一个账户的余额发生了变化（比如safeTransferFrom被调用）。
+
+
+ - 转账交易中账户余额的更新必须在 ERC1155TokenReceiver 接口函数在接收合约处被调用之前完成。
+ - 该笔转账的事件必须在 ERC1155TokenReceiver 接口函数在接收合约处被调用前触发，并且事件要反映账户余额的变化。
+ - onERC1155Received 或 onERC1155BatchReceived 必须在接收合约中被调用。
+ - onERC1155Received 必须在接收合约中被调用并遵循其调用规则。 关于调用onERC1155Received必须遵循的规则，更多细节请参看“onERC1155Received rules”。
+ - onERC1155BatchReceived 或许（并非一定）会在接收合约中被调用，一旦被调用则必须遵循其调用规则。 关于调用onERC1155BatchReceived必须遵循的规则，更多细节请参看“onERC1155BatchReceived rules”。
+
+
+
+场景7：接收合约实现了ERC1155TokenReceiver接口函数，并且接收者有多个账户余额发生了变化（比如 safeBatchTransferFrom 被调用）。
+
+ - 转账交易中所有账户余额的更新必须在 ERC1155TokenReceiver 接口函数在接收合约中被调用之前完成。
+ - 所有的转账事件必须在 ERC1155TokenReceiver 接口函数在接收合约中被调用前触发，并且事件要反映账户的余额变化。
+ - 对每一个账户余额的变动，onERC1155Received 或 onERC1155BatchReceived 都必须在接收合约中被调用。 对每一个接口函数的返回 魔值（return magic value）必须进行检查和处理，并遵循 "onERC1155Received rules" 和 "onERC1155BatchReceived rules" 中的规则。
+ - onERC1155BatchReceived 必须在接收合约处被调用并遵循其调用规则。 关于调用onERC1155BatchReceived必须遵循的规则，更多细节请参看“onERC1155BatchReceived rules”。
+ - onERC1155Received 或许（并非一定）会在接收合约处被调用，如调用则必须遵循其调用规则。 关于调用onERC1155Received必须遵循的规则，更多细节请参看“onERC1155Received rules”。
+
+
+
+场景8：你写了一个智能合约，实现了ERC1155TokenReceiver接口函数的功能，你调用onERC1155Received或onERC1155BatchReceived或两个都调用，把该合约通证转账到另一个地址。
+
+ - 该转账将被视为已经接收，并继续调用 safeTransferFrom 或 safeBatchTransferFrom。 该转账成功完成后，被调用的接收合约中的接口函数所产生的keccak256值必须被返回。
+ - 参数“_data”可以（并非必须）被用于新的场景。
+ - 如果该转账失败，则交易可以（并非必须）被回滚。 在此场景下，如果合约设计者希望合约仍然保留对该通证的所有权，则通证所有权可以（并非必须）仍然为合约所有。
+
+
+
+场景9：用户通过非标准API函数转账通证。所谓的非标准API函数是指除 safeTransferFrom 和 safeBatchTransferFrom 以外的API函数。
+
+ - 在此场景中，转账交易里所有发生的账户余额变化和触发的事件消息都必须遵循标准API被调用时所遵循的规则。 即用户仍然可以通过标准函数查询余额，并且所查询到的结果和调用 TransferSingle 及 TransferBatch 事件得到的结果一样。
+ - 如果接收者是智能合约，ERC1155TokenReceiver 接口函数仍然必须被调用，且返回值必须与调用标准函数时一样。 当接收者是智能合约，但该合约并未实现 ERC1155TokenReceiver 接口函数时，safeTransferFrom 或 safeBatchTransferFrom 一定会回滚交易。但对非标准函数而言，它可能（并非一定）会继续执行后续的操作而不回滚交易。 更多细节请参看“Implementation specific transfer API rules”。
+
+
+/// 上述各个规则请细看 "https://u.naturaldao.io/be/chapter4/4.7%20EIP-1155%20%E5%A4%9A%E9%87%8D%E9%80%9A%E8%AF%81%E6%A0%87%E5%87%86" 和 "https://eips.ethereum.org/EIPS/eip-1155"。
+
+
+
+##################################################
+######                                      ######
+######  ERC1155TokenReceiver ERC-165 rules  ######
+######                                      ######
+##################################################
 
 
 function supportsInterface(bytes4 interfaceID) external view returns (bool) {
@@ -1640,6 +1798,8 @@ function supportsInterface(bytes4 interfaceID) external view returns (bool) {
             interfaceID == 0x4e2312e0;      // ERC-1155 `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")) ^ bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
 }
 
+
+/// 各个接口的 methodId 
 
 bytes4 constant public ERC1155_ERC165 = 0xd9b67a26; // ERC-165 identifier for the main token standard.
 bytes4 constant public ERC1155_ERC165_TOKENRECEIVER = 0x4e2312e0; // ERC-165 identifier for the `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")) ^ bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
@@ -1649,7 +1809,6 @@ bytes4 constant public ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from
 
 
 
-pragma solidity ^0.5.9;
 
 /**
     Note: The ERC-165 identifier for this interface is 0x0e89341c.
@@ -1680,13 +1839,19 @@ balanceOf(baseTokenFT, msg.sender); // Get balance of the fungible base token 54
 
 
 
-## EIP-3525 (半同质化token ERC3525 一种介于 ERC20 和 ERC721 的产物)
+## EIP-3525 (半同质化token ERC3525)   一种介于 ERC20 和 ERC721 的产物
 
 
+## EIP-3712 (多种批量 同质通证标准)   弥补ERC20和ERC1155的不足之处，使得其适合多同质化通证进行授权与交易等应用场景
+ 
 
-## ERC-223
+## EIP-223 (token标准 ERC-223, 貌似没被通过？？还是没被记录在案？？？)
 
-## ERC-998 (可组合的 NFT，composable NFTs， CNFT)
+## EIP-677 (transferAndCall Token Standard ERC-677, 貌似没被通过？？还是没被记录在案？？？)
+
+## EIP-827 (token标准 ERC-20的拓展 ERC-827, 貌似没被通过？？还是没被记录在案？？？)
+
+## EIP-998 (可组合的 NFT，composable NFTs， CNFT)
 
 它的结构设计是一个标准化延伸可以让任何一个NFT可以拥有其他NFT或FT。转移CNFT时，就是转移CNFT所拥有的整个层级结构和所属关系。简单来说就是ERC-998可以包含多个ERC-721和ERC-20形式的代币。
 
@@ -2968,4 +3133,625 @@ Diamond 代理依靠的是一种存储模式。该代理被一些被称为面的
 
 
 
+
+## EIP-792 (ERC 792 Arbitration Standard, 仲裁智能合约标准)
+
+
+## EIP-1056 (ERC 1056: Lightweight Identity, 数字身份通证标准)
+
+## EIP-2569 (为通用代币保存和显示链上图像)  一组接口，用于在以太坊中保存 SVG 图像，并从以太坊检索图像文件以获取通用令牌。
+
+
+## EIP-3156 (闪电贷)
+
+目前市面上主流的闪电贷如: aave、 uniswap 等各自实现细节均不一样，这让使用者和开发者对接起来很是不便。 EIP-3156 就是对闪电贷统一提供了闪电贷的标准接口。 主要针对 ERC-20 token 的闪电贷。
+
+
+闪电贷功能使用 [回调模式] 集成了两个智能合约。在这个 EIP 中，它们被称为 [LENDER] 和 [RECEIVER]
+
+
+
+
+```
+
+##################################
+######                      ######
+###### Lender（出借人）接口  ######
+######                      ######
+##################################
+
+
+pragma solidity ^0.7.0 || ^0.8.0;
+import "./IERC3156FlashBorrower.sol";
+
+
+interface IERC3156FlashLender {
+
+
+
+    /**
+     * @dev The amount of currency available to be lent.
+     * @param token The loan currency.
+     * @return The amount of `token` that can be borrowed.
+     */
+     /// 
+     /// 返回可能的最大贷款额token
+     ///
+    function maxFlashLoan(
+        address token
+    ) external view returns (uint256);
+
+
+
+    /**
+     * @dev The fee to be charged for a given loan.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
+     */
+     ///
+     /// 返回贷款 收取的费用amount token
+     ///
+    function flashFee(
+        address token,
+        uint256 amount
+    ) external view returns (uint256);
+
+
+
+    /**
+     * @dev Initiate a flash loan.
+     * @param receiver The receiver of the tokens in the loan, and the receiver of the callback.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @param data Arbitrary data structure, intended to contain user-defined parameters.
+     */
+     ///
+     /// onFlashLoan 在 IERC3156FlashBorrower 合约中包含对该函数的回调
+     ///
+    function flashLoan(
+        IERC3156FlashBorrower receiver,
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external returns (bool);
+
+            
+}
+
+
+
+
+####################################
+######                        ######
+###### Receiver（承借人）接口  ######
+######                        ######
+####################################
+
+
+interface IERC3156FlashBorrower {
+
+
+    /**
+     * @dev Receive a flash loan.
+     * @param initiator The initiator of the loan.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @param fee The additional amount of tokens to repay.
+     * @param data Arbitrary data structure, intended to contain user-defined parameters.
+     * @return The keccak256 hash of "ERC3156FlashBorrower.onFlashLoan"
+     */
+     ///
+     ///
+     ///
+    function onFlashLoan(
+        address initiator,
+        address token,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata data
+    ) external returns (bytes32);
+}
+
+
+
+```
+
+
+
+
+示例参考：
+
+
+```
+
+####################################
+######                        ######
+###### Receiver（承借人）示例  ######
+######                        ######
+####################################
+
+pragma solidity ^0.8.0;
+
+import "./interfaces/IERC20.sol";
+import "./interfaces/IERC3156FlashBorrower.sol";
+import "./interfaces/IERC3156FlashLender.sol";
+
+contract FlashBorrower is IERC3156FlashBorrower {
+    enum Action {NORMAL, OTHER}
+
+    IERC3156FlashLender lender;
+
+    constructor (
+        IERC3156FlashLender lender_
+    ) {
+        lender = lender_;
+    }
+
+    /// @dev ERC-3156 Flash loan callback
+    function onFlashLoan(
+        address initiator,
+        address token,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata data
+    ) external override returns(bytes32) {
+        require(
+            msg.sender == address(lender),
+            "FlashBorrower: Untrusted lender"
+        );
+        require(
+            initiator == address(this),
+            "FlashBorrower: Untrusted loan initiator"
+        );
+        (Action action) = abi.decode(data, (Action));
+        if (action == Action.NORMAL) {
+            // do one thing
+        } else if (action == Action.OTHER) {
+            // do another
+        }
+        return keccak256("ERC3156FlashBorrower.onFlashLoan");
+    }
+
+    /// @dev Initiate a flash loan
+    function flashBorrow(
+        address token,
+        uint256 amount
+    ) public {
+        bytes memory data = abi.encode(Action.NORMAL);
+        uint256 _allowance = IERC20(token).allowance(address(this), address(lender));
+        uint256 _fee = lender.flashFee(token, amount);
+        uint256 _repayment = amount + _fee;
+        IERC20(token).approve(address(lender), _allowance + _repayment);
+        lender.flashLoan(this, token, amount, data);
+    }
+}
+
+
+
+
+##################################
+######                      ######
+###### Lender（出借人）示例  ######
+###### (具备   mint   功能)  ######
+######                      ######
+##################################
+
+pragma solidity ^0.8.0;
+
+import "../ERC20.sol";
+import "../interfaces/IERC20.sol";
+import "../interfaces/IERC3156FlashBorrower.sol";
+import "../interfaces/IERC3156FlashLender.sol";
+
+
+/**
+ * @author Alberto Cuesta Cañada
+ * @dev Extension of {ERC20} that allows flash minting.
+ */
+contract FlashMinter is ERC20, IERC3156FlashLender {
+
+    bytes32 public constant CALLBACK_SUCCESS = keccak256("ERC3156FlashBorrower.onFlashLoan");
+    uint256 public fee; //  1 == 0.01 %.
+
+    /**
+     * @param fee_ The percentage of the loan `amount` that needs to be repaid, in addition to `amount`.
+     */
+    constructor (
+        string memory name,
+        string memory symbol,
+        uint256 fee_
+    ) ERC20(name, symbol) {
+        fee = fee_;
+    }
+
+    /**
+     * @dev The amount of currency available to be lent.
+     * @param token The loan currency.
+     * @return The amount of `token` that can be borrowed.
+     */
+    function maxFlashLoan(
+        address token
+    ) external view override returns (uint256) {
+        return type(uint256).max - totalSupply();
+    }
+
+    /**
+     * @dev The fee to be charged for a given loan.
+     * @param token The loan currency. Must match the address of this contract.
+     * @param amount The amount of tokens lent.
+     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
+     */
+    function flashFee(
+        address token,
+        uint256 amount
+    ) external view override returns (uint256) {
+        require(
+            token == address(this),
+            "FlashMinter: Unsupported currency"
+        );
+        return _flashFee(token, amount);
+    }
+
+    /**
+     * @dev Loan `amount` tokens to `receiver`, and takes it back plus a `flashFee` after the ERC3156 callback.
+     * @param receiver The contract receiving the tokens, needs to implement the `onFlashLoan(address user, uint256 amount, uint256 fee, bytes calldata)` interface.
+     * @param token The loan currency. Must match the address of this contract.
+     * @param amount The amount of tokens lent.
+     * @param data A data parameter to be passed on to the `receiver` for any custom use.
+     */
+    function flashLoan(
+        IERC3156FlashBorrower receiver,
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external override returns (bool){
+        require(
+            token == address(this),
+            "FlashMinter: Unsupported currency"
+        );
+        uint256 fee = _flashFee(token, amount);
+        _mint(address(receiver), amount);
+        require(
+            receiver.onFlashLoan(msg.sender, token, amount, fee, data) == CALLBACK_SUCCESS,
+            "FlashMinter: Callback failed"
+        );
+        uint256 _allowance = allowance(address(receiver), address(this));
+        require(
+            _allowance >= (amount + fee),
+            "FlashMinter: Repay not approved"
+        );
+        _approve(address(receiver), address(this), _allowance - (amount + fee));
+        _burn(address(receiver), amount + fee);
+        return true;
+    }
+
+    /**
+     * @dev The fee to be charged for a given loan. Internal function with no checks.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
+     */
+    function _flashFee(
+        address token,
+        uint256 amount
+    ) internal view returns (uint256) {
+        return amount * fee / 10000;
+    }
+}
+
+
+
+
+
+
+##################################
+######                      ######
+######    闪电贷示例参考     ######
+######                      ######
+##################################
+
+
+pragma solidity ^0.8.0;
+
+import "../interfaces/IERC20.sol";
+import "../interfaces/IERC3156FlashBorrower.sol";
+import "../interfaces/IERC3156FlashLender.sol";
+
+
+/**
+ * @author Alberto Cuesta Cañada
+ * @dev Extension of {ERC20} that allows flash lending.
+ */
+contract FlashLender is IERC3156FlashLender {
+
+    bytes32 public constant CALLBACK_SUCCESS = keccak256("ERC3156FlashBorrower.onFlashLoan");
+    mapping(address => bool) public supportedTokens;
+    uint256 public fee; //  1 == 0.01 %.
+
+
+    /**
+     * @param supportedTokens_ Token contracts supported for flash lending.
+     * @param fee_ The percentage of the loan `amount` that needs to be repaid, in addition to `amount`.
+     */
+    constructor(
+        address[] memory supportedTokens_,
+        uint256 fee_
+    ) {
+        for (uint256 i = 0; i < supportedTokens_.length; i++) {
+            supportedTokens[supportedTokens_[i]] = true;
+        }
+        fee = fee_;
+    }
+
+    /**
+     * @dev Loan `amount` tokens to `receiver`, and takes it back plus a `flashFee` after the callback.
+     * @param receiver The contract receiving the tokens, needs to implement the `onFlashLoan(address user, uint256 amount, uint256 fee, bytes calldata)` interface.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @param data A data parameter to be passed on to the `receiver` for any custom use.
+     */
+    function flashLoan(
+        IERC3156FlashBorrower receiver,
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external override returns(bool) {
+        require(
+            supportedTokens[token],
+            "FlashLender: Unsupported currency"
+        );
+        uint256 fee = _flashFee(token, amount);
+        require(
+            IERC20(token).transfer(address(receiver), amount),
+            "FlashLender: Transfer failed"
+        );
+        require(
+            receiver.onFlashLoan(msg.sender, token, amount, fee, data) == CALLBACK_SUCCESS,
+            "FlashLender: Callback failed"
+        );
+        require(
+            IERC20(token).transferFrom(address(receiver), address(this), amount + fee),
+            "FlashLender: Repay failed"
+        );
+        return true;
+    }
+
+    /**
+     * @dev The fee to be charged for a given loan.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
+     */
+    function flashFee(
+        address token,
+        uint256 amount
+    ) external view override returns (uint256) {
+        require(
+            supportedTokens[token],
+            "FlashLender: Unsupported currency"
+        );
+        return _flashFee(token, amount);
+    }
+
+    /**
+     * @dev The fee to be charged for a given loan. Internal function with no checks.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
+     */
+    function _flashFee(
+        address token,
+        uint256 amount
+    ) internal view returns (uint256) {
+        return amount * fee / 10000;
+    }
+
+    /**
+     * @dev The amount of currency available to be lent.
+     * @param token The loan currency.
+     * @return The amount of `token` that can be borrowed.
+     */
+    function maxFlashLoan(
+        address token
+    ) external view override returns (uint256) {
+        return supportedTokens[token] ? IERC20(token).balanceOf(address(this)) : 0;
+    }
+}
+
+
+
+```
+
+
+
+## EIP-1620 (流支付)  资金流代表了在有限时间内连续支付的想法
+
+
+**其中时间是使用块号来测量的，[流] 是主合约中的映射。**
+
+1. 供应商设立资金流合约。
+2. 潜在 付款人 可以与 合约 进行交互，并通过存入所选期间所需的资金来立即开始流支付。
+3. 收款人 可以根据其持续的偿付能力从合约中提取资金。 那是：payment rate * (current block height - starting block height)。
+4. 如果双方承诺签名，流条款（支付率、长度、元数据）可以随时更新。
+5. 任何一方都可以在没有链上共识的情况下在任何时间点停止流。
+6. 如果流支付期间结束并且之前没有被任何一方停止，则收款人有权提取所有存入的资金。
+
+
+**应用场景**
+
+1. 工资
+2. 订阅
+3. 顾问公司
+4. CDP
+5. 租
+6. 停车场
+
+
+如： 资金不是一次性投资并将钱分给项目开发商，而是保存在智能合约中，该合约根据时间的流逝分配资金。项目开发人员可以在流保持活跃时撤回资金，而如果项目停止，投资者有权收回其初始承诺的很大一部分。
+
+
+**结构定义**
+
+```
+
+
+/// 流结构
+struct Stream {
+  address sender;             为流提供资金的实体的
+  address recipient;          钱被送到哪里
+  address tokenAddress;       用作支付资产的 ERC20 代币的
+  uint256 balance;            流中剩余的总资金
+  Timeframe timeframe;        时间结构
+  Rate rate;                  频率结构
+}
+
+
+/// 时间结构
+struct Timeframe {
+    uint256 start;          流的起始块号
+    uint256 stop;           流的停止块号
+}
+
+
+/// 率结构
+struct Rate {
+  uint256 payment;          可以从sender转入recipient的钱数目
+  uint256 interval;         payment频率 sender -> recipient
+}
+
+
+```
+
+
+**方法定义**
+
+
+```
+
+
+/// 给定 流Id 和 账户的可用资金
+///
+function balanceOf(uint256 _streamId, address _addr);
+
+/// 获取 流信息
+///
+function getStream(uint256 _streamId) returns (address sender, address recipient, address tokenAddress, uint256 balance, uint256 startBlock, uint256 stopBlock, uint256 payment, uint256 interval);
+
+
+/// 创建 支付流   
+///
+/// 必须允许发送者并行创建多个流。 不应该接受以太币并且只使用 ERC20 兼容的代币。
+///
+/// 触发事件：LogCreate
+///
+function create(address _recipient, address _tokenAddress, uint256 _startBlock, uint256 _stopBlock, uint256 _payment, uint256 _interval);
+
+
+/// 提取全部或部分可用资金
+///
+/// 必须只允许接收者执行此操作
+///
+/// 触发事件：LogWithdraw
+///
+function withdraw(uint256 _streamId, uint256 _funds);
+
+
+/// 通过将资金分配给发送者和接收者来赎回流
+///
+/// 应该允许任何一方操作
+///
+/// 触发事件：LogRedeem
+function redeem(uint256 _streamId);
+
+
+
+/// 表明一方愿意更新流
+///
+/// 应允许任何一方这样做，但不得在未经所有相关方同意的情况下执行
+///
+/// 触发事件：LogConfirmUpdate
+///
+/// 触发事件：最后一个相关方调用此函数时的LogExecuteUpdate
+///
+function update(uint256 _streamId, address _tokenAddress, uint256 _stopBlock, uint256 _payment, uint256 _interval);
+
+
+
+/// 撤销相关方之一提出的更新 (应该是 确认更新吧 ??) 【妈的，标准上定义的名字为 comfirmXxx 而不是 RevokeXxx ...】
+///
+/// 必须允许任何一方这样做
+///
+/// 触发事件：LogRevokeUpdate
+///
+function confirmUpdate(uint256 _streamId, address _tokenAddress, uint256 _stopBlock, uint256 _payment, uint256 _interval);
+
+
+
+
+/// 撤销相关方之一提出的更新 (这个方法我自己加的) 【妈的，标准没有定义 RevokeXxx 但 event 又定义了 event LogRevokeUpdate ...】
+///
+/// 必须允许任何一方这样做
+///
+/// 触发事件：LogRevokeUpdate
+///
+function revokeUpdate(uint256 indexed _streamId, address _tokenAddress, uint256 _stopBlock, uint256 _payment, uint256 _interval);
+
+
+```
+
+
+**事件定义**
+
+
+```
+
+
+/// 创建流
+///
+/// 必须在create成功调用时触发
+///
+event LogCreate(uint256 indexed _streamId, address indexed _sender, address indexed _recipient, address _tokenAddress, uint256 _startBlock, uint256 _stopBlock, uint256 _payment, uint256 _interval);
+
+
+
+/// 提取款项
+///
+/// 必须在 withdraw 函数成功调用时触发
+///
+event LogWithdraw(uint256 indexed _streamId, address indexed _recipient, uint256 _funds);
+
+
+
+/// 兑换 (赎回)
+///
+/// 必须在 redeem 函数成功调用时触发
+///
+event LogRedeem(uint256 indexed _streamId, address indexed _sender, address indexed _recipient, uint256 _senderBalance, uint256 _recipientBalance);
+
+
+/// 确认更新
+///
+/// 必须在 confirmUpdate 函数成功调用时触发
+///
+event LogConfirmUpdate(uint256 indexed _streamId, address indexed _confirmer, address _newTokenAddress, uint256 _newStopBlock, uint256 _newPayment, uint256 _newInterval);
+
+
+
+/// 撤销更新
+///
+/// 必须在 revokeUpdate 函数成功调用时触发
+///
+event LogRevokeUpdate(uint256 indexed _streamId, address indexed revoker, address _newTokenAddress, uint256 _newStopBlock, uint256 _newPayment, uint256 _newInterval);
+
+
+/// 执行更新
+/// 
+/// 必须在所有相关方批准更新时触发
+/// 
+event LogExecuteUpdate(uint256 indexed _newStreamId, address indexed _sender, address indexed _recipient, address _newTokenAddress, uint256 _newStopBlock, uint256 _newPayment, uint256 _newInterval);
+
+
+
+```
 
