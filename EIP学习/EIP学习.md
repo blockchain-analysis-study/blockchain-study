@@ -747,14 +747,14 @@ ERC1820注册表合约可以部署在任何链上，并在所有链上的地址�
 
 接口的后28个字节都为0的话，会认为是 ERC-165 接口，并且注册表将转发到合约以查看是否实现了接口。
 
-此合约还充当 ERC165 缓存，以减少 gas 消耗。
+此合约还充当 ERC-165 缓存，以减少 gas 消耗。
 
 
 
 
 在以太坊上有很多方法定义伪自省，ERC165不能由普通用户帐户使用。 ERC672 则使用了反向 ENS，反向 ENS 有两个问题：增加了不必要的复杂度，其次，ENS 是由多签控制的中心化合约。 从理论上讲，这种多签能够修改系统。
 
-ERC1820标准比 ERC-672 简单得多，并且完全去中心化。
+ERC-1820 标准比 ERC-672 简单得多，并且完全去中心化。
 
 此标准还为所有链提供一个唯一（相同的）地址。从而解决了解决不同链的查找注册表地址的问题。
 
@@ -942,7 +942,8 @@ contract ERC1820Registry {
 ```
 
 
-## ERC-777 (ERC-20 的高级拓展)
+## EIP-777 (ERC-777, ERC-20 的高级拓展)  配合 EIP-1820 用， EIP-1820 从 EIP-777 抽出来的
+
 
 如：操作员（operators） 可以代表另一个地址（合约或普通账户）发送代币， 以及 send/receive 加入了钩子函数（hooks ）让代币持有者可以有更多的控制。
 
@@ -1084,7 +1085,7 @@ interface ERC777TokensSender {
 
 调用tokensToSend钩子函数用于通知持有者余额减少（如发送和销毁）。
 
-任何希望收到代币通知的地址（普通地址或合约）都会从需要按ERC1820注册及实现 ERC777TokensSender 接口，描述如下：
+任何希望收到代币通知的地址（普通地址或合约）都会从需要按 ERC1820 注册及实现 ERC777TokensSender 接口，描述如下：
 
 通过调用 ERC1820 注册表合约上的 setInterfaceImplementer 函数来完成的，其中持有者地址为地址参数，ERC777TokensSender 的 keccak256哈希值（0x29ddb589b1fb5fc7cf394961c1adf5f8c6454761adf795e67fe149f658abe895）作为接口哈希参数，以及实现ERC777TokensSender的合约作为实现者参数。
 
@@ -1139,11 +1140,19 @@ interface ERC777TokensRecipient {
 ```
 
 
+**补充**
 
-## ERC-55 (混合大小写校验和地址编码)
+ERC777 合约必须要通过 ERC1820 注册 ERC777Token 接口，这样任何人都可以查询合约是否是 ERC777 标准的合约，注册方法是 : 调用 ERC1820 注册合约的 setInterfaceImplementer 方法，参数 addr 及 implementer 均是合约的地址，interfaceHash 是 ERC777Token 的 keccak256 哈希值（0xac7fbab5…177054）
+
+如果 ERC777 要实现 ERC20 标准，还必须通过 ERC1820 注册 ERC20Token 接口
 
 
-## ERC-1167  (最小代理合约： 节省Gas部署合约)
+
+
+## EIP-55 (混合大小写校验和地址编码)
+
+
+## EIP-1167  (最小代理合约： 节省Gas部署合约)
 
 
 ```
@@ -1175,6 +1184,77 @@ library Clones {
 }
 
 ```
+
+
+## EIP-2470 (单例工厂, 使用 create2 和 initcode 的合约部署工厂标准)
+
+
+
+**优点** 
+
+多链下可以使用相同钱包地址 (兼容EVM和ECDSA的链)
+
+
+**用途**
+
+一些 DApp 需要一个且仅一个合约实例，它在任何链上都具有相同的地址
+
+
+
+
+**和 EIP-1820/EIP-2429 部署区别**
+
+
+和 EIP-1820 和 EIP-2429 一样使用 nick部署方式部署合约
+
+[https://eips.ethereum.org/EIPS/eip-2470]
+
+
+
+**代码**
+
+
+```
+
+pragma solidity 0.6.2;
+
+
+/**
+ * @title Singleton Factory (EIP-2470)
+ * @notice Exposes CREATE2 (EIP-1014) to deploy bytecode on deterministic addresses based on initialization code and salt.
+ * @author Ricardo Guilherme Schmidt (Status Research & Development GmbH)
+ */
+contract SingletonFactory {
+    /**
+     * @notice Deploys `_initCode` using `_salt` for defining the deterministic address.
+     * @param _initCode Initialization code.
+     * @param _salt Arbitrary value to modify resulting address.
+     * @return createdContract Created contract address.
+     */
+    function deploy(bytes memory _initCode, bytes32 _salt)
+        public
+        returns (address payable createdContract)
+    {
+        assembly {
+            createdContract := create2(0, add(_initCode, 0x20), mload(_initCode), _salt)
+        }
+    }
+}
+// IV is a value changed to generate the vanity address.
+// IV: 6583047
+
+
+/// 任何链上必须使用下列字节码部署
+
+0xf9016c8085174876e8008303c4d88080b90154608060405234801561001057600080fd5b50610134806100206000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c80634af63f0214602d575b600080fd5b60cf60048036036040811015604157600080fd5b810190602081018135640100000000811115605b57600080fd5b820183602082011115606c57600080fd5b80359060200191846001830284011164010000000083111715608d57600080fd5b91908080601f016020809104026020016040519081016040528093929190818152602001838380828437600092019190915250929550509135925060eb915050565b604080516001600160a01b039092168252519081900360200190f35b6000818351602085016000f5939250505056fea26469706673582212206b44f8a82cb6b156bfcc3dc6aadd6df4eefd204bc928a4397fd15dacf6d5320564736f6c634300060200331b83247000822470
+
+
+```
+
+
+
+## EIP-1014 (瘦 create2, 指令 create2)
+
 
 
 ## EIP-173 (合约所有权标准)
@@ -1847,11 +1927,29 @@ balanceOf(baseTokenFT, msg.sender); // Get balance of the fungible base token 54
 
 ## EIP-223 (token标准 ERC-223, 貌似没被通过？？还是没被记录在案？？？)
 
-## EIP-677 (transferAndCall Token Standard ERC-677, 貌似没被通过？？还是没被记录在案？？？)
+
+## EIP-677 (transferAndCall Token Standard ERC-677, 貌似没被通过？？还是没被记录在案？？？)  比 EIP-20 的 transfer 多一个 data 字段， chainlink 使用做预言机 回调合约 方式
+
+```
+function transferAndCall(address _to, uint _value, bytes _data)
+    public
+    returns (bool success)
+{
+    super.transfer(_to, _value);
+    Transfer(msg.sender, _to, _value, _data);
+    if (isContract(_to)) {
+      contractFallback(_to, _value, _data);
+    }
+    return true;
+}
+```
+
 
 ## EIP-827 (token标准 ERC-20的拓展 ERC-827, 貌似没被通过？？还是没被记录在案？？？)
 
+
 ## EIP-998 (可组合的 NFT，composable NFTs， CNFT)
+
 
 它的结构设计是一个标准化延伸可以让任何一个NFT可以拥有其他NFT或FT。转移CNFT时，就是转移CNFT所拥有的整个层级结构和所属关系。简单来说就是ERC-998可以包含多个ERC-721和ERC-20形式的代币。
 
@@ -2077,7 +2175,7 @@ hashStruct(s : Struct) = keccak256(typeHash ‖ encodeData(s))
 
 
 
-## EIP-1272 合约校验签名方法 (合约签名/验证)
+## EIP-1271 合约校验签名方法 (合约签名/验证)
 
 ```
 外部拥有账户 (EOA) 可以使用其关联的私钥签署消息，但目前合约不能。我们为任何合约提出了一种标准方法来验证 【代表给定合约】 的签名是否有效。这可以通过在isValidSignature(hash, signature)签名合约上实现一个函数来实现，可以调用该函数来验证签名
@@ -2167,7 +2265,6 @@ contract ERC1271 {
     view 
     returns (bytes4 magicValue);
 }
-
 
 
 ```
@@ -2323,7 +2420,7 @@ Gas Relayer：本次调用的gas返还受益人（留0 block.coinbase）
 
 第三个是根据EIP-191版本 0 的验证者地址（账户合约地址） 。
 
-其余参数是 gas 中继的应用程序特定数据：根据EIP-1344 的chainID 、执行随机数、执行数据、约定的 gas 价格、gas 中继调用的 gas 限制、要偿还的 gas 代币和授权接收奖励的 gas 中继器。
+其余参数是 gas 中继的应用程序特定数据：根据 EIP-1344 的chainID 、执行随机数、执行数据、约定的 gas 价格、gas 中继调用的 gas 限制、要偿还的 gas 代币和授权接收奖励的 gas 中继器。
 
 
 ```
@@ -2954,7 +3051,7 @@ UML
 我们之前一直强调代理合约的关键在于逻辑合约地址存储和合约数据存储，在此之前我们介绍了通过继承解决合约存储问题和通过随机地址槽存储数据解决数据冲突问题。
 
 
-相对于 EIP-897 的继承存储，和 EIP-1967 的非结构化存储 来说，EIP-2535 使用了 `Diamond Storage` 和 `AppStorage`，即：依旧是选择随机存储槽存储逻辑合约所需要的数据，此方案通常被称为Diamond Storage。与之前仅提供随机数据存储槽存储代理合约地址不同，在EIP2535中，我们需要为不同类型的逻辑合约设计存储地址以保证其数据存储不会与其他逻辑合约冲突。
+相对于 EIP-897 的继承存储，和 EIP-1967 的非结构化存储 来说，EIP-2535 使用了 `Diamond Storage` 和 `AppStorage`，即：依旧是选择随机存储槽存储逻辑合约所需要的数据，此方案通常被称为Diamond Storage。与之前仅提供随机数据存储槽存储代理合约地址不同，在 EIP-2535 中，我们需要为不同类型的逻辑合约设计存储地址以保证其数据存储不会与其他逻辑合约冲突。
 
 ![](./img/EIP-2535_DiamondStorage.png)
 
@@ -3755,3 +3852,292 @@ event LogExecuteUpdate(uint256 indexed _newStreamId, address indexed _sender, ad
 
 ```
 
+
+## EIP-820 (伪内省注册合约, 作废)
+
+## EIP-1820 (伪内省注册合约, 替换 EIP-820)  EIP-1820 从 EIP-777 抽出来的， EIP-777 要配合 EIP-1820 用
+
+
+
+**【注意】**
+
+EIP-1820 修复了 Solidity 0.5 更新引入的 EIP-165 逻辑中的不兼容性
+
+【除了这个修复，EIP-1820 在功能上等同于 EIP-820】
+
+
+
+
+
+**作用**
+
+> 该标准定义了一个通用的注册智能合约，任何地址（合约或普通账户）都可以注册它支持的接口以及由哪个智能合约负责其实现。就是说，实现了可以给任意账户地址注册它的支持接口且将该实现交由某个合约去做。
+
+
+
+1. 定义了一个注册表，{智能合约} 和 {常规账户} 可以在其中发布它们实现的功能——直接或通过代理合约。
+2. 【任何人都可以查询此注册表以询问特定地址是否实现了给定接口以及哪个智能合约处理其实现。】
+3. 【该注册表可以部署在任何链上，并在所有链上共享相同的地址。】
+4. 最后 28 个字节为零 ( 0) 的接口被视为ERC-165接口，并且该注册表应将调用转发给合约以查看它是否实现了该接口。
+5. 【该合约还充当ERC-165缓存以减少气体消耗。】
+
+
+
+
+
+**动机**
+
+
+在以太坊中有不同的方法来定义伪内省。
+
+1. 第一个是ERC-165，它有不能被普通账户使用的限制。 (只能检查 合约的 interfaceId，对于普通地址来说不能做检查)
+2. 第二次尝试是使用反向ENS的ERC-672。使用反向ENS有两个问题。首先，它不必要地复杂，其次，ENS仍然是一个由多重签名控制的中心化合约。理论上，这种多重签名将能够修改系统。
+
+
+
+该标准比ERC-672简单得多，并且是完全去中心化的。该标准还为所有链提供了唯一地址。从而解决了为不同链解析正确注册地址的问题。
+
+
+### 代码
+
+
+```
+
+/// 合约的标准代码
+
+pragma solidity 0.5.3;
+// IV is value needed to have a vanity address starting with '0x1820'.
+// IV: 53759
+
+/// @dev The interface a contract MUST implement if it is the implementer of
+/// some (other) interface for any address other than itself.
+interface ERC1820ImplementerInterface {
+    /// @notice Indicates whether the contract implements the interface 'interfaceHash' for the address 'addr' or not.
+    /// @param interfaceHash keccak256 hash of the name of the interface
+    /// @param addr Address for which the contract will implement the interface
+    /// @return ERC1820_ACCEPT_MAGIC only if the contract implements 'interfaceHash' for the address 'addr'.
+    function canImplementInterfaceForAddress(bytes32 interfaceHash, address addr) external view returns(bytes32);
+}
+
+
+/// @title ERC1820 Pseudo-introspection Registry Contract
+/// @author Jordi Baylina and Jacques Dafflon
+/// @notice This contract is the official implementation of the ERC1820 Registry.
+/// @notice For more details, see https://eips.ethereum.org/EIPS/eip-1820
+contract ERC1820Registry {
+    /// @notice ERC165 Invalid ID.
+    bytes4 constant internal INVALID_ID = 0xffffffff;
+    /// @notice Method ID for the ERC165 supportsInterface method (= `bytes4(keccak256('supportsInterface(bytes4)'))`).
+    bytes4 constant internal ERC165ID = 0x01ffc9a7;
+    /// @notice Magic value which is returned if a contract implements an interface on behalf of some other address.
+    bytes32 constant internal ERC1820_ACCEPT_MAGIC = keccak256(abi.encodePacked("ERC1820_ACCEPT_MAGIC"));
+
+    /// @notice mapping from addresses and interface hashes to their implementers.
+    mapping(address => mapping(bytes32 => address)) internal interfaces;
+    /// @notice mapping from addresses to their manager.
+    mapping(address => address) internal managers;
+    /// @notice flag for each address and erc165 interface to indicate if it is cached.
+    mapping(address => mapping(bytes4 => bool)) internal erc165Cached;
+
+    /// @notice Indicates a contract is the 'implementer' of 'interfaceHash' for 'addr'.
+    event InterfaceImplementerSet(address indexed addr, bytes32 indexed interfaceHash, address indexed implementer);
+    /// @notice Indicates 'newManager' is the address of the new manager for 'addr'.
+    event ManagerChanged(address indexed addr, address indexed newManager);
+
+    /// @notice Query if an address implements an interface and through which contract.
+    /// @param _addr Address being queried for the implementer of an interface.
+    /// (If '_addr' is the zero address then 'msg.sender' is assumed.)
+    /// @param _interfaceHash Keccak256 hash of the name of the interface as a string.
+    /// E.g., 'web3.utils.keccak256("ERC777TokensRecipient")' for the 'ERC777TokensRecipient' interface.
+    /// @return The address of the contract which implements the interface '_interfaceHash' for '_addr'
+    /// or '0' if '_addr' did not register an implementer for this interface.
+    function getInterfaceImplementer(address _addr, bytes32 _interfaceHash) external view returns (address) {
+        address addr = _addr == address(0) ? msg.sender : _addr;
+        if (isERC165Interface(_interfaceHash)) {
+            bytes4 erc165InterfaceHash = bytes4(_interfaceHash);
+            return implementsERC165Interface(addr, erc165InterfaceHash) ? addr : address(0);
+        }
+        return interfaces[addr][_interfaceHash];
+    }
+
+    /// @notice Sets the contract which implements a specific interface for an address.
+    /// Only the manager defined for that address can set it.
+    /// (Each address is the manager for itself until it sets a new manager.)
+    /// @param _addr Address for which to set the interface.
+    /// (If '_addr' is the zero address then 'msg.sender' is assumed.)
+    /// @param _interfaceHash Keccak256 hash of the name of the interface as a string.
+    /// E.g., 'web3.utils.keccak256("ERC777TokensRecipient")' for the 'ERC777TokensRecipient' interface.
+    /// @param _implementer Contract address implementing '_interfaceHash' for '_addr'.
+    function setInterfaceImplementer(address _addr, bytes32 _interfaceHash, address _implementer) external {
+        address addr = _addr == address(0) ? msg.sender : _addr;
+        require(getManager(addr) == msg.sender, "Not the manager");
+
+        require(!isERC165Interface(_interfaceHash), "Must not be an ERC165 hash");
+        if (_implementer != address(0) && _implementer != msg.sender) {
+            require(
+                ERC1820ImplementerInterface(_implementer)
+                    .canImplementInterfaceForAddress(_interfaceHash, addr) == ERC1820_ACCEPT_MAGIC,
+                "Does not implement the interface"
+            );
+        }
+        interfaces[addr][_interfaceHash] = _implementer;
+        emit InterfaceImplementerSet(addr, _interfaceHash, _implementer);
+    }
+
+    /// @notice Sets '_newManager' as manager for '_addr'.
+    /// The new manager will be able to call 'setInterfaceImplementer' for '_addr'.
+    /// @param _addr Address for which to set the new manager.
+    /// @param _newManager Address of the new manager for 'addr'. (Pass '0x0' to reset the manager to '_addr'.)
+    function setManager(address _addr, address _newManager) external {
+        require(getManager(_addr) == msg.sender, "Not the manager");
+        managers[_addr] = _newManager == _addr ? address(0) : _newManager;
+        emit ManagerChanged(_addr, _newManager);
+    }
+
+    /// @notice Get the manager of an address.
+    /// @param _addr Address for which to return the manager.
+    /// @return Address of the manager for a given address.
+    function getManager(address _addr) public view returns(address) {
+        // By default the manager of an address is the same address
+        if (managers[_addr] == address(0)) {
+            return _addr;
+        } else {
+            return managers[_addr];
+        }
+    }
+
+    /// @notice Compute the keccak256 hash of an interface given its name.
+    /// @param _interfaceName Name of the interface.
+    /// @return The keccak256 hash of an interface name.
+    function interfaceHash(string calldata _interfaceName) external pure returns(bytes32) {
+        return keccak256(abi.encodePacked(_interfaceName));
+    }
+
+    /* --- ERC165 Related Functions --- */
+    /* --- Developed in collaboration with William Entriken. --- */
+
+    /// @notice Updates the cache with whether the contract implements an ERC165 interface or not.
+    /// @param _contract Address of the contract for which to update the cache.
+    /// @param _interfaceId ERC165 interface for which to update the cache.
+    function updateERC165Cache(address _contract, bytes4 _interfaceId) external {
+        interfaces[_contract][_interfaceId] = implementsERC165InterfaceNoCache(
+            _contract, _interfaceId) ? _contract : address(0);
+        erc165Cached[_contract][_interfaceId] = true;
+    }
+
+    /// @notice Checks whether a contract implements an ERC165 interface or not.
+    //  If the result is not cached a direct lookup on the contract address is performed.
+    //  If the result is not cached or the cached value is out-of-date, the cache MUST be updated manually by calling
+    //  'updateERC165Cache' with the contract address.
+    /// @param _contract Address of the contract to check.
+    /// @param _interfaceId ERC165 interface to check.
+    /// @return True if '_contract' implements '_interfaceId', false otherwise.
+    function implementsERC165Interface(address _contract, bytes4 _interfaceId) public view returns (bool) {
+        if (!erc165Cached[_contract][_interfaceId]) {
+            return implementsERC165InterfaceNoCache(_contract, _interfaceId);
+        }
+        return interfaces[_contract][_interfaceId] == _contract;
+    }
+
+    /// @notice Checks whether a contract implements an ERC165 interface or not without using nor updating the cache.
+    /// @param _contract Address of the contract to check.
+    /// @param _interfaceId ERC165 interface to check.
+    /// @return True if '_contract' implements '_interfaceId', false otherwise.
+    function implementsERC165InterfaceNoCache(address _contract, bytes4 _interfaceId) public view returns (bool) {
+        uint256 success;
+        uint256 result;
+
+        (success, result) = noThrowCall(_contract, ERC165ID);
+        if (success == 0 || result == 0) {
+            return false;
+        }
+
+        (success, result) = noThrowCall(_contract, INVALID_ID);
+        if (success == 0 || result != 0) {
+            return false;
+        }
+
+        (success, result) = noThrowCall(_contract, _interfaceId);
+        if (success == 1 && result == 1) {
+            return true;
+        }
+        return false;
+    }
+
+    /// @notice Checks whether the hash is a ERC165 interface (ending with 28 zeroes) or not.
+    /// @param _interfaceHash The hash to check.
+    /// @return True if '_interfaceHash' is an ERC165 interface (ending with 28 zeroes), false otherwise.
+    function isERC165Interface(bytes32 _interfaceHash) internal pure returns (bool) {
+        return _interfaceHash & 0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF == 0;
+    }
+
+    /// @dev Make a call on a contract without throwing if the function does not exist.
+    function noThrowCall(address _contract, bytes4 _interfaceId)
+        internal view returns (uint256 success, uint256 result)
+    {
+        bytes4 erc165ID = ERC165ID;
+
+        assembly {
+            let x := mload(0x40)               // Find empty storage location using "free memory pointer"
+            mstore(x, erc165ID)                // Place signature at beginning of empty storage
+            mstore(add(x, 0x04), _interfaceId) // Place first argument directly next to signature
+
+            success := staticcall(
+                30000,                         // 30k gas
+                _contract,                     // To addr
+                x,                             // Inputs are stored at location x
+                0x24,                          // Inputs are 36 (4 + 32) bytes long
+                x,                             // Store output over input (saves space)
+                0x20                           // Outputs are 32 bytes long
+            )
+
+            result := mload(x)                 // Load the result
+        }
+    }
+}
+
+
+
+/// 任何兼容 ethereum 的链上必须使用下列字节码进行部署
+
+
+0xf90a388085174876e800830c35008080b909e5608060405234801561001057600080fd5b506109c5806100206000396000f3fe608060405234801561001057600080fd5b50600436106100a5576000357c010000000000000000000000000000000000000000000000000000000090048063a41e7d5111610078578063a41e7d51146101d4578063aabbb8ca1461020a578063b705676514610236578063f712f3e814610280576100a5565b806329965a1d146100aa5780633d584063146100e25780635df8122f1461012457806365ba36c114610152575b600080fd5b6100e0600480360360608110156100c057600080fd5b50600160a060020a038135811691602081013591604090910135166102b6565b005b610108600480360360208110156100f857600080fd5b5035600160a060020a0316610570565b60408051600160a060020a039092168252519081900360200190f35b6100e06004803603604081101561013a57600080fd5b50600160a060020a03813581169160200135166105bc565b6101c26004803603602081101561016857600080fd5b81019060208101813564010000000081111561018357600080fd5b82018360208201111561019557600080fd5b803590602001918460018302840111640100000000831117156101b757600080fd5b5090925090506106b3565b60408051918252519081900360200190f35b6100e0600480360360408110156101ea57600080fd5b508035600160a060020a03169060200135600160e060020a0319166106ee565b6101086004803603604081101561022057600080fd5b50600160a060020a038135169060200135610778565b61026c6004803603604081101561024c57600080fd5b508035600160a060020a03169060200135600160e060020a0319166107ef565b604080519115158252519081900360200190f35b61026c6004803603604081101561029657600080fd5b508035600160a060020a03169060200135600160e060020a0319166108aa565b6000600160a060020a038416156102cd57836102cf565b335b9050336102db82610570565b600160a060020a031614610339576040805160e560020a62461bcd02815260206004820152600f60248201527f4e6f7420746865206d616e616765720000000000000000000000000000000000604482015290519081900360640190fd5b6103428361092a565b15610397576040805160e560020a62461bcd02815260206004820152601a60248201527f4d757374206e6f7420626520616e204552433136352068617368000000000000604482015290519081900360640190fd5b600160a060020a038216158015906103b85750600160a060020a0382163314155b156104ff5760405160200180807f455243313832305f4143434550545f4d4147494300000000000000000000000081525060140190506040516020818303038152906040528051906020012082600160a060020a031663249cb3fa85846040518363ffffffff167c01000000000000000000000000000000000000000000000000000000000281526004018083815260200182600160a060020a0316600160a060020a031681526020019250505060206040518083038186803b15801561047e57600080fd5b505afa158015610492573d6000803e3d6000fd5b505050506040513d60208110156104a857600080fd5b5051146104ff576040805160e560020a62461bcd02815260206004820181905260248201527f446f6573206e6f7420696d706c656d656e742074686520696e74657266616365604482015290519081900360640190fd5b600160a060020a03818116600081815260208181526040808320888452909152808220805473ffffffffffffffffffffffffffffffffffffffff19169487169485179055518692917f93baa6efbd2244243bfee6ce4cfdd1d04fc4c0e9a786abd3a41313bd352db15391a450505050565b600160a060020a03818116600090815260016020526040812054909116151561059a5750806105b7565b50600160a060020a03808216600090815260016020526040902054165b919050565b336105c683610570565b600160a060020a031614610624576040805160e560020a62461bcd02815260206004820152600f60248201527f4e6f7420746865206d616e616765720000000000000000000000000000000000604482015290519081900360640190fd5b81600160a060020a031681600160a060020a0316146106435780610646565b60005b600160a060020a03838116600081815260016020526040808220805473ffffffffffffffffffffffffffffffffffffffff19169585169590951790945592519184169290917f605c2dbf762e5f7d60a546d42e7205dcb1b011ebc62a61736a57c9089d3a43509190a35050565b600082826040516020018083838082843780830192505050925050506040516020818303038152906040528051906020012090505b92915050565b6106f882826107ef565b610703576000610705565b815b600160a060020a03928316600081815260208181526040808320600160e060020a031996909616808452958252808320805473ffffffffffffffffffffffffffffffffffffffff19169590971694909417909555908152600284528181209281529190925220805460ff19166001179055565b600080600160a060020a038416156107905783610792565b335b905061079d8361092a565b156107c357826107ad82826108aa565b6107b85760006107ba565b815b925050506106e8565b600160a060020a0390811660009081526020818152604080832086845290915290205416905092915050565b6000808061081d857f01ffc9a70000000000000000000000000000000000000000000000000000000061094c565b909250905081158061082d575080155b1561083d576000925050506106e8565b61084f85600160e060020a031961094c565b909250905081158061086057508015155b15610870576000925050506106e8565b61087a858561094c565b909250905060018214801561088f5750806001145b1561089f576001925050506106e8565b506000949350505050565b600160a060020a0382166000908152600260209081526040808320600160e060020a03198516845290915281205460ff1615156108f2576108eb83836107ef565b90506106e8565b50600160a060020a03808316600081815260208181526040808320600160e060020a0319871684529091529020549091161492915050565b7bffffffffffffffffffffffffffffffffffffffffffffffffffffffff161590565b6040517f01ffc9a7000000000000000000000000000000000000000000000000000000008082526004820183905260009182919060208160248189617530fa90519096909550935050505056fea165627a7a72305820377f4a2d4301ede9949f163f319021a6e9c687c292a5e2b2c4734c126b524e6c00291ba01820182018201820182018201820182018201820182018201820182018201820a01820182018201820182018201820182018201820182018201820182018201820
+
+
+
+/// 该合约将使用无密钥部署方法（也称为Nick的方法）进行部署，该方法依赖于一次性地址。
+
+一次性地址为  0xa990077c3205cbDf861e17Fa532eeB069cE9fF96   该帐户是通过对其交易签名进行逆向工程而生成的。这样私钥就没人知道了，但是却知道它是部署交易的有效签名者。
+
+
+/// 部署在每条链上都必须是下列地址
+
+
+0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24
+
+```
+
+**主要接口**
+
+
+
+1. setInterfaceImplementer(address addr, bytes32 interfaceHash, address implementer) 
+
+用来设置地址 addr 的接口 interfaceHash 接口名称的 keccak256 Hash 由哪个合约实现 implementer 
+
+2. getInterfaceImplementer(address addr, bytes32 interfaceHash) external view returns (address) 
+
+这个函数用来查询地址 addr 的接口由哪个合约实现
+
+
+setInterfaceImplementer 函数会参数信息记录到下面这个 interfaces 映射里：
+
+```
+mapping(address => mapping(bytes32 => address)) interfaces;  // 地址 => 接口 => 实现地址
+```
+
+相对应的 getInterfaceImplementer() 通过 interfaces 这个 mapping 来获得接口的实现。
+
+
+
+## EIP 2429 (秘密多重签名恢复)
