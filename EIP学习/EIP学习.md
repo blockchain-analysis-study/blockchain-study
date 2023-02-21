@@ -2189,7 +2189,7 @@ hashStruct(s : Struct) = keccak256(typeHash ‖ encodeData(s))
 1. 合约钱包拥有者使用自己的私钥进行签名;
 2. 向目标合约提交合约钱包拥有者的签名
 3. 目标合约使用此签名向合约钱包进行isValidSignature方法。
-4. 合约钱包中的isValidSignature方法会检查签名是否属于合约拥有者。如果属于，合约钱包返回 0x1626ba7e  [其实就是 `bytes4(keccak256("isValidSignature(bytes32,bytes)")` 的值]，否则返回0xffffffff
+4. 合约钱包中的isValidSignature方法会检查签名是否属于合约拥有者。如果属于，合约钱包返回 0x1626ba7e  [其实就是 `bytes4(keccak256("isValidSignature(bytes32,bytes)")` 的值]，否则返回 0xffffffff
 5. 目标合约接受返回值，通过签名正误决定下一步操作
 
 
