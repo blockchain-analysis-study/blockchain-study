@@ -942,6 +942,8 @@ contract ERC1820Registry {
 ```
 
 
+
+
 ## EIP-777 (ERC-777, ERC-20 的高级拓展)  配合 EIP-1820 用， EIP-1820 从 EIP-777 抽出来的
 
 
@@ -1147,6 +1149,9 @@ ERC777 合约必须要通过 ERC1820 注册 ERC777Token 接口，这样任何人
 如果 ERC777 要实现 ERC20 标准，还必须通过 ERC1820 注册 ERC20Token 接口
 
 
+
+
+## EIP-1594 核心安全令牌标准
 
 
 ## EIP-55 (混合大小写校验和地址编码)
@@ -1917,6 +1922,10 @@ balanceOf(baseTokenFT, msg.sender); // Get balance of the fungible base token 54
 
 ```
 
+## EIP-3523 (半同质代币, SFT semi-fungible tokens)
+
+
+半同质代币将具有 ERC-20 的定量特征和 ERC-721 的定性属性。与ERC-721标准相比，主要增加的是 `mapping(uint256 => uint256) internal _values` 和 `mapping(uint256 => uint256) internal _slots` 之间新的映射关系，分别代表 `代币数量` 和 `资产类型`。主要区别在于`铸造`、`转移`和`销毁`功能。
 
 
 ## EIP-3525 (半同质化token ERC3525)   一种介于 ERC20 和 ERC721 的产物
@@ -2107,9 +2116,14 @@ contract EIP672 {
 
 对于version type = 0x00, 中存放的是32位的验证者地址
 
-对于version type = 0x45, 在中，将\x19Ethereum Signed Message:\n+len(message)添加到了的前面，然后在进行哈希，签名。
+对于version type = 0x45, 在中，将 \x19Ethereum Signed Message:\n+len(message) 添加到了的前面，然后在进行哈希，签名。 如，ethereum 中对 Hash 进行签名时会用到为： "\x19Ethereum Signed Message:\n32"
+
+【注意】： 该前缀在 EIP-191 中引入，作为区分用于以太坊智能合约和其他加密平台的签名的一种方式。通过添加特定于以太坊的前缀，消息（带有前缀）会产生不同的签名，仅特定于以太坊。但是，如果没有特定于平台的前缀，则生成的签名对于所有平台都是相同的，这可能会导致签名重放攻击。
+
 
 在 Gnosis safe 中，我们主要关注version type = 0x01, 即EIP-712的实现：
+
+而 Gnosis safe 中的 checkNSignatures() 函数，中就有  "ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", dataHash)), v - 4, r, s);"
 
 
 ```
@@ -2117,6 +2131,9 @@ contract EIP672 {
 
 
 ## EIP-712 大对象签名 (结构化数据的签名/验证)
+
+
+**EIP-712 确保生成的签名仅对代币合约的这个特定实例有效，并且不能在具有不同链 ID 的不同网络上重放。**
 
 
 
@@ -2176,6 +2193,10 @@ hashStruct(s : Struct) = keccak256(typeHash ‖ encodeData(s))
 
 
 ## EIP-1271 合约校验签名方法 (合约签名/验证)
+
+
+
+
 
 ```
 外部拥有账户 (EOA) 可以使用其关联的私钥签署消息，但目前合约不能。我们为任何合约提出了一种标准方法来验证 【代表给定合约】 的签名是否有效。这可以通过在isValidSignature(hash, signature)签名合约上实现一个函数来实现，可以调用该函数来验证签名
@@ -2271,12 +2292,24 @@ contract ERC1271 {
 
 
 
+## EIP-6492 (预部署合同签名验证，EIP-1271 的拓展，针对还未部署的合约使用 EIP-1271 的功能)
+
+
+
+
 ## EIP-2612（[链下]授权签名） EIP-20 签名批准的许可延期
 
 
-在 ERC20 中 具备 approve 和之间的相互作用 transferFrom，这使得代币不仅可以在外部拥有账户 (EOA) 之间转移，还可以在特定应用条件下用于其他合约抽象msg.sender为令牌访问控制的定义机制。
+**相当于让第三者代替用户做 approve，即不需要 msg.sender 做 approve。**
 
-EIP-2612在ERC-20标准上增加了一个新的函数：permit，该功能与approve函数相同，[但是将签名作为参数]。也就是说，**ERC2612的用户签名操作里面已经包含了approve信息。在合约验证成功后，该合约就可以执行transferFrom操作。**这样就能使用户可以通过在他们的交易中附加一个授权签名（Permit）信息来与应用合约交互，而不需要事先授权。
+> 为了改善用户体验，签名数据的结构遵循 EIP-712，它已经在主要 RPC 提供商中得到广泛采用。
+
+
+在 ERC20 中 具备 approve 和之间的相互作用 transferFrom，这使得代币不仅可以在外部拥有账户 (EOA) 之间转移，还可以在特定应用条件下用于其他合约抽象 msg.sender 为令牌访问控制的定义机制。
+
+EIP-2612在ERC-20标准上增加了一个新的函数：**permit，该功能与approve函数相同，[但是将签名作为参数]**。 也就是说，**ERC2612的用户签名操作里面已经包含了approve信息。在合约验证成功后，该合约就可以执行transferFrom操作。**这样就能使用户可以通过在他们的交易中附加一个授权签名（Permit）信息来与应用合约交互，而不需要事先授权。
+
+（主要解决了，可以让 中间业务合约 通过[自己的函数] 或者[链下]拿到 用户的 sign，然后 业务合约去调用 token 合约 的 permit 函数做到 不需要用户去调用 token 合约的 approve 函数，进而可以在业务合约中决定(就在当前交易中调完 permit 后就可以直接调 transferFrom 了，当然也可以不调，只是说已经可以调了) ）
 
 这样的机制是的类似 uniswap 等项目可以不需要用户事先授权，而直接转走代币。
 
@@ -2315,6 +2348,706 @@ EIP-2612在ERC-20标准上增加了一个新的函数：permit，该功能与app
 [这种间接性使得Permit2可以将类似于EIP-2612的好处扩展到每一个现有的ERC20代币上。]
 
 
+**注意：  permit 函数的调用者可以是任意地址。**
+
+
+代码示意:
+
+
+```
+必须实现 3 个函数：
+
+
+function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external
+function nonces(address owner) external view returns (uint)
+function DOMAIN_SEPARATOR() external view returns (bytes32)
+
+
+
+调用 permit(owner, spender, value, deadline, v, r, s) 会将 approval[owner][spender] 设置为 value ，将 nonces[owner] 递增 1，并发出相应的 Approval 事件，当且仅当满足以下条件时：
+
+ 1. 当前出块时间小于或等于 deadline  ----- deadline 参数可以设置为 uint(-1) 以创建有效永不过期的 Permit 
+ 2. owner 不是零地址
+ 3. nonces[owner] （状态更新前）等于 nonce
+ 4. r 、 s 和 v 是来自消息的 owner 的有效 secp256k1 签名
+
+
+
+
+signatures = keccak256(abi.encodePacked(
+   hex"1901",
+   DOMAIN_SEPARATOR,
+   keccak256(abi.encode(
+            keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"),
+            owner,
+            spender,
+            value,
+            nonce,
+            deadline))
+))
+
+
+其中 DOMAIN_SEPARATOR 是根据 EIP-712 定义的。 DOMAIN_SEPARATOR 对合约和链来说应该是唯一的，以防止来自其他域的重放攻击，并满足 EIP-712 的要求，但在其他方面不受约束。 DOMAIN_SEPARATOR 的常见选择是：
+
+DOMAIN_SEPARATOR = keccak256(
+    abi.encode(
+        keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
+        keccak256(bytes(name)),
+        keccak256(bytes(version)),
+        chainid,
+        address(this)
+));
+
+
+
+
+
+
+```
+
+eip 712 结构
+
+```
+{
+  "types": {
+    "EIP712Domain": [
+      {
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "version",
+        "type": "string"
+      },
+      {
+        "name": "chainId",
+        "type": "uint256"
+      },
+      {
+        "name": "verifyingContract",
+        "type": "address"
+      }
+    ],
+    "Permit": [{
+      "name": "owner",
+      "type": "address"
+      },
+      {
+        "name": "spender",
+        "type": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256"
+      },
+      {
+        "name": "nonce",
+        "type": "uint256"
+      },
+      {
+        "name": "deadline",
+        "type": "uint256"
+      }
+    ],
+    "primaryType": "Permit",
+    "domain": {
+      "name": erc20name,
+      "version": version,
+      "chainId": chainid,
+      "verifyingContract": tokenAddress
+  },
+  "message": {
+    "owner": owner,
+    "spender": spender,
+    "value": value,
+    "nonce": nonce,
+    "deadline": deadline
+  }
+}}
+
+```
+
+
+```
+
+如 USDC 代码:
+
+pragma solidity 0.6.12;
+
+import { AbstractFiatTokenV2 } from "./AbstractFiatTokenV2.sol";
+import { EIP712Domain } from "./EIP712Domain.sol";
+import { EIP712 } from "../util/EIP712.sol";
+
+/**
+ * @title EIP-2612
+ * @notice Provide internal implementation for gas-abstracted approvals
+ */
+abstract contract EIP2612 is AbstractFiatTokenV2, EIP712Domain {
+    // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)")
+    bytes32
+        public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
+
+    mapping(address => uint256) private _permitNonces;
+
+    /**
+     * @notice Nonces for permit
+     * @param owner Token owner's address (Authorizer)
+     * @return Next nonce
+     */
+    function nonces(address owner) external view returns (uint256) {
+        return _permitNonces[owner];
+    }
+
+    /**
+     * @notice Verify a signed approval permit and execute if valid
+     * @param owner     Token owner's address (Authorizer)
+     * @param spender   Spender's address
+     * @param value     Amount of allowance
+     * @param deadline  The time at which this expires (unix time)
+     * @param v         v of the signature
+     * @param r         r of the signature
+     * @param s         s of the signature
+     */
+    function _permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) internal {
+        require(deadline >= now, "FiatTokenV2: permit is expired");
+
+        bytes memory data = abi.encode(
+            PERMIT_TYPEHASH,
+            owner,
+            spender,
+            value,
+            _permitNonces[owner]++,
+            deadline
+        );
+        require(
+            EIP712.recover(DOMAIN_SEPARATOR, v, r, s, data) == owner,
+            "EIP2612: invalid signature"
+        );
+
+        _approve(owner, spender, value);
+    }
+}
+
+
+```
+
+
+## EIP-3009 授权转账     (EIP-2612 的补充)
+
+一组函数，通过符合 EIP-712 类型的消息签名规范的签名启用元交易和与 ERC-20 令牌合约的原子交互。
+
+**建议**
+
+> 现有规范 EIP-2612 也允许元交易，并且鼓励合约实现两者以实现最大兼容性
+
+
+**和 EIP-2612 区别**
+
+1. EIP-2612 使用连续的随机数，但它使用随机的 32 字节随机数 (及 nonce)
+2. EIP-2612 依赖于 ERC-20 approve / transferFrom （“ERC-20 allowance”）模式
+
+
+**EIP-2612 的问题**
+
+1. 使用 `连续随机数` 的最大问题是它不允许用户在不冒交易失败风险的情况下一次执行多个交易 (但是 nonce 却只 +1)
+2. 矿工可能会以错误的顺序处理交易 (因为矿工可以在接收到 permit 签名后，选择不提交某些交易)
+
+
+> 如果 gas 价格非常高并且交易经常排队并且长时间未确认，这可能尤其成问题。非顺序随机数允许用户同时创建任意数量的交易。
+
+
+
+**目的**
+
+1. 将天然气支付委托给其他人
+2. 用代币本身而不是 ETH 支付 gas
+3. 在单个原子事务中执行一个或多个令牌传输和其他操作
+4. 将 ERC-20 代币转移到另一个地址，并让接收者提交交易 ( 接受者自己提交易 ????)
+5. 以最小的开销 批量处理多个事务
+6. 创建和执行多个交易，而不必担心由于矿工意外重用随机数或不正确的排序而导致交易失败
+
+
+
+**示例**
+
+
+
+
+```
+
+
+【必须的】
+
+
+event AuthorizationUsed(
+    address indexed authorizer,
+    bytes32 indexed nonce
+);
+
+// keccak256("TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)")
+bytes32 public constant TRANSFER_WITH_AUTHORIZATION_TYPEHASH = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267;
+
+// keccak256("ReceiveWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)")
+bytes32 public constant RECEIVE_WITH_AUTHORIZATION_TYPEHASH = 0xd099cc98ef71107a616c4f0f941f04c322d8e254fe26b3c6668db87aae413de8;
+
+/**
+ * @notice Returns the state of an authorization
+ * @dev Nonces are randomly generated 32-byte data unique to the authorizer's
+ * address
+ * @param authorizer    Authorizer's address
+ * @param nonce         Nonce of the authorization
+ * @return True if the nonce is used
+ */
+function authorizationState(
+    address authorizer,
+    bytes32 nonce
+) external view returns (bool);
+
+/**
+ * @notice Execute a transfer with a signed authorization
+ * @param from          Payer's address (Authorizer)
+ * @param to            Payee's address
+ * @param value         Amount to be transferred
+ * @param validAfter    The time after which this is valid (unix time)
+ * @param validBefore   The time before which this is valid (unix time)
+ * @param nonce         Unique nonce
+ * @param v             v of the signature
+ * @param r             r of the signature
+ * @param s             s of the signature
+ */
+function transferWithAuthorization(
+    address from,
+    address to,
+    uint256 value,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+) external;
+
+/**
+ * @notice Receive a transfer with a signed authorization from the payer
+ * @dev This has an additional check to ensure that the payee's address matches
+ * the caller of this function to prevent front-running attacks. (See security
+ * considerations)   
+ *
+ * 这有一个额外的检查，以确保 to 收款人 的地址与这个函数的 调用者  msg.sender 相匹配，以防止前面的攻击。(见安全考虑)
+ *
+ * @param from          Payer's address (Authorizer)
+ * @param to            Payee's address
+ * @param value         Amount to be transferred
+ * @param validAfter    The time after which this is valid (unix time)
+ * @param validBefore   The time before which this is valid (unix time)
+ * @param nonce         Unique nonce
+ * @param v             v of the signature
+ * @param r             r of the signature
+ * @param s             s of the signature
+ */
+function receiveWithAuthorization(
+    address from,
+    address to,
+    uint256 value,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+) external;
+
+
+
+
+
+【可选的】
+
+event AuthorizationCanceled(
+    address indexed authorizer,
+    bytes32 indexed nonce
+);
+
+// keccak256("CancelAuthorization(address authorizer,bytes32 nonce)")
+bytes32 public constant CANCEL_AUTHORIZATION_TYPEHASH = 0x158b0a9edf7a828aad02f63cd515c68ef2f50ba807396f6d12842833a1597429;
+
+/**
+ * @notice Attempt to cancel an authorization
+ * @param authorizer    Authorizer's address
+ * @param nonce         Nonce of the authorization
+ * @param v             v of the signature
+ * @param r             r of the signature
+ * @param s             s of the signature
+ */
+function cancelAuthorization(
+    address authorizer,
+    bytes32 nonce,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+) external;
+
+
+
+
+
+```
+
+
+EIP-712 Domain
+
+```
+DomainSeparator := Keccak256(ABIEncode(
+  Keccak256(
+    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+  ),
+  Keccak256("USD Coin"),                      // name
+  Keccak256("2"),                             // version
+  1,                                          // chainId
+  0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48  // verifyingContract
+))
+```
+
+
+包装 receiveWithAuthorization 调用的智能合约函数可以选择通过接受 receiveWithAuthorization 调用的完整 ABI 编码参数集作为 bytes 类型的单个参数来减少参数数量。 例如：
+
+```
+// keccak256("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,uint8,bytes32,bytes32)")[0:4]
+bytes4 private constant _RECEIVE_WITH_AUTHORIZATION_SELECTOR = 0xef55bec6;
+
+function deposit(address token, bytes calldata receiveAuthorization)
+    external
+    nonReentrant
+{
+    (address from, address to, uint256 amount) = abi.decode(
+        receiveAuthorization[0:96],
+        (address, address, uint256)  // 32 + 32 + 32 = 96  receiveWithAuthorization() 的前面三个参数
+    );
+    require(to == address(this), "Recipient is not this contract");
+
+    (bool success, ) = token.call(
+        abi.encodePacked(
+            _RECEIVE_WITH_AUTHORIZATION_SELECTOR,
+            receiveAuthorization
+        )
+    );
+    require(success, "Failed to transfer tokens");
+
+    ...
+}
+```
+
+
+
+**缘由**
+
+有人可能会说交易排序是首选顺序随机数的原因之一。然而，顺序随机数实际上并不能帮助实现元交易的交易排序.
+
+对于原生以太坊交易，当一个 nonce 值过高的交易被提交到网络时，它将保持待处理状态，直到使用较低未使用的 nonce 的交易被确认,
+然而，对于元交易，当提交包含过高的连续 nonce 值的交易时，它不会停留在等待状态，而是会立即恢复并失败，从而导致 gas 浪费。
+（这也是在 EIP-4337 标准中的 bundler 本地处理 UserOperation 时会出现的问题.）
+
+
+如：
+事实上，矿工还可以重新排序交易并按照他们想要的顺序将它们包含在块中（假设每个交易都由不同的元交易中继器提交到网络）也使得元交易有可能失败，即使随机数使用是正确的。 （例如，用户提交随机数 3、4 和 5，但矿工最终将它们作为 4、5、3 包含在区块中，结果只有 3 个成功）.  [EIP-4337 也存在这个问题]
+
+
+
+
+**Valid After 和 Valid Before 参数**
+
+
+依赖中继者为您提交交易意味着您可能无法准确控制交易提交的时间。 这些参数允许用户将交易安排为仅在未来或特定截止日期之前有效，从而保护用户免受因提交太晚或太早而可能导致的潜在不良影响。 [类似 EIP-4337] 
+
+
+**新合约受益于能够直接利用 EIP-3009 来创建原子交易，但现有合约可能仍依赖于传统的 ERC-20 配额模式 ( approve / transferFrom )**
+
+
+
+
+为了向使用 ERC-20 配额模式的现有合约（“母合约”）添加对 EIP-3009 的支持，可以构建一个转发合约（“转发器”），该合约需要授权并执行以下操作：
+
+
+1. 从授权中提取用户和存款金额
+2. 调用 receiveWithAuthorization 将指定资金从用户转移到转发器
+3. 批准父合约从转发器处花费资金
+4. 调用父合约上的方法，该方法花费了转发器设置的配额
+5. 将任何生成的令牌的所有权转移回用户
+
+
+**示例**
+
+
+1. 中继器合约
+
+```
+
+interface IDeFiToken {
+
+    function deposit(uint256 amount) external returns (uint256);
+
+    function transfer(address account, uint256 amount)
+        external
+        returns (bool);
+}
+
+
+
+
+contract DepositForwarder {
+
+
+    // keccak256("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,uint8,bytes32,bytes32)")[0:4]
+    bytes4 private constant _RECEIVE_WITH_AUTHORIZATION_SELECTOR = 0xef55bec6;
+
+    IDeFiToken private _parent;
+    IERC20 private _token;
+
+    constructor(IDeFiToken parent, IERC20 token) public {
+        _parent = parent;
+        _token = token;
+    }
+
+    function deposit(bytes calldata receiveAuthorization)
+        external
+        nonReentrant
+        returns (uint256)
+    {
+        (address from, address to, uint256 amount) = abi.decode(
+            receiveAuthorization[0:96],
+            (address, address, uint256)
+        );
+        require(to == address(this), "Recipient is not this contract");
+
+        (bool success, ) = address(_token).call(
+            abi.encodePacked(
+                _RECEIVE_WITH_AUTHORIZATION_SELECTOR,
+                receiveAuthorization
+            )
+        );
+        require(success, "Failed to transfer to the forwarder");
+
+        require(
+            _token.approve(address(_parent), amount),
+            "Failed to set the allowance"
+        );
+
+        uint256 tokensMinted = _parent.deposit(amount);
+        require(
+            _parent.transfer(from, tokensMinted),
+            "Failed to transfer the minted tokens"
+        );
+
+        uint256 remainder = _token.balanceOf(address(this);
+        if (remainder > 0) {
+            require(
+                _token.transfer(from, remainder),
+                "Failed to refund the remainder"
+            );
+        }
+
+        return tokensMinted;
+    }
+}
+
+```
+
+
+2. EIP-3009 实现
+
+```
+abstract contract EIP3009 is IERC20Transfer, EIP712Domain {
+    
+
+    // keccak256("TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)")
+    bytes32 public constant TRANSFER_WITH_AUTHORIZATION_TYPEHASH = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267;
+
+    // keccak256("ReceiveWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)")
+    bytes32 public constant RECEIVE_WITH_AUTHORIZATION_TYPEHASH = 0xd099cc98ef71107a616c4f0f941f04c322d8e254fe26b3c6668db87aae413de8;
+
+    mapping(address => mapping(bytes32 => bool)) internal _authorizationStates;
+
+    event AuthorizationUsed(address indexed authorizer, bytes32 indexed nonce);
+
+    string internal constant _INVALID_SIGNATURE_ERROR = "EIP3009: invalid signature";
+
+    function authorizationState(address authorizer, bytes32 nonce)
+        external
+        view
+        returns (bool)
+    {
+        return _authorizationStates[authorizer][nonce];
+    }
+
+
+
+
+    // spender 代替 from 转走 from 的钱给 to， r/s/v 必须和  from 匹配
+    function transferWithAuthorization(
+        address from,
+        address to,
+        uint256 value,
+        uint256 validAfter,
+        uint256 validBefore,
+        bytes32 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        require(now > validAfter, "EIP3009: authorization is not yet valid");
+        require(now < validBefore, "EIP3009: authorization is expired");
+        require(
+            !_authorizationStates[from][nonce],
+            "EIP3009: authorization is used"
+        );
+
+        bytes memory data = abi.encode(
+            TRANSFER_WITH_AUTHORIZATION_TYPEHASH,
+            from,
+            to,
+            value,
+            validAfter,
+            validBefore,
+            nonce
+        );
+        require(
+            EIP712.recover(DOMAIN_SEPARATOR, v, r, s, data) == from,
+            "EIP3009: invalid signature"
+        );
+
+        _authorizationStates[from][nonce] = true;
+        emit AuthorizationUsed(from, nonce);
+
+        _transfer(from, to, value);
+    }
+
+
+
+
+    // spender 代替 from 转走 from 的钱给 to， to 必须为 spender，且 r/s/v 必须和  from 匹配
+    function _receiveWithAuthorization(
+        address from,
+        address to,
+        uint256 value,
+        uint256 validAfter,
+        uint256 validBefore,
+        bytes32 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) internal {
+
+        require(to == msg.sender, "FiatTokenV2: caller must be the payee");  // 这一句很重要
+        _requireValidAuthorization(from, nonce, validAfter, validBefore);
+
+        bytes memory data = abi.encode(
+            RECEIVE_WITH_AUTHORIZATION_TYPEHASH,
+            from,
+            to,
+            value,
+            validAfter,
+            validBefore,
+            nonce
+        );
+        require(
+            EIP712.recover(DOMAIN_SEPARATOR, v, r, s, data) == from,
+            "FiatTokenV2: invalid signature"
+        );
+
+        _markAuthorizationAsUsed(from, nonce);
+        _transfer(from, to, value);
+    }
+
+
+}
+
+```
+
+3. IERC20Transfer 
+
+```
+abstract contract IERC20Transfer {
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal virtual;
+}
+
+```
+
+4. EIP712Domain 
+
+```
+
+abstract contract EIP712Domain {
+    bytes32 public DOMAIN_SEPARATOR;
+}
+
+```
+
+5. EIP-712 
+
+
+```
+
+library EIP712 {
+
+
+    // keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
+    bytes32 public constant EIP712_DOMAIN_TYPEHASH = 0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f;
+
+    function makeDomainSeparator(string memory name, string memory version)
+        internal
+        view
+        returns (bytes32)
+    {
+        uint256 chainId;
+        assembly {
+            chainId := chainid()
+        }
+
+        return
+            keccak256(
+                abi.encode(
+                    EIP712_DOMAIN_TYPEHASH,
+                    keccak256(bytes(name)),
+                    keccak256(bytes(version)),
+                    address(this),
+                    bytes32(chainId)
+                )
+            );
+    }
+
+    function recover(
+        bytes32 domainSeparator,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        bytes memory typeHashAndData
+    ) internal pure returns (address) {
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                domainSeparator,
+                keccak256(typeHashAndData)
+            )
+        );
+        address recovered = ecrecover(digest, v, r, s);
+        require(recovered != address(0), "EIP712: invalid signature");
+        return recovered;
+    }
+}
+
+```
 
 
 ## EIP-4361（以太坊登录）  使用同一个私钥实现 单点登录 ？？ EIP-4361 的目标是为中心化身份提供者提供一种自我托管的替代方案，提高基于以太坊身份验证的链下服务的互操作性，并为钱包供应商提供一致的机器可读消息格式，以实现更好的用户体验和同意管理。

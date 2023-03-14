@@ -1,6 +1,5 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body {
   max-width: 980px;
-  outline: 1300px solid #fff;
   margin: 16px auto;
 }
 
@@ -1100,15 +1099,19 @@ event Transfer(address indexed _from, address indexed _to, uint256 _value)
 event Approval(address indexed _owner, address indexed _spender, uint256 _value)
 </pre></div>
 
-<h2 id="erc-721">ERC 721 (非同质代币)<a class="headerlink" href="#erc-721" title="Permanent link"></a></h2>
+<h2 id="eip-721-erc-721">EIP-721 (非同质代币, ERC-721)<a class="headerlink" href="#eip-721-erc-721" title="Permanent link"></a></h2>
+<p>【注意】：每个符合ERC721的智能合约必须同时符合ERC721和ERC165。ERC165是智能合约定义自己支持哪些接口的一种方式。</p>
 <div class="highlight"><pre>event Transfer(address indexed _from, address indexed _to, uint256 indexed _tokenId);
 event Approval(address indexed _owner, address indexed _approved, uint256 indexed _tokenId);
 event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved);
 
 
 
-
-必备函数
+######################
+#####            #####
+#####  必备函数   #####
+#####            #####
+######################
 
 function balanceOf(address _owner) external view returns (uint256);
 function ownerOf(uint256 _tokenId) external view returns (address);
@@ -1126,7 +1129,14 @@ function isApprovedForAll(address _owner, address _operator) external view retur
 pragma solidity ^0.4.20;
 
 
-interface ERC721 {
+
+######################
+#####            #####
+#####   721合约  #####
+#####            #####
+######################
+
+interface ERC721 /* is ERC165 */ {
     /// @dev 当任何NFT的所有权更改时（不管哪种方式），就会触发此事件。
     ///  包括在创建时（`from` == 0）和销毁时(`to` == 0), 合约创建时除外。
     event Transfer(address indexed _from, address indexed _to, uint256 indexed _tokenId);
@@ -1195,6 +1205,17 @@ interface ERC721 {
 }
 
 
+
+######################
+#####            #####
+#####   165提案  #####
+#####            #####
+######################
+
+
+/// 一般要求 721 满足 165
+///
+
 interface ERC165 {
     /// @notice 是否合约实现了接口
     /// @param interfaceID  ERC-165定义的接口id
@@ -1204,6 +1225,18 @@ interface ERC165 {
 }
 
 
+/// 【注意】：每个符合ERC721的智能合约必须同时符合ERC721和ERC165。ERC165是智能合约定义自己支持哪些接口的一种方式。
+
+
+
+######################
+#####            #####
+#####   钱包实现  #####
+#####            #####
+######################
+
+
+/// 钱包等应用要接受NFT的安全转账，则必须实现如下接口
 
 interface ERC721TokenReceiver {
     /// @notice 处理接收NFT
@@ -1219,6 +1252,37 @@ interface ERC721TokenReceiver {
 }
 
 
+######################
+#####            #####
+#####   可选接口  #####
+#####            #####
+######################
+
+/// 
+、、、
+
+{
+    &quot;title&quot;: &quot;Asset Metadata&quot;,
+    &quot;type&quot;: &quot;object&quot;,
+    &quot;properties&quot;: {
+        &quot;name&quot;: {
+            &quot;type&quot;: &quot;string&quot;,
+            &quot;description&quot;: &quot;Identifies the asset to which this NFT represents&quot;
+        },
+        &quot;description&quot;: {
+            &quot;type&quot;: &quot;string&quot;,
+            &quot;description&quot;: &quot;Describes the asset to which this NFT represents&quot;
+        },
+        &quot;image&quot;: {
+            &quot;type&quot;: &quot;string&quot;,
+            &quot;description&quot;: &quot;A URI pointing to a resource with mime type image/* representing the asset to which this NFT represents. Consider making any images at a width between 320 and 1080 pixels and aspect ratio between 1.91:1 and 4:5 inclusive.&quot;
+        }
+    }
+}
+
+、、、
+
+/// 【注意】： 由于NFT最早面向艺术品，ERC-721可选Metadata接口“ERC721 Metadata JSON Schema”只指定了name、description、image三个属性（且不可修改）。但对于游戏而言，这些属性远远不够，因此我们下一节要介绍的另一个NFT标准EIP-1155将name、description、image属性转移到了URI的json里面，而不规定URI接口返回的JSON Schema。
 
 interface ERC721Metadata {
     /// @notice NFTs 集合的名字
@@ -1229,11 +1293,13 @@ interface ERC721Metadata {
 
     /// @notice 一个给定资产的唯一的统一资源标识符(URI)
     /// @dev 如果 `_tokenId` 无效，抛出异常. URIs在 RFC 3986 定义，
-    /// URI 也许指向一个 符合 &quot;ERC721 元数据 JSON Schema&quot; 的 JSON 文件
+    /// URIs在 RFC 3986 定义。ERC721 URI 可指向一个符合 &quot;ERC721 URI JSON Schema&quot; 的 JSON 文件。
     function tokenURI(uint256 _tokenId) external view returns (string);
 }
 
 
+
+/// 枚举接口包含了按索引获取到对应的代币，可以提供NFTs的完整列表，以便NFT可被发现。
 
 interface ERC721Enumerable {
     /// @notice  NFTs 计数
@@ -1255,15 +1321,391 @@ interface ERC721Enumerable {
 }
 </pre></div>
 
+<h2 id="erc-4907-nft-eip-721">ERC-4907 (租赁NFT协议)  作为 EIP-721 的拓展<a class="headerlink" href="#erc-4907-nft-eip-721" title="Permanent link"></a></h2>
+<p>他作为 ERC-721 的扩展， EIP-4907 增加了一个变量UserInfo，让应用可以查询此NFT当前被租出去的目标地址“user”和出租时间”expires&rdquo;。如果发现已经超出出租时间，则租赁关系宣告失效。</p>
+<p>代码极为简单仅有72行，使用这个标准，就是在原来的ERC721之上新增</p>
+<p>1个事件（用于通知链下应用称为事件）</p>
+<p>3个方法（用于实现链上数据管理功能）</p>
+<p>分别是</p>
+<p>UpdateUser 事件：当NFT转移，租赁校色设置时，发出租赁用户改变的通知</p>
+<p>setUser 方法：NFT所有者授权者可用，设置此NFTID的出租用户和过期时间</p>
+<p>userOf 方法：任何人可用，查询此NFTID的出租用户</p>
+<p>userExpires 方法：任何人可用，查询此NFTID的过期时间</p>
+<p>传统的 EIP-721 NFT只是通过2个映射 owners 、balances, 即一种字典形式的key-value对应关系的存储结构去记录数据。</p>
+<div class="highlight"><pre>mapping(uint256 =&gt; address)  _owners;// 记录每一个NFTID当前对应的所有者地址
+mapping(address =&gt; uint256)  _balances; //记录了当前所有者总计持有的NFT数量
+</pre></div>
+
+<p>而 EIP-4907 则是新增了一个数据对象 UserInfo 在所有权的概念之外增加[用户]的维度。</p>
+<div class="highlight"><pre>struct UserInfo {
+        address user;   // 用户地址
+        uint64 expires; //用户到期时间
+}
+</pre></div>
+
+<p>主要函数：</p>
+<div class="highlight"><pre>function setUser(uint256 tokenId, address user, uint64 expires) public virtual{
+
+  require(_isApprovedOrOwner(msg.sender, tokenId),&quot;ERC721: transfer caller is not owner nor approved&quot;);
+
+  UserInfo storage info =  _users[tokenId];//新增存储登记信息
+
+  info.user = user;   
+  info.expires = expires;
+
+  emit UpdateUser(tokenId,user,expires); //发出事件通知链下应用
+}
+
+
+
+function userOf(uint256 tokenId)public view virtual returns(address){
+
+
+  if( uint256(_users[tokenId].expires) &gt;=  block.timestamp){ 
+
+    //执行此函数，在未到期的情况下，返回此ID的当前用户地址
+    return  _users[tokenId].user; 
+  } else {
+
+    //到期情况下，则返回0地址，意未占用
+    return address(0);
+  }
+}
+
+
+
+function userExpires(uint256 tokenId) public view virtual returns(uint256){
+        return _users[tokenId].expires; //执行此函数，返回此ID的用户过期时间
+}
+
+
+
+/// 此外， EIP-4907 对标准交易方法 Transfer 增加了一部分内容，通过 _beforeTokenTransfer 实现，就是强制在进行 Transfer 交易转移后就删除掉这部分对用户的信息 (删掉旧的 user 信息)，并且发出事件通知已经用户失效了。
+
+function _beforeTokenTransfer(address from,address to,uint256 tokenId
+) internal virtual override{
+        super._beforeTokenTransfer(from, to, tokenId);
+        //当交易不是自己转自己的情况下，如果有设置“用户”则删除他
+        if (from != to &amp;&amp; _users[tokenId].user != address(0)) {
+            delete _users[tokenId];// 删除用户信息
+            emit UpdateUser(tokenId, address(0), 0);// 发出事件通知已删除
+        }
+}
+</pre></div>
+
+<h2 id="eip-5006-nft-eip-1155-nft">EIP-5006 (租赁NFT)  针对 EIP-1155 的NFT租赁标准<a class="headerlink" href="#eip-5006-nft-eip-1155-nft" title="Permanent link"></a></h2>
+<p>EIP-5006 的核心价值则是将进一步强化围绕用户创作应用场景上所有权和使用权的分离，明确NFT扩大应用价值的方向。</p>
+<p>该标准是EIP-1155的扩展。它提出了一个额外的角色 ( user)，可以授予代表user资产的地址而不是owner.</p>
+<div class="highlight"><pre>/ SPDX-License-Identifier: CC0-1.0
+
+pragma solidity ^0.8.0;
+
+interface IERC5006 {
+
+
+    struct UserRecord {
+        uint256 tokenId;
+        address owner;
+        uint64 amount;
+        address user;
+        uint64 expiry;
+    }
+
+    /**
+     * @dev Emitted when permission for `user` to use `amount` of `tokenId` token owned by `owner`
+     * until `expiry` are given.
+     */
+    event CreateUserRecord(
+        uint256 recordId,
+        uint256 tokenId,
+        uint64  amount,
+        address owner,
+        address user,
+        uint64  expiry
+    );
+
+    /**
+     * @dev Emitted when record of `recordId` are deleted. 
+     */
+    event DeleteUserRecord(uint256 recordId);
+
+    /**
+     * @dev Returns the usable amount of `tokenId` tokens  by `account`.
+     */
+    function usableBalanceOf(address account, uint256 tokenId)
+        external
+        view
+        returns (uint256);
+
+    /**
+     * @dev Returns the amount of frozen tokens of token type `id` by `account`.
+     */
+    function frozenBalanceOf(address account, uint256 tokenId)
+        external
+        view
+        returns (uint256);
+
+    /**
+     * @dev Returns the `UserRecord` of `recordId`.
+     */
+    function userRecordOf(uint256 recordId)
+        external
+        view
+        returns (UserRecord memory);
+
+    /**
+     * @dev Gives permission to `user` to use `amount` of `tokenId` token owned by `owner` until `expiry`.
+     *
+     * Emits a {CreateUserRecord} event.
+     *
+     * Requirements:
+     *
+     * - If the caller is not `owner`, it must be have been approved to spend ``owner``&#39;s tokens
+     * via {setApprovalForAll}.
+     * - `owner` must have a balance of tokens of type `id` of at least `amount`.
+     * - `user` cannot be the zero address.
+     * - `amount` must be greater than 0.
+     * - `expiry` must after the block timestamp.
+     */
+    function createUserRecord(
+        address owner,
+        address user,
+        uint256 tokenId,
+        uint64 amount,
+        uint64 expiry
+    ) external returns (uint256);
+
+    /**
+     * @dev Atomically delete `record` of `recordId` by the caller.
+     *
+     * Emits a {DeleteUserRecord} event.
+     *
+     * Requirements:
+     *
+     * - the caller must have allowance.
+     */
+    function deleteUserRecord(uint256 recordId) external;
+}
+
+
+为了使用，提供了4个接口来管理1155的租赁关系
+
+setUser：设置某个NFT-id下的某个所有者，设置多少个token数量给某个用户
+
+balanceOfUser ：查询哪个NFT-ID的哪个用户租赁到多少
+
+balanceOfUserFromOwner：查询某个NFT-ID的某所有者下的某个用户租赁到多少个
+
+frozenAmountOfOwner：查询某个NFT-ID的所有者其持有的token，已经被租出去多少个了（要冻结掉防止重复出租）
+</pre></div>
+
+<p>EIP-4907 的核心价值是为链上 [原生租赁] 提供了技术支撑，实现了 NFT 的所有权和使用权的分离，是解决NFT流动性短缺问题的重要基础设施。</p>
+<p>EIP-5006 的核心价值则是将进一步强化围绕 [用户创作应用场景上] 所有权和使用权的分离，明确NFT扩大应用价值的方向，将会涌现更多丰富的玩法、应用场景和衍生品。</p>
+<h2 id="eip-5058-nft">EIP-5058 (可锁定的 NFT代币) 该协议海贼审核中，不建议使用<a class="headerlink" href="#eip-5058-nft" title="Permanent link"></a></h2>
+<p>本质上他是 ERC721 的拓展，让项目方可以对NFT资产，执行 [锁定] 而不是转移，他新增函数setLockApprovalForAll()以及lockApprove()，这样一来在锁定期结束之前被锁定的 NFT 不能转移。</p>
+<blockquote>
+<p>有些类似 ERC-721R 提案 (可退款的 NFT) 的做法一样，先将 资金锁定。</p>
+</blockquote>
+<div class="highlight"><pre>// SPDX-License-Identifier: CC0-1.0
+
+pragma solidity ^0.8.8;
+
+/**
+ * @dev EIP-721 Non-Fungible Token Standard, optional lockable extension
+ * ERC721 Token that can be locked for a certain period and cannot be transferred.
+ * This is designed for a non-escrow staking contract that comes later to lock a user&#39;s NFT
+ * while still letting them keep it in their wallet.
+ * This extension can ensure the security of user tokens during the staking period.
+ * If the nft lending protocol is compatible with this extension, the trouble caused by the NFT
+ * airdrop can be avoided, because the airdrop is still in the user&#39;s wallet
+ */
+interface IERC5058 {
+    /**
+     * @dev Emitted when `tokenId` token is locked by `operator` from `from`.
+     */
+    event Locked(address indexed operator, address indexed from, uint256 indexed tokenId, uint256 expired);
+
+    /**
+     * @dev Emitted when `tokenId` token is unlocked by `operator` from `from`.
+     */
+    event Unlocked(address indexed operator, address indexed from, uint256 indexed tokenId);
+
+    /**
+     * @dev Emitted when `owner` enables `approved` to lock the `tokenId` token.
+     */
+    event LockApproval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+
+    /**
+     * @dev Emitted when `owner` enables or disables (`approved`) `operator` to lock all of its tokens.
+     */
+    event LockApprovalForAll(address indexed owner, address indexed operator, bool approved);
+
+    /**
+     * @dev Returns the locker who is locking the `tokenId` token.
+     *
+     * Requirements:
+     *
+     * - `tokenId` must exist.
+     */
+    function lockerOf(uint256 tokenId) external view returns (address locker);
+
+    /**
+     * @dev Lock `tokenId` token until the block number is greater than `expired` to be unlocked.
+     *
+     * Requirements:
+     *
+     * - `tokenId` token must be owned by `owner`.
+     * - `expired` must be greater than block.number
+     * - If the caller is not `owner`, it must be approved to lock this token
+     * by either {lockApprove} or {setLockApprovalForAll}.
+     *
+     * Emits a {Locked} event.
+     */
+    function lock(uint256 tokenId, uint256 expired) external;
+
+    /**
+     * @dev Unlock `tokenId` token.
+     *
+     * Requirements:
+     *
+     * - `tokenId` token must be owned by `owner`.
+     * - the caller must be the operator who locks the token by {lock}
+     *
+     * Emits a {Unlocked} event.
+     */
+    function unlock(uint256 tokenId) external;
+
+    /**
+     * @dev Gives permission to `to` to lock `tokenId` token.
+     *
+     * Requirements:
+     *
+     * - The caller must own the token or be an approved lock operator.
+     * - `tokenId` must exist.
+     *
+     * Emits an {LockApproval} event.
+     */
+    function lockApprove(address to, uint256 tokenId) external;
+
+    /**
+     * @dev Approve or remove `operator` as an lock operator for the caller.
+     * Operators can call {lock} for any token owned by the caller.
+     *
+     * Requirements:
+     *
+     * - The `operator` cannot be the caller.
+     *
+     * Emits an {LockApprovalForAll} event.
+     */
+    function setLockApprovalForAll(address operator, bool approved) external;
+
+    /**
+     * @dev Returns the account lock approved for `tokenId` token.
+     *
+     * Requirements:
+     *
+     * - `tokenId` must exist.
+     */
+    function getLockApproved(uint256 tokenId) external view returns (address operator);
+
+    /**
+     * @dev Returns if the `operator` is allowed to lock all of the assets of `owner`.
+     *
+     * See {setLockApprovalForAll}
+     */
+    function isLockApprovedForAll(address owner, address operator) external view returns (bool);
+
+    /**
+     * @dev Returns if the `tokenId` token is locked.
+     */
+    function isLocked(uint256 tokenId) external view returns (bool);
+
+    /**
+     * @dev Returns the `tokenId` token lock expired time.
+     */
+    function lockExpiredTime(uint256 tokenId) external view returns (uint256);
+}
+</pre></div>
+
+<p>用户授权项目方：lockApprove（许可锁定单个NFT），setLockApprovalForAll（许可锁定该地址下全部NFT）</p>
+<p>项目方合约调用：lockFrom（锁定用户的NFT），unlockFrom（解锁用户的NFT）</p>
+<p>设定锁定期：</p>
+<pre><code>项目方（第三方）锁定 NFT 时，
+
+需要指定锁定过期的区块高度，该高度必须大于当前区块高度。
+
+锁到期后，NFT 自动释放，才可以进行转移。
+</code></pre>
+<h2 id="eip-2981-nft">EIP-2981 (NFT 版税标准)<a class="headerlink" href="#eip-2981-nft" title="Permanent link"></a></h2>
+<p>该标准允许合约（例如支持ERC-721和ERC-1155接口的 NFT）在每次出售或转售 NFT 时发出要支付给 [NFT 创建者] 或 [权利持有人] 的特许权使用费金额。这适用于希望支持艺术家和其他 NFT 创作者持续资助的 NFT 市场。</p>
+<p>特许权使用费必须是自愿的，因为 transferFrom() 包括钱包之间的 NFT 转移在内的转移机制并不总是意味着发生了销售。</p>
+<p>市场和个人通过检索特许权使用费支付信息来实施此标准 royaltyInfo()，它指定为给定的销售价格向哪个地址支付多少。支付和通知接收者的确切机制将在未来的 EIP 中定义。该 ERC 应被视为 NFT 版税支付进一步创新的最小、节省 gas 的构建块。</p>
+<p>EIP-2981 合约必须支持 EIP-165 </p>
+<div class="highlight"><pre>pragma solidity ^0.6.0;
+import &quot;./IERC165.sol&quot;;
+
+///
+/// @dev Interface for the NFT Royalty Standard
+///
+interface IERC2981 is IERC165 {
+
+    /// ERC165 bytes to add to interface array - set in parent contract
+    /// implementing this standard
+    ///
+    /// bytes4(keccak256(&quot;royaltyInfo(uint256,uint256)&quot;)) == 0x2a55205a
+    /// bytes4 private constant _INTERFACE_ID_ERC2981 = 0x2a55205a;
+    /// _registerInterface(_INTERFACE_ID_ERC2981);
+
+    /// @notice Called with the sale price to determine how much royalty
+    //          is owed and to whom.
+    /// @param _tokenId - the NFT asset queried for royalty information
+    /// @param _salePrice - the sale price of the NFT asset specified by _tokenId
+    /// @return receiver - address of who should be sent the royalty payment
+    /// @return royaltyAmount - the royalty payment amount for _salePrice
+    function royaltyInfo(
+        uint256 _tokenId,
+        uint256 _salePrice
+    ) external view returns (
+        address receiver,
+        uint256 royaltyAmount
+    );
+}
+
+interface IERC165 {
+    /// @notice Query if a contract implements an interface
+    /// @param interfaceID The interface identifier, as specified in ERC-165
+    /// @dev Interface identification is specified in ERC-165. This function
+    ///  uses less than 30,000 gas.
+    /// @return `true` if the contract implements `interfaceID` and
+    ///  `interfaceID` is not 0xffffffff, `false` otherwise
+    function supportsInterface(bytes4 interfaceID) external view returns (bool);
+}
+
+
+
+/// 必须检查是否实现了  &#39;royaltyInfo(uint256,uint256)&#39;
+
+/// bytes4(keccak256(&quot;royaltyInfo(uint256,uint256)&quot;)) == 0x2a55205a
+
+bytes4 private constant _INTERFACE_ID_ERC2981 = 0x2a55205a;
+
+function checkRoyalties(address _contract) internal returns (bool) {
+    (bool success) = IERC165(_contract).supportsInterface(_INTERFACE_ID_ERC2981);
+    return success;
+ }
+</pre></div>
+
+<p><strong>EIP-2981 是可选的</strong></p>
+<p>不可能知道哪些 [ NFT 转移] 是销售的结果，哪些只是钱包移动或合并他们的 NFT。因此，我们不能强制每个转账功能（例如transferFrom()在 ERC-721 中）都涉及特许权使用费，因为并非每个转账都是需要此类付款的销售。我们相信 NFT 市场生态系统将自愿实施这一版税支付标准，为艺术家/创作者提供持续的资金。NFT 购买者在做出 NFT 购买决定时会将特许权使用费作为评估因素。</p>
 <h2 id="erc-1820-erc-165-erc-672">ERC-1820 (伪自省注册表合约)  比对 ERC-165 和 ERC-672<a class="headerlink" href="#erc-1820-erc-165-erc-672" title="Permanent link"></a></h2>
 <p>ERC1820标准向后兼容 ERC165, ERC1820标准定义了一个通用注册表合约，任何地址（合约或普通用户帐户）都可以注册它支持的接口以及哪个智能合约负责接口实现。</p>
 <p>ERC1820标准定义智能合约和普通用户帐户可以向注册表发布其实现了哪些功能（普通用户帐户通过代理合约实现）</p>
 <p>任何人都可以查询此注册表，询问哪个地址是否实现了给定的接口以及哪个智能合约处理实现逻辑。</p>
 <p>ERC1820注册表合约可以部署在任何链上，并在所有链上的地址是相同的。</p>
 <p>接口的后28个字节都为0的话，会认为是 ERC-165 接口，并且注册表将转发到合约以查看是否实现了接口。</p>
-<p>此合约还充当 ERC165 缓存，以减少 gas 消耗。</p>
+<p>此合约还充当 ERC-165 缓存，以减少 gas 消耗。</p>
 <p>在以太坊上有很多方法定义伪自省，ERC165不能由普通用户帐户使用。 ERC672 则使用了反向 ENS，反向 ENS 有两个问题：增加了不必要的复杂度，其次，ENS 是由多签控制的中心化合约。 从理论上讲，这种多签能够修改系统。</p>
-<p>ERC1820标准比 ERC-672 简单得多，并且完全去中心化。</p>
+<p>ERC-1820 标准比 ERC-672 简单得多，并且完全去中心化。</p>
 <p>此标准还为所有链提供一个唯一（相同的）地址。从而解决了解决不同链的查找注册表地址的问题。</p>
 <div class="highlight"><pre>pragma solidity 0.5.3;
 // IV is value needed to have a vanity address starting with &#39;0x1820&#39;.
@@ -1443,7 +1885,7 @@ contract ERC1820Registry {
 }
 </pre></div>
 
-<h2 id="erc-777-erc-20">ERC-777 (ERC-20 的高级拓展)<a class="headerlink" href="#erc-777-erc-20" title="Permanent link"></a></h2>
+<h2 id="eip-777-erc-777-erc-20-eip-1820-eip-1820-eip-777">EIP-777 (ERC-777, ERC-20 的高级拓展)  配合 EIP-1820 用， EIP-1820 从 EIP-777 抽出来的<a class="headerlink" href="#eip-777-erc-777-erc-20-eip-1820-eip-1820-eip-777" title="Permanent link"></a></h2>
 <p>如：操作员（operators） 可以代表另一个地址（合约或普通账户）发送代币， 以及 send/receive 加入了钩子函数（hooks ）让代币持有者可以有更多的控制。</p>
 <p>使用和发送以太相同的理念发送token，方法为：send(dest, value, data).</p>
 <p>合约和普通地址都可以通过注册tokensToSend hook函数来控制和拒绝发送哪些token（拒绝发送通过在hook函数tokensToSend 里 revert 来实现）。</p>
@@ -1572,7 +2014,7 @@ interface ERC777TokensSender {
 
 调用tokensToSend钩子函数用于通知持有者余额减少（如发送和销毁）。
 
-任何希望收到代币通知的地址（普通地址或合约）都会从需要按ERC1820注册及实现 ERC777TokensSender 接口，描述如下：
+任何希望收到代币通知的地址（普通地址或合约）都会从需要按 ERC1820 注册及实现 ERC777TokensSender 接口，描述如下：
 
 通过调用 ERC1820 注册表合约上的 setInterfaceImplementer 函数来完成的，其中持有者地址为地址参数，ERC777TokensSender 的 keccak256哈希值（0x29ddb589b1fb5fc7cf394961c1adf5f8c6454761adf795e67fe149f658abe895）作为接口哈希参数，以及实现ERC777TokensSender的合约作为实现者参数。
 
@@ -1621,8 +2063,14 @@ interface ERC777TokensRecipient {
 ** 钩子是使用 ERC-1820 标准注册及发现利用的 **
 </pre></div>
 
-<h2 id="erc-55">ERC-55 (混合大小写校验和地址编码)<a class="headerlink" href="#erc-55" title="Permanent link"></a></h2>
-<h2 id="erc-1167-gas">ERC-1167  (最小代理合约： 节省Gas部署合约)<a class="headerlink" href="#erc-1167-gas" title="Permanent link"></a></h2>
+<p><strong>补充</strong></p>
+<p>ERC777 合约必须要通过 ERC1820 注册 ERC777Token 接口，这样任何人都可以查询合约是否是 ERC777 标准的合约，注册方法是 : 调用 ERC1820 注册合约的 setInterfaceImplementer 方法，参数 addr 及 implementer 均是合约的地址，interfaceHash 是 ERC777Token 的 keccak256 哈希值（0xac7fbab5…177054）</p>
+<p>如果 ERC777 要实现 ERC20 标准，还必须通过 ERC1820 注册 ERC20Token 接口</p>
+<h2 id="eip-3523-sft-semi-fungible-tokens">EIP-3523 (半同质代币, SFT semi-fungible tokens)<a class="headerlink" href="#eip-3523-sft-semi-fungible-tokens" title="Permanent link"></a></h2>
+<p>半同质代币将具有 ERC-20 的定量特征和 ERC-721 的定性属性。与ERC-721标准相比，主要增加的是 <code>mapping(uint256 =&gt; uint256) internal _values</code> 和 <code>mapping(uint256 =&gt; uint256) internal _slots</code> 之间新的映射关系，分别代表 <code>代币数量</code> 和 <code>资产类型</code>。主要区别在于<code>铸造</code>、<code>转移</code>和<code>销毁</code>功能。</p>
+<h2 id="eip-1594">EIP-1594 核心安全令牌标准<a class="headerlink" href="#eip-1594" title="Permanent link"></a></h2>
+<h2 id="eip-55">EIP-55 (混合大小写校验和地址编码)<a class="headerlink" href="#eip-55" title="Permanent link"></a></h2>
+<h2 id="eip-1167-gas">EIP-1167  (最小代理合约： 节省Gas部署合约)<a class="headerlink" href="#eip-1167-gas" title="Permanent link"></a></h2>
 <div class="highlight"><pre>pragma solidity ^0.8.0;
 library Clones {
 
@@ -1650,6 +2098,50 @@ library Clones {
 }
 </pre></div>
 
+<h2 id="eip-2470-create2-initcode">EIP-2470 (单例工厂, 使用 create2 和 initcode 的合约部署工厂标准)<a class="headerlink" href="#eip-2470-create2-initcode" title="Permanent link"></a></h2>
+<p><strong>优点</strong> </p>
+<p>多链下可以使用相同钱包地址 (兼容EVM和ECDSA的链)</p>
+<p><strong>用途</strong></p>
+<p>一些 DApp 需要一个且仅一个合约实例，它在任何链上都具有相同的地址</p>
+<p><strong>和 EIP-1820/EIP-2429 部署区别</strong></p>
+<p>和 EIP-1820 和 EIP-2429 一样使用 nick部署方式部署合约</p>
+<p>[<a href="https://eips.ethereum.org/EIPS/eip-2470">https://eips.ethereum.org/EIPS/eip-2470</a>]</p>
+<p><strong>代码</strong></p>
+<div class="highlight"><pre>pragma solidity 0.6.2;
+
+
+/**
+ * @title Singleton Factory (EIP-2470)
+ * @notice Exposes CREATE2 (EIP-1014) to deploy bytecode on deterministic addresses based on initialization code and salt.
+ * @author Ricardo Guilherme Schmidt (Status Research &amp; Development GmbH)
+ */
+contract SingletonFactory {
+    /**
+     * @notice Deploys `_initCode` using `_salt` for defining the deterministic address.
+     * @param _initCode Initialization code.
+     * @param _salt Arbitrary value to modify resulting address.
+     * @return createdContract Created contract address.
+     */
+    function deploy(bytes memory _initCode, bytes32 _salt)
+        public
+        returns (address payable createdContract)
+    {
+        assembly {
+            createdContract := create2(0, add(_initCode, 0x20), mload(_initCode), _salt)
+        }
+    }
+}
+// IV is a value changed to generate the vanity address.
+// IV: 6583047
+
+
+/// 任何链上必须使用下列字节码部署
+
+0xf9016c8085174876e8008303c4d88080b90154608060405234801561001057600080fd5b50610134806100206000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c80634af63f0214602d575b600080fd5b60cf60048036036040811015604157600080fd5b810190602081018135640100000000811115605b57600080fd5b820183602082011115606c57600080fd5b80359060200191846001830284011164010000000083111715608d57600080fd5b91908080601f016020809104026020016040519081016040528093929190818152602001838380828437600092019190915250929550509135925060eb915050565b604080516001600160a01b039092168252519081900360200190f35b6000818351602085016000f5939250505056fea26469706673582212206b44f8a82cb6b156bfcc3dc6aadd6df4eefd204bc928a4397fd15dacf6d5320564736f6c634300060200331b83247000822470
+</pre></div>
+
+<h2 id="eip-1014-create2-create2">EIP-1014 (瘦 create2, 指令 create2)<a class="headerlink" href="#eip-1014-create2-create2" title="Permanent link"></a></h2>
+<h2 id="eip-173">EIP-173 (合约所有权标准)<a class="headerlink" href="#eip-173" title="Permanent link"></a></h2>
 <h2 id="erc-165">ERC-165  (标准接口检测)<a class="headerlink" href="#erc-165" title="Permanent link"></a></h2>
 <p>这个提案创建一个标准方法以发布和检测智能合约实现了哪些接口。</p>
 <p>接口如何识别。
@@ -1744,8 +2236,218 @@ contract Homer is ERC165, Simpson {
 }
 </pre></div>
 
-<h2 id="erc-4626">ERC-4626 (代币化资金库标准)<a class="headerlink" href="#erc-4626" title="Permanent link"></a></h2>
-<h2 id="erc-1155">ERC-1155 (多代币标准)<a class="headerlink" href="#erc-1155" title="Permanent link"></a></h2>
+<h2 id="eip-4626-erc-4626">EIP-4626  (代币化资金库标准) ERC-4626<a class="headerlink" href="#eip-4626-erc-4626" title="Permanent link"></a></h2>
+<p>EIP-4626 提供了一种将代币投资到投资池 ( 通常称为金库 ) 的标准方法。</p>
+<p>主要针对 Vault 进行优化，旨在将所有的 DeFi Vault 标准化，统一变成 ERC-20 形式的交易合约，提供铸造、 存取、查询余额等功能;降低 Vault 的工作量，提高运作效率。</p>
+<p>允许为代表单个基础EIP-20 代币份额的代币化保险库实施标准 API。该标准是 EIP-20 代币的扩展，提供了存取代币和读取余额的基本功能。</p>
+<p><strong>动机</strong></p>
+<p>当前的 Vault 缺乏标准化，借贷、聚合器等利息代币有着不一样的实施细节，这使得许多协议在聚合器或插件层的集成变得困难，协议开发者需要实现自己的适配器，这一过程容易出错并且浪费开发资源。</p>
+<p><strong>做法</strong></p>
+<p>所有的 ERC-4626 代币 Vault 都必须先实现 ERC-20 来作为股权代币。 如果一个 Vault 是不可转账的，它需要为 transfer 和 transferFrom 方法实现回滚 Revert 操作。 和 ERC-20 代币有关的操作如 balanceOf、 transfer、totalSupply 将在 Vault 的股份上进行操作，这代表了对 Vault 基础持有量对一小部分的所有权需求。</p>
+<p>所有的 ERC-4626 代币 Vault 必须实现 ERC-20 的元数据拓展功能，name 和 symbol 需要反映出底层代币的相关数据。</p>
+<p><strong>方法</strong></p>
+<div class="highlight"><pre>asset
+totalAssets
+convertToShares
+convertToAssets
+maxDeposit
+previewDeposit：允许用户去模拟在当前区块下存入资产后 Vault 发生的变化
+deposit：存入底层资产，铸造股权代币
+maxMint
+previewMint
+mint
+maxWithdraw
+previewWithdraw
+withdraw：烧掉股权代币，取回底层资产
+maxRedeem
+previewRedeem
+redeem
+</pre></div>
+
+<p><strong>事件</strong></p>
+<div class="highlight"><pre>// Deposit
+
+event Deposit(address indexed caller, address indexed owner, uint256 assets, uint256 shares);
+
+
+
+// Withdraw
+
+event Withdraw(
+        address indexed caller,
+        address indexed receiver,
+        address indexed owner,
+        uint256 assets,
+        uint256 shares
+);
+</pre></div>
+
+<p><strong>IMMUTABLES</strong></p>
+<div class="highlight"><pre>ERC20 public immutable asset;
+
+constructor(
+    ERC20 _asset,
+    string memory _name,
+    string memory _symbol
+) ERC20(_name, _symbol, _asset.decimals()) {
+    asset = _asset;
+}
+</pre></div>
+
+<p><strong>主逻辑</strong></p>
+<div class="highlight"><pre>// Deposit函数：
+
+function deposit(uint256 assets, address receiver) public virtual returns (uint256 shares) {
+
+    // Check for rounding error since we round down in previewDeposit.
+    require((shares = previewDeposit(assets)) != 0, &quot;ZERO_SHARES&quot;);
+
+    // Need to transfer before minting or ERC777s could reenter.
+    asset.safeTransferFrom(msg.sender, address(this), assets);
+
+    _mint(receiver, shares);
+
+    emit Deposit(msg.sender, receiver, assets, shares);
+
+    afterDeposit(assets, shares);
+}
+
+
+// Mint函数：
+
+function mint(uint256 shares, address receiver) public virtual returns (uint256 assets) {
+    assets = previewMint(shares); // No need to check for rounding error, previewMint rounds up.
+
+    // Need to transfer before minting or ERC777s could reenter.
+    asset.safeTransferFrom(msg.sender, address(this), assets);
+
+    _mint(receiver, shares);
+
+    emit Deposit(msg.sender, receiver, assets, shares);
+
+    afterDeposit(assets, shares);
+}
+
+
+// Withdraw函数：
+
+
+function withdraw(
+    uint256 assets,
+    address receiver,
+    address owner
+) public virtual returns (uint256 shares) {
+
+    shares = previewWithdraw(assets); // No need to check for rounding error, previewWithdraw rounds up.
+
+    if (msg.sender != owner) {
+        uint256 allowed = allowance[owner][msg.sender]; // Saves gas for limited approvals.
+
+        if (allowed != type(uint256).max) allowance[owner][msg.sender] = allowed - shares;
+    }
+
+    beforeWithdraw(assets, shares);
+
+    _burn(owner, shares);
+
+    emit Withdraw(msg.sender, receiver, owner, assets, shares);
+
+    asset.safeTransfer(receiver, assets);
+}
+
+
+// Redeem函数：
+
+function redeem(
+    uint256 shares,
+    address receiver,
+    address owner
+) public virtual returns (uint256 assets) {
+
+    if (msg.sender != owner) {
+        uint256 allowed = allowance[owner][msg.sender]; // Saves gas for limited approvals.
+
+        if (allowed != type(uint256).max) allowance[owner][msg.sender] = allowed - shares;
+    }
+
+    // Check for rounding error since we round down in previewRedeem.
+    require((assets = previewRedeem(shares)) != 0, &quot;ZERO_ASSETS&quot;);
+
+    beforeWithdraw(assets, shares);
+
+    _burn(owner, shares);
+
+    emit Withdraw(msg.sender, receiver, owner, assets, shares);
+
+    asset.safeTransfer(receiver, assets);
+}
+</pre></div>
+
+<p><strong>账户逻辑</strong></p>
+<div class="highlight"><pre>function totalAssets() public view virtual returns (uint256);
+
+function convertToShares(uint256 assets) public view returns (uint256) {
+    uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+
+    return supply == 0 ? assets : assets.mulDivDown(supply, totalAssets());
+}
+
+function convertToAssets(uint256 shares) public view returns (uint256) {
+    uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+
+    return supply == 0 ? shares : shares.mulDivDown(totalAssets(), supply);
+}
+
+function previewDeposit(uint256 assets) public view virtual returns (uint256) {
+    return convertToShares(assets);
+}
+
+function previewMint(uint256 shares) public view virtual returns (uint256) {
+    uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+
+    return supply == 0 ? shares : shares.mulDivUp(totalAssets(), supply);
+}
+
+function previewWithdraw(uint256 assets) public view virtual returns (uint256) {
+    uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+
+    return supply == 0 ? assets : assets.mulDivUp(supply, totalAssets());
+}
+
+function previewRedeem(uint256 shares) public view virtual returns (uint256) {
+    return convertToAssets(shares);
+}
+
+/*///////////////////////////////////////////////////////////////
+                 DEPOSIT/WITHDRAWAL LIMIT LOGIC
+//////////////////////////////////////////////////////////////*/
+
+function maxDeposit(address) public view virtual returns (uint256) {
+    return type(uint256).max;
+}
+
+function maxMint(address) public view virtual returns (uint256) {
+    return type(uint256).max;
+}
+
+function maxWithdraw(address owner) public view virtual returns (uint256) {
+    return convertToAssets(balanceOf[owner]);
+}
+
+function maxRedeem(address owner) public view virtual returns (uint256) {
+    return balanceOf[owner];
+}
+</pre></div>
+
+<p><strong>钩子逻辑</strong></p>
+<div class="highlight"><pre>function beforeWithdraw(uint256 assets, uint256 shares) internal virtual {}
+
+function afterDeposit(uint256 assets, uint256 shares) internal virtual {}
+</pre></div>
+
+<p>Vault 的接口是为聚合器设计的。</p>
+<h2 id="erc-1155">ERC-1155 (多代币标准, 多重通证标准)<a class="headerlink" href="#erc-1155" title="Permanent link"></a></h2>
+<p>【注意】： 实现ERC-1155标准的智能合约必须实现ERC-165标准中的supportsInterface接口函数，并当其参数interfaceID传入值为0xd9b67a26时，返回true</p>
 <div class="highlight"><pre>pragma solidity ^0.5.9;
 
 /**
@@ -1859,7 +2561,13 @@ interface ERC1155 /* is ERC165 */ {
 
 
 
-pragma solidity ^0.5.9;
+
+/// ERC-1155通证接收者:
+///
+/// ERC-1155通证接受者 必须实现 ERC1155TokenReceiver 接口中所有定义的函数。更多细节请参看 &quot;Safe Transfer Rules&quot;。
+/// ERC-1155通证接收者 必须实现 ERC-165 标准中的 supportsInterface 接口函数，并支持 ERC1155TokenReceiver 接口。更多细节请参看 &quot;ERC1155TokenReceiver ERC-165 rules&quot;。
+
+
 
 /**
     Note: The ERC-165 identifier for this interface is 0x4e2312e0.
@@ -1897,8 +2605,91 @@ interface ERC1155TokenReceiver {
 }
 
 
+#################################
+######                     ######
+###### Safe Transfer Rules ######
+######                     ######
+#################################
 
-// ERC1155TokenReceiver ERC-165 rules
+当涉及ERC1155TokenReceiver中的接口函数时，标准函数 safeTransferFrom 和 safeBatchTransferFrom 的执行方式严格遵循下列规则:  
+
+
+
+场景1：接收者不是智能合约
+
+onERC1155Received 和 onERC1155BatchReceived 不应该被外部账户（Externally Owned Account简称EOA）调用。 只能是合约接收。
+
+
+
+
+场景2：交易不是挖矿或转账
+
+onERC1155Received 和 onERC1155BatchReceived 不应该在除挖矿或转账之外的其它操作中被调用。
+
+
+
+场景3：作为接收者的合约没有实现ERC1155TokenReceiver接口中相应的函数
+
+该笔交易必须被回滚并给出下面的警告信息 &quot;如果交易的通证是用其它合约标准实现的并且通证的实现代码中包含标准和非标准函数，则该交易可以遵循该通证的合约标准而不是ERC1155标准。详细信息请参看 [Compatibility with other standards]。&quot;
+
+
+
+场景4：接收合约实现了ERC1155TokenReceiver中相应的接口函数但返回一个未知值。
+
+该笔交易必须被回滚。
+
+
+
+场景5：接收合约实现了ERC1155TokenReceiver中相应的接口函数但抛出错误。
+
+该笔交易必须被回滚。
+
+
+
+场景6：接收合约实现了ERC1155TokenReceiver接口函数，并且接收者有且仅有一个账户的余额发生了变化（比如safeTransferFrom被调用）。
+
+
+ - 转账交易中账户余额的更新必须在 ERC1155TokenReceiver 接口函数在接收合约处被调用之前完成。
+ - 该笔转账的事件必须在 ERC1155TokenReceiver 接口函数在接收合约处被调用前触发，并且事件要反映账户余额的变化。
+ - onERC1155Received 或 onERC1155BatchReceived 必须在接收合约中被调用。
+ - onERC1155Received 必须在接收合约中被调用并遵循其调用规则。 关于调用onERC1155Received必须遵循的规则，更多细节请参看“onERC1155Received rules”。
+ - onERC1155BatchReceived 或许（并非一定）会在接收合约中被调用，一旦被调用则必须遵循其调用规则。 关于调用onERC1155BatchReceived必须遵循的规则，更多细节请参看“onERC1155BatchReceived rules”。
+
+
+
+场景7：接收合约实现了ERC1155TokenReceiver接口函数，并且接收者有多个账户余额发生了变化（比如 safeBatchTransferFrom 被调用）。
+
+ - 转账交易中所有账户余额的更新必须在 ERC1155TokenReceiver 接口函数在接收合约中被调用之前完成。
+ - 所有的转账事件必须在 ERC1155TokenReceiver 接口函数在接收合约中被调用前触发，并且事件要反映账户的余额变化。
+ - 对每一个账户余额的变动，onERC1155Received 或 onERC1155BatchReceived 都必须在接收合约中被调用。 对每一个接口函数的返回 魔值（return magic value）必须进行检查和处理，并遵循 &quot;onERC1155Received rules&quot; 和 &quot;onERC1155BatchReceived rules&quot; 中的规则。
+ - onERC1155BatchReceived 必须在接收合约处被调用并遵循其调用规则。 关于调用onERC1155BatchReceived必须遵循的规则，更多细节请参看“onERC1155BatchReceived rules”。
+ - onERC1155Received 或许（并非一定）会在接收合约处被调用，如调用则必须遵循其调用规则。 关于调用onERC1155Received必须遵循的规则，更多细节请参看“onERC1155Received rules”。
+
+
+
+场景8：你写了一个智能合约，实现了ERC1155TokenReceiver接口函数的功能，你调用onERC1155Received或onERC1155BatchReceived或两个都调用，把该合约通证转账到另一个地址。
+
+ - 该转账将被视为已经接收，并继续调用 safeTransferFrom 或 safeBatchTransferFrom。 该转账成功完成后，被调用的接收合约中的接口函数所产生的keccak256值必须被返回。
+ - 参数“_data”可以（并非必须）被用于新的场景。
+ - 如果该转账失败，则交易可以（并非必须）被回滚。 在此场景下，如果合约设计者希望合约仍然保留对该通证的所有权，则通证所有权可以（并非必须）仍然为合约所有。
+
+
+
+场景9：用户通过非标准API函数转账通证。所谓的非标准API函数是指除 safeTransferFrom 和 safeBatchTransferFrom 以外的API函数。
+
+ - 在此场景中，转账交易里所有发生的账户余额变化和触发的事件消息都必须遵循标准API被调用时所遵循的规则。 即用户仍然可以通过标准函数查询余额，并且所查询到的结果和调用 TransferSingle 及 TransferBatch 事件得到的结果一样。
+ - 如果接收者是智能合约，ERC1155TokenReceiver 接口函数仍然必须被调用，且返回值必须与调用标准函数时一样。 当接收者是智能合约，但该合约并未实现 ERC1155TokenReceiver 接口函数时，safeTransferFrom 或 safeBatchTransferFrom 一定会回滚交易。但对非标准函数而言，它可能（并非一定）会继续执行后续的操作而不回滚交易。 更多细节请参看“Implementation specific transfer API rules”。
+
+
+/// 上述各个规则请细看 &quot;https://u.naturaldao.io/be/chapter4/4.7%20EIP-1155%20%E5%A4%9A%E9%87%8D%E9%80%9A%E8%AF%81%E6%A0%87%E5%87%86&quot; 和 &quot;https://eips.ethereum.org/EIPS/eip-1155&quot;。
+
+
+
+##################################################
+######                                      ######
+######  ERC1155TokenReceiver ERC-165 rules  ######
+######                                      ######
+##################################################
 
 
 function supportsInterface(bytes4 interfaceID) external view returns (bool) {
@@ -1906,6 +2697,8 @@ function supportsInterface(bytes4 interfaceID) external view returns (bool) {
             interfaceID == 0x4e2312e0;      // ERC-1155 `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256(&quot;onERC1155Received(address,address,uint256,uint256,bytes)&quot;)) ^ bytes4(keccak256(&quot;onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)&quot;))`).
 }
 
+
+/// 各个接口的 methodId 
 
 bytes4 constant public ERC1155_ERC165 = 0xd9b67a26; // ERC-165 identifier for the main token standard.
 bytes4 constant public ERC1155_ERC165_TOKENRECEIVER = 0x4e2312e0; // ERC-165 identifier for the `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256(&quot;onERC1155Received(address,address,uint256,uint256,bytes)&quot;)) ^ bytes4(keccak256(&quot;onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)&quot;))`).
@@ -1915,7 +2708,6 @@ bytes4 constant public ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from
 
 
 
-pragma solidity ^0.5.9;
 
 /**
     Note: The ERC-165 identifier for this interface is 0x0e89341c.
@@ -1942,14 +2734,30 @@ balanceOf(baseTokenNFT + indexNFT, msg.sender); // Get balance of the token at i
 balanceOf(baseTokenFT, msg.sender); // Get balance of the fungible base token 54321.
 </pre></div>
 
-<h2 id="erc-223">ERC-223<a class="headerlink" href="#erc-223" title="Permanent link"></a></h2>
-<h2 id="erc-998-nftcomposable-nfts-cnft">ERC-998 (可组合的 NFT，composable NFTs， CNFT)<a class="headerlink" href="#erc-998-nftcomposable-nfts-cnft" title="Permanent link"></a></h2>
+<h2 id="eip-3525-token-erc3525-erc20-erc721">EIP-3525 (半同质化token ERC3525)   一种介于 ERC20 和 ERC721 的产物<a class="headerlink" href="#eip-3525-token-erc3525-erc20-erc721" title="Permanent link"></a></h2>
+<h2 id="eip-3712-erc20erc1155">EIP-3712 (多种批量 同质通证标准)   弥补ERC20和ERC1155的不足之处，使得其适合多同质化通证进行授权与交易等应用场景<a class="headerlink" href="#eip-3712-erc20erc1155" title="Permanent link"></a></h2>
+<h2 id="eip-223-token-erc-223">EIP-223 (token标准 ERC-223, 貌似没被通过？？还是没被记录在案？？？)<a class="headerlink" href="#eip-223-token-erc-223" title="Permanent link"></a></h2>
+<h2 id="eip-677-transferandcall-token-standard-erc-677-eip-20-transfer-data-chainlink">EIP-677 (transferAndCall Token Standard ERC-677, 貌似没被通过？？还是没被记录在案？？？)  比 EIP-20 的 transfer 多一个 data 字段， chainlink 使用做预言机 回调合约 方式<a class="headerlink" href="#eip-677-transferandcall-token-standard-erc-677-eip-20-transfer-data-chainlink" title="Permanent link"></a></h2>
+<div class="highlight"><pre>function transferAndCall(address _to, uint _value, bytes _data)
+    public
+    returns (bool success)
+{
+    super.transfer(_to, _value);
+    Transfer(msg.sender, _to, _value, _data);
+    if (isContract(_to)) {
+      contractFallback(_to, _value, _data);
+    }
+    return true;
+}
+</pre></div>
+
+<h2 id="eip-827-token-erc-20-erc-827">EIP-827 (token标准 ERC-20的拓展 ERC-827, 貌似没被通过？？还是没被记录在案？？？)<a class="headerlink" href="#eip-827-token-erc-20-erc-827" title="Permanent link"></a></h2>
+<h2 id="eip-998-nftcomposable-nfts-cnft">EIP-998 (可组合的 NFT，composable NFTs， CNFT)<a class="headerlink" href="#eip-998-nftcomposable-nfts-cnft" title="Permanent link"></a></h2>
 <p>它的结构设计是一个标准化延伸可以让任何一个NFT可以拥有其他NFT或FT。转移CNFT时，就是转移CNFT所拥有的整个层级结构和所属关系。简单来说就是ERC-998可以包含多个ERC-721和ERC-20形式的代币。</p>
 <p>ERC998ERC721 top-down:必须实现ERC721的接⼝</p>
 <p>ERC998ERC20 bottom-up:必须实现ERC20的接⼝</p>
 <p>ERC165标准必须适⽤用于所使⽤用的每个ERC998接⼝</p>
 <p><a href="http://192.168.10.146:6789">http://192.168.10.146:6789</a></p>
-<h2 id="erc-4907-nft">ERC-4907 (租赁NFT协议)<a class="headerlink" href="#erc-4907-nft" title="Permanent link"></a></h2>
 <h2 id="erc-672-ens">ERC-672 (逆向 ENS 伪自省)<a class="headerlink" href="#erc-672-ens" title="Permanent link"></a></h2>
 <div class="highlight"><pre>pragma solidity ^0.4.18;
 
@@ -2085,9 +2893,14 @@ contract EIP672 {
 
 对于version type = 0x00, 中存放的是32位的验证者地址
 
-对于version type = 0x45, 在中，将\x19Ethereum Signed Message:\n+len(message)添加到了的前面，然后在进行哈希，签名。
+对于version type = 0x45, 在中，将 \x19Ethereum Signed Message:\n+len(message) 添加到了的前面，然后在进行哈希，签名。 如，ethereum 中对 Hash 进行签名时会用到为： &quot;\x19Ethereum Signed Message:\n32&quot;
+
+【注意】： 该前缀在 EIP-191 中引入，作为区分用于以太坊智能合约和其他加密平台的签名的一种方式。通过添加特定于以太坊的前缀，消息（带有前缀）会产生不同的签名，仅特定于以太坊。但是，如果没有特定于平台的前缀，则生成的签名对于所有平台都是相同的，这可能会导致签名重放攻击。
+
 
 在 Gnosis safe 中，我们主要关注version type = 0x01, 即EIP-712的实现：
+
+而 Gnosis safe 中的 checkNSignatures() 函数，中就有  &quot;ecrecover(keccak256(abi.encodePacked(&quot;\x19Ethereum Signed Message:\n32&quot;, dataHash)), v - 4, r, s);&quot;
 </pre></div>
 
 <h2 id="eip-712">EIP-712 大对象签名 (结构化数据的签名/验证)<a class="headerlink" href="#eip-712" title="Permanent link"></a></h2>
@@ -2127,11 +2940,117 @@ bytes32 constant EIP712DOMAIN_TYPEHASH = keccak256(
 <p>encode(domainSeparator : bytes32, message : Struct) = &ldquo;x19x01&rdquo; ‖ domainSeparator ‖ hashStruct(message)</p>
 <p><strong>hashStruct函数的定义为：</strong></p>
 <p>hashStruct(s : Struct) = keccak256(typeHash ‖ encodeData(s))</p>
-<h2 id="eip-1272">EIP-1272 合约校验签名方法 (合约签名/验证)<a class="headerlink" href="#eip-1272" title="Permanent link"></a></h2>
+<h2 id="eip-1271">EIP-1271 合约校验签名方法 (合约签名/验证)<a class="headerlink" href="#eip-1271" title="Permanent link"></a></h2>
 <div class="highlight"><pre>外部拥有账户 (EOA) 可以使用其关联的私钥签署消息，但目前合约不能。我们为任何合约提出了一种标准方法来验证 【代表给定合约】 的签名是否有效。这可以通过在isValidSignature(hash, signature)签名合约上实现一个函数来实现，可以调用该函数来验证签名
 </pre></div>
 
-<h2 id="eip-2612">EIP-2612（授权签名）<a class="headerlink" href="#eip-2612" title="Permanent link"></a></h2>
+<p><strong>EIP1271的流程:</strong></p>
+<ol>
+<li>合约钱包拥有者使用自己的私钥进行签名;</li>
+<li>向目标合约提交合约钱包拥有者的签名</li>
+<li>目标合约使用此签名向合约钱包进行isValidSignature方法。</li>
+<li>合约钱包中的isValidSignature方法会检查签名是否属于合约拥有者。如果属于，合约钱包返回 0x1626ba7e  [其实就是 <code>bytes4(keccak256("isValidSignature(bytes32,bytes)")</code> 的值]，否则返回 0xffffffff</li>
+<li>目标合约接受返回值，通过签名正误决定下一步操作</li>
+</ol>
+<p>和 EIP-712 的区别是，限定了 (如：钱包合约)合约的签名交由 特定的用户EOA 代做，校验签名则需要  (如：钱包合约)合约来做。</p>
+<p><strong>代码示例</strong></p>
+<div class="highlight"><pre>用户合约：
+
+
+function callERC1271isValidSignature(
+    address _addr,
+    bytes32 _hash,
+    bytes calldata _signature
+) external view {
+
+    // 将 交易签名的校验交给 钱包合约 (证明该交易确实是 钱包合约 发出的)
+    bytes4 result = IERC1271Wallet(_addr).isValidSignature(_hash, _signature);
+    require(result == 0x1626ba7e, &quot;INVALID_SIGNATURE&quot;);
+}
+
+
+
+
+钱包合约：
+
+
+function isValidSignature(
+    bytes32 _hash,
+    bytes calldata _signature
+) external override view returns (bytes4) {
+    // Validate signatures
+    if (recoverSigner(_hash, _signature) == owner) {
+        return 0x1626ba7e;
+    } else {
+        return 0xffffffff;
+    }
+}
+
+其中对于 recoverSigner 需要根据具体的签名类型由用户自行编写，较为简单的方法是使用 ecrecover，(用户自行实现自己的钱包合约逻辑)
+
+
+
+
+EIP-1271 合约
+
+
+
+contract ERC1271 {
+
+  // bytes4(keccak256(&quot;isValidSignature(bytes32,bytes)&quot;)
+  bytes4 constant internal MAGICVALUE = 0x1626ba7e;
+
+  /**
+   * @dev Should return whether the signature provided is valid for the provided hash
+   * @param _hash      Hash of the data to be signed
+   * @param _signature Signature byte array associated with _hash
+   *
+   * MUST return the bytes4 magic value 0x1626ba7e when function passes.
+   * MUST NOT modify state (using STATICCALL for solc &lt; 0.5, view modifier for solc &gt; 0.5)
+   * MUST allow external calls
+   */ 
+  function isValidSignature(
+    bytes32 _hash, 
+    bytes memory _signature)
+    public
+    view 
+    returns (bytes4 magicValue);
+}
+</pre></div>
+
+<h2 id="eip-6492-eip-1271-eip-1271">EIP-6492 (预部署合同签名验证，EIP-1271 的拓展，针对还未部署的合约使用 EIP-1271 的功能)<a class="headerlink" href="#eip-6492-eip-1271-eip-1271" title="Permanent link"></a></h2>
+<h2 id="eip-2612-eip-20">EIP-2612（[链下]授权签名） EIP-20 签名批准的许可延期<a class="headerlink" href="#eip-2612-eip-20" title="Permanent link"></a></h2>
+<p><strong>相当于让第三者代替用户做 approve，即不需要 msg.sender 做 approve。</strong></p>
+<blockquote></blockquote>
+<p>在 ERC20 中 具备 approve 和之间的相互作用 transferFrom，这使得代币不仅可以在外部拥有账户 (EOA) 之间转移，还可以在特定应用条件下用于其他合约抽象 msg.sender 为令牌访问控制的定义机制。</p>
+<p>EIP-2612在ERC-20标准上增加了一个新的函数：<strong>permit，该功能与approve函数相同，[但是将签名作为参数]</strong>。 也就是说，<strong>ERC2612的用户签名操作里面已经包含了approve信息。在合约验证成功后，该合约就可以执行transferFrom操作。</strong>这样就能使用户可以通过在他们的交易中附加一个授权签名（Permit）信息来与应用合约交互，而不需要事先授权。</p>
+<p>（主要解决了，可以让 中间业务合约 通过[自己的函数] 或者[链下]拿到 用户的 sign，然后 业务合约去调用 token 合约 的 permit 函数做到 不需要用户去调用 token 合约的 approve 函数，进而可以在业务合约中决定(就在当前交易中调完 permit 后就可以直接调 transferFrom 了，当然也可以不调，只是说已经可以调了) ）</p>
+<p>这样的机制是的类似 uniswap 等项目可以不需要用户事先授权，而直接转走代币。</p>
+<p><strong>EIP-2612 使用原理：</strong></p>
+<p><img alt="" src="/D:/%E6%96%87%E6%A1%A3/blockchain-study/EIP%E5%AD%A6%E4%B9%A0/img/EIP-2612_permit_using_flow.jpg" /></p>
+<p>[首先，EIP-2612 代币合约 (EIP-20的拓展)具备 permit()函数]</p>
+<ol>
+<li>Alice签署一个链下的 &ldquo;permit(签名授权)&rdquo; 信息，表示她希望授予一个合约一个（EIP-2612）代币的使用权。</li>
+<li>Alice提交签署的消息，作为她与所述协议合约(如： uniswap 合约)交互的一部分。</li>
+<li>协议合约(如： uniswap 合约)调用代币合约(EIP-2612 token 合约)上的 &ldquo;permit()&rdquo; 方法，它会使用签名授权信息和签名，同时授予协议合约一个授权。</li>
+<li>协议合约现在有了授权，所以它可以在代币合约上调用transferFrom()，转账由Alice持有的代币。</li>
+</ol>
+<p>这解决了典型ERC20 授权方法的两个问题：</p>
+<ol>
+<li>用户永远不需要提交一个单独的approve()交易。</li>
+<li>不再有悬空授权的必要之恶，因为许可消息授予的是即时授权，通常会立即花费。因此也可以选择一个更合理的授权额度，更重要的是，在签名授权消息可以被使用代币的时间上有一个到期时间。</li>
+</ol>
+<p>但是在 EIP-2612 之前推出的代币 (ERC-20) 并不支持签名授权功能，而且并非所有较新的代币都采用该功能，这就是悲催的现实。因此大多数时候，这种方法不可行。所以我们看 permit2() 的实现，其实就是在旧的(不支持 permit() 的 ERC-20 合约和协议合约间加一层 permit2 合约)。</p>
+<p><img alt="" src="/D:/%E6%96%87%E6%A1%A3/blockchain-study/EIP%E5%AD%A6%E4%B9%A0/img/EIP-2612_permit2_using_flow.jpg" /></p>
+<ol>
+<li>Alice在一个ERC20合约 (旧的、不支持permit()的合约)上调用approve()，典型的方式为的Permit2合约授予一个无限的授权。</li>
+<li>Alice签署一个链下 permit2 消息，该消息表明协议合约(如： uniswap 合约)被允许代表她转账代币。</li>
+<li>Alice在协议合约(如： uniswap 合约)上调用一个交互函数，将签署的 permit2 消息作为参数传入。</li>
+<li>协议合约(如： uniswap 合约)在Permit2合约上调用 permitTransferFrom()，而Permit2合约又使用其授权（在1中授予）在ERC20合约上调用 &ldquo;transferFrom()&rdquo;，转账Alice持有的代币。</li>
+</ol>
+<p>这样 permit2 合约相当于 为旧有不支持 permit() 的ERC20合约 充当了 permit() 的代理，而 permit2 合约和 ERC20 合约间的交互还是使用旧有的，先 approve() 再 transferFrom() 。
+[这种间接性使得Permit2可以将类似于EIP-2612的好处扩展到每一个现有的ERC20代币上。]</p>
+<h2 id="eip-3009">EIP-3009 授权转账<a class="headerlink" href="#eip-3009" title="Permanent link"></a></h2>
 <h2 id="eip-4361-eip-4361">EIP-4361（以太坊登录）  使用同一个私钥实现 单点登录 ？？ EIP-4361 的目标是为中心化身份提供者提供一种自我托管的替代方案，提高基于以太坊身份验证的链下服务的互操作性，并为钱包供应商提供一致的机器可读消息格式，以实现更好的用户体验和同意管理。<a class="headerlink" href="#eip-4361-eip-4361" title="Permanent link"></a></h2>
 <h2 id="eip-86">EIP-86 里首次提出的 (抽象账户)，其目的是实现 “交易来源和签名的抽象”<a class="headerlink" href="#eip-86" title="Permanent link"></a></h2>
 <h2 id="eip-3074-auth-authcalleip-4337">EIP-3074：操作码 AUTH 和 AUTHCALL；EIP 4337 之前的提案<a class="headerlink" href="#eip-3074-auth-authcalleip-4337" title="Permanent link"></a></h2>
@@ -2154,11 +3073,149 @@ bde0b9f486b1960454e326375d0b1680243e031fd4fb3f070d9a3ef9871ccfd5
 EIP 1127 仍处于提案阶段，尚未在以太坊区块链上实施。如果它获得批准和实施，它可能会对以太坊生态系统和可以在该平台上构建的 dApp 类型产生重大影响。
 </pre></div>
 
-<h2 id="eip-1077-gas">EIP-1077  提供智能合约支付gas的抽象接口<a class="headerlink" href="#eip-1077-gas" title="Permanent link"></a></h2>
+<h2 id="eip-1077-gas-eip-4337">EIP-1077  (提供智能合约支付gas的抽象接口) 是一个比 EIP-4337 更早提出的提案<a class="headerlink" href="#eip-1077-gas-eip-4337" title="Permanent link"></a></h2>
+<p>采用 DApp 的主要障碍是需要多个 token 来执行链式操作。允许用户签名消息以显示执行意图，但允许第三方中继器执行消息可以避免此问题，尽管以太坊交易始终需要 ETH，但智能合约可以采用 EIP-191 签名并转发付款激励具有 ETH 的不受信任方执行交易。可以标准化它们的通用格式，以及用户允许以代币支付交易的方式，为应用程序开发人员提供了很大的灵活性，并且可以成为应用程序用户与区块链交互的主要方式。</p>
+<p>实现函数：</p>
+<div class="highlight"><pre>function executeGasRelay(bytes calldata _execData, uint256 _gasPrice, uint256 _gasLimit, address _gasToken, address _gasRelayer, bytes calldata _signature) external;   
+
+
+function executeGasRelayMsg(uint256 _nonce, bytes memory _execData, uint256 _gasPrice, uint256 _gasLimit, address _gasToken, address _gasRelayer) public pure returns (bytes memory);
+
+
+function executeGasRelayERC191Msg(uint256 _nonce, bytes memory _execData, uint256 _gasPrice, uint256 _gasLimit, address _gasToken, address _gasRelayer) public view returns (bytes memory);
+
+
+function lastNonce() public returns (uint nonce);
+
+
+
+签名消息需要以下字段：
+
+Nonce：随机数或时间戳；
+Execute Data：账户合约要执行的字节码；
+Gas Price：gas价格（以所选代币支付）；
+Gas Limit：为中继执行预留的gas；
+Gas Token：支付gas的代币（以太币为0）；
+Gas Relayer：本次调用的gas返还受益人（留0 block.coinbase）
+</pre></div>
+
+<p><strong>消息签名</strong></p>
+<p>消息必须按照EIP-191标准进行签名，被调用的合约也必须实现EIP-1271，EIP-1271 必须验证签名的消息。</p>
+<p>消息必须由正在执行的帐户合约的所有者签名。如果所有者是合约，它必须实现EIP-1271接口并将验证转发给它。</p>
+<p>如： </p>
+<p>为了合规，交易必须请求签署一个“messageHash”，它是多个字段的串联。</p>
+<p>字段必须构造为此方法：</p>
+<p>第一个和第二个字段是为了使其符合EIP-191。</p>
+<p>开始交易以byte(0x19)确保签名数据不是有效的以太坊交易。</p>
+<p>第二个参数是版本控制字节。</p>
+<p>第三个是根据EIP-191版本 0 的验证者地址（账户合约地址） 。</p>
+<p>其余参数是 gas 中继的应用程序特定数据：根据 EIP-1344 的chainID 、执行随机数、执行数据、约定的 gas 价格、gas 中继调用的 gas 限制、要偿还的 gas 代币和授权接收奖励的 gas 中继器。</p>
+<div class="highlight"><pre>EIP-191消息必须构造如下：
+
+keccak256(
+    abi.encodePacked(
+        byte(0x19), //ERC-191 - the initial 0x19 byte
+        byte(0x0), //ERC-191 - the version byte
+        address(this), //ERC-191 - version data (validator address)
+        chainID,
+        bytes4(
+            keccak256(&quot;executeGasRelay(uint256,bytes,uint256,uint256,address,address)&quot;)
+        ),
+        _nonce, 
+        _execData,
+        _gasPrice,
+        _gasLimit,
+        _gasToken,
+        _gasRelayer
+    )
+)
+</pre></div>
+
 <h2 id="eip-2771-recipientforwarder-recipient">EIP-2771 通过可信转发器接收元交易的合约接口， Recipient合约通过可信Forwarder合约接受元交易 (定义 Recipient 合约接口)<a class="headerlink" href="#eip-2771-recipientforwarder-recipient" title="Permanent link"></a></h2>
-<h2 id="eip-1474-jsonrpc">EIP-1474：远程过程调用规范 定义 jsonrpc 的返回状态码<a class="headerlink" href="#eip-1474-jsonrpc" title="Permanent link"></a></h2>
+<p>该 EIP 定义了合约级协议，用于Recipient合约通过可信Forwarder合约接受元交易。没有进行任何协议更改。Recipient合同通过附加额外的调用数据发送有效msg.sender (称为 msgSender()) 和msg.data (称为 msgData())。</p>
+<p><strong>几个概念</strong></p>
+<ol>
+<li>交易签名者</li>
+</ol>
+<blockquote>
+<p>签署交易并将交易发送到 Gas Relay</p>
+</blockquote>
+<ol start="2">
+<li>Gas Relay</li>
+</ol>
+<blockquote>
+<p>接收来自交易签名者的链下签名请求并支付 gas 以将其转化为通过 Trusted Forwarder 的有效交易</p>
+</blockquote>
+<ol start="3">
+<li>Trusted ForwarderRecipient</li>
+</ol>
+<blockquote>
+<p>在转发来自交易签名者的请求之前，受信任的合约可以正确验证签名和随机数</p>
+</blockquote>
+<ol start="4">
+<li>Recipient</li>
+</ol>
+<blockquote>
+<p>通过 Trusted Forwarder 接受元交易的合约</p>
+</blockquote>
+<p><img alt="" src="/D:/%E6%96%87%E6%A1%A3/blockchain-study/EIP%E5%AD%A6%E4%B9%A0/img/EIP-2771_using_flow.jpg" /></p>
+<ol>
+<li>用户先对交易做链下签名</li>
+<li>用户将签名好的链下交易发送给  Gas Relay</li>
+<li>Gas Relay 接收来自交易签名者的链下签名请求并支付 gas 以将其转化为通过 Trusted Forwarder 的有效交易</li>
+<li>在转发来自交易签名者的请求之前，受信任的合约 (Trusted Forwarder) 可以正确验证签名和随机数。Trusted Forwarder负责调用Recipient合约，并且必须将[Transaction Signer的地址]（20 字节数据）附加到调用数据的末尾。</li>
+<li>Trusted Forwarder 将交易转发给 Recipient 合约</li>
+<li>
+<p>Recipient 合约然后可以通过执行 3 个操作来提取交易签名者地址：</p>
+<ul>
+<li>检查 Gas Relay 是否可信。如何实施不在本提案的范围内。</li>
+<li>从调用数据的最后 20 个字节中提取[Transaction Signer的地址]，并将其用作sender交易的原始地址（而不是msg.sender, 因为 msg.sender 是 Gas Relay ）</li>
+<li>如果 msg.sender 不是 受信任的Gas Relay（或者如果msg.data短于 20 个字节），则按原样返回原件msg.sender。
+(Recipient 必须检查它是否 信任转发方 (Trusted Forwarder) 以防止它提取从不受信任的合约附加的地址数据。这可能导致伪造地址)</li>
+</ul>
+</li>
+</ol>
+<div class="highlight"><pre>Recipient 合约必须实现这个功能：
+
+function isTrustedForwarder(address forwarder) external view returns(bool);
+
+
+如：
+
+
+contract RecipientExample {
+
+    function purchaseItem(uint256 itemId) external {
+        address sender = _msgSender();
+        // ... perform the purchase for sender
+    }
+
+    address immutable _trustedForwarder;
+    constructor(address trustedForwarder) internal {
+        _trustedForwarder = trustedForwarder;
+    }
+
+    function isTrustedForwarder(address forwarder) public returns(bool) {
+        return forwarder == _trustedForwarder;
+    }
+
+    function _msgSender() internal view returns (address payable signer) {
+        signer = msg.sender;
+        if (msg.data.length&gt;=20 &amp;&amp; isTrustedForwarder(signer)) {
+            assembly {
+                signer := shr(96,calldataload(sub(calldatasize(),20)))
+            }
+        }    
+    }
+
+}
+</pre></div>
+
+<h2 id="eip-1474-jsonrpc">EIP-1474  远程过程调用规范 定义 jsonrpc 的返回状态码<a class="headerlink" href="#eip-1474-jsonrpc" title="Permanent link"></a></h2>
 <h2 id="eip-1167">EIP-1167  代理(部署)合约 供了一种低成本克隆合约的方法<a class="headerlink" href="#eip-1167" title="Permanent link"></a></h2>
 <div class="highlight"><pre>contract Deployer {
+
+
     event InstanceDeployed(address instance);
 
     /**
@@ -2183,6 +3240,7 @@ EIP 1127 仍处于提案阶段，尚未在以太坊区块链上实施。如果�
         }
         emit InstanceDeployed(address(instance));
     }
+
 }
 
 
@@ -2331,7 +3389,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 37  CALLDATACOPY    如前所述复制calldata到内存   
 
 
-最终吧用户的 calldata 复制到 memory 中，然后 &#39;3d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af4&#39; 为：
+最终把用户的 calldata 复制到 memory 中，然后 &#39;3d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af4&#39; 为：
 
 3d  RETURNDATASIZE   
 3d  RETURNDATASIZE  
@@ -2636,7 +3694,7 @@ contract Proxiable {
 <p><strong>和 EIP-1967 区别</strong></p>
 <p>此模型与我们之前介绍的EIP-1967等传统代理模型不同，此模型没有采用无序存储合约地址的方法，而是在通过映射约定不同的函数和对应的合约地址，此方法属于有序存储。</p>
 <p>我们之前一直强调代理合约的关键在于逻辑合约地址存储和合约数据存储，在此之前我们介绍了通过继承解决合约存储问题和通过随机地址槽存储数据解决数据冲突问题。</p>
-<p>相对于 EIP-897 的继承存储，和 EIP-1967 的非结构化存储 来说，EIP-2535 使用了 <code>Diamond Storage</code> 和 <code>AppStorage</code>，即：依旧是选择随机存储槽存储逻辑合约所需要的数据，此方案通常被称为Diamond Storage。与之前仅提供随机数据存储槽存储代理合约地址不同，在EIP2535中，我们需要为不同类型的逻辑合约设计存储地址以保证其数据存储不会与其他逻辑合约冲突。</p>
+<p>相对于 EIP-897 的继承存储，和 EIP-1967 的非结构化存储 来说，EIP-2535 使用了 <code>Diamond Storage</code> 和 <code>AppStorage</code>，即：依旧是选择随机存储槽存储逻辑合约所需要的数据，此方案通常被称为Diamond Storage。与之前仅提供随机数据存储槽存储代理合约地址不同，在 EIP-2535 中，我们需要为不同类型的逻辑合约设计存储地址以保证其数据存储不会与其他逻辑合约冲突。</p>
 <p><img alt="" src="/D:/%E6%96%87%E6%A1%A3/blockchain-study/EIP%E5%AD%A6%E4%B9%A0/img/EIP-2535_DiamondStorage.png" /></p>
 <p>如: 两个代理合约调用两个逻辑合约。 类比下图显示了使用相同两个刻面的两颗钻石：</p>
 <p><img alt="" src="/D:/%E6%96%87%E6%A1%A3/blockchain-study/EIP%E5%AD%A6%E4%B9%A0/.img/EIP-2535_facetreuse.png" /></p>
@@ -2750,4 +3808,849 @@ library LibAppStorage {
 <blockquote>
 <p>一个特殊的切面合约，用于返回钻石中各个切面合约的具体内容，包括切面合约地址、切面合约中的函数选择器等内容。</p>
 </blockquote>
-<p>在EIP-2535中，最重要的函数就是 <code>diamondCut()</code>，该函数的功能是增加、修改或替换钻石合约中函数和切面合约。如果钻石合约为不可变合约，则可以不实现此函数。该函数运行后会抛出 事件。此函数的接口如下:</p></article></body></html>
+<p>在EIP-2535中，最重要的函数就是 <code>diamondCut()</code>，该函数的功能是[增加、修改或替换]钻石合约中[函数和切面合约]。如果钻石合约为不可变合约，则可以不实现此函数。该函数运行后会抛出 <code>DiamondCut</code> 事件。此函数的接口如下:</p>
+<div class="highlight"><pre>interface IDiamondCut {
+
+    enum FacetCutAction {Add, Replace, Remove}
+    // Add=0, Replace=1, Remove=2
+
+    struct FacetCut {
+        address facetAddress;
+        FacetCutAction action;
+        bytes4[] functionSelectors;
+    }
+
+    /// @notice Add/replace/remove any number of functions and optionally execute
+    ///         a function with delegatecall
+    /// @param _diamondCut Contains the facet addresses and function selectors
+    /// @param _init The address of the contract or facet to execute _calldata
+    /// @param _calldata A function call, including function selector and arguments
+    ///                  _calldata is executed with delegatecall on _init
+    function diamondCut(
+        FacetCut[] calldata _diamondCut,
+        address _init,
+        bytes calldata _calldata
+    ) external;
+
+    event DiamondCut(FacetCut[] _diamondCut, address _init, bytes _calldata);
+}
+</pre></div>
+
+<p>Diamond 是一个合约，它将调用委托给称为面的实现合约。Diamond 合约实现了一个 diamondCut 函数，它提供了添加/替换/删除的能力。除了 diamondCut 函数之外，还实现了一组 loupe 函数。这些函数显示了关于所实现的Diamond 的信息。Diamond 合约维护了一个selectorToFacet的映射，这基本上是一个函数签名到实现合约地址的映射。当用户调用一个函数时，Diamond 代理的回退函数使用函数签名来寻找这个映射中的实现地址。在找到函数签名的地址后，回退函数只是将调用委托给实现合约，并将响应返回给用户。</p>
+<p>Diamond 代理依靠的是一种存储模式。该代理被一些被称为面的实现合约所共享。理想情况下，每个切面都有自己的存储。然而，根据实施要求，面可以与其他面共享存储。 DiamondStorage 和 AppStorage 是一些流行的存储模式，分别用于[隔离]和[共享]存储。</p>
+<p>说白了就是将一些逻辑合约的地址和逻辑合约的 finction sig 进行映射，存到代理合约中，用来实现 modules 功能。</p>
+<h2 id="eip-792-erc-792-arbitration-standard">EIP-792 (ERC 792 Arbitration Standard, 仲裁智能合约标准)<a class="headerlink" href="#eip-792-erc-792-arbitration-standard" title="Permanent link"></a></h2>
+<h2 id="eip-1056-erc-1056-lightweight-identity">EIP-1056 (ERC 1056: Lightweight Identity, 数字身份通证标准)<a class="headerlink" href="#eip-1056-erc-1056-lightweight-identity" title="Permanent link"></a></h2>
+<h2 id="eip-2569-svg">EIP-2569 (为通用代币保存和显示链上图像)  一组接口，用于在以太坊中保存 SVG 图像，并从以太坊检索图像文件以获取通用令牌。<a class="headerlink" href="#eip-2569-svg" title="Permanent link"></a></h2>
+<h2 id="eip-3156">EIP-3156 (闪电贷)<a class="headerlink" href="#eip-3156" title="Permanent link"></a></h2>
+<p>目前市面上主流的闪电贷如: aave、 uniswap 等各自实现细节均不一样，这让使用者和开发者对接起来很是不便。 EIP-3156 就是对闪电贷统一提供了闪电贷的标准接口。 主要针对 ERC-20 token 的闪电贷。</p>
+<p>闪电贷功能使用 [回调模式] 集成了两个智能合约。在这个 EIP 中，它们被称为 [LENDER] 和 [RECEIVER]</p>
+<div class="highlight"><pre>##################################
+######                      ######
+###### Lender（出借人）接口  ######
+######                      ######
+##################################
+
+
+pragma solidity ^0.7.0 || ^0.8.0;
+import &quot;./IERC3156FlashBorrower.sol&quot;;
+
+
+interface IERC3156FlashLender {
+
+
+
+    /**
+     * @dev The amount of currency available to be lent.
+     * @param token The loan currency.
+     * @return The amount of `token` that can be borrowed.
+     */
+     /// 
+     /// 返回可能的最大贷款额token
+     ///
+    function maxFlashLoan(
+        address token
+    ) external view returns (uint256);
+
+
+
+    /**
+     * @dev The fee to be charged for a given loan.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
+     */
+     ///
+     /// 返回贷款 收取的费用amount token
+     ///
+    function flashFee(
+        address token,
+        uint256 amount
+    ) external view returns (uint256);
+
+
+
+    /**
+     * @dev Initiate a flash loan.
+     * @param receiver The receiver of the tokens in the loan, and the receiver of the callback.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @param data Arbitrary data structure, intended to contain user-defined parameters.
+     */
+     ///
+     /// onFlashLoan 在 IERC3156FlashBorrower 合约中包含对该函数的回调
+     ///
+    function flashLoan(
+        IERC3156FlashBorrower receiver,
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external returns (bool);
+
+
+}
+
+
+
+
+####################################
+######                        ######
+###### Receiver（承借人）接口  ######
+######                        ######
+####################################
+
+
+interface IERC3156FlashBorrower {
+
+
+    /**
+     * @dev Receive a flash loan.
+     * @param initiator The initiator of the loan.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @param fee The additional amount of tokens to repay.
+     * @param data Arbitrary data structure, intended to contain user-defined parameters.
+     * @return The keccak256 hash of &quot;ERC3156FlashBorrower.onFlashLoan&quot;
+     */
+     ///
+     ///
+     ///
+    function onFlashLoan(
+        address initiator,
+        address token,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata data
+    ) external returns (bytes32);
+}
+</pre></div>
+
+<p>示例参考：</p>
+<div class="highlight"><pre>####################################
+######                        ######
+###### Receiver（承借人）示例  ######
+######                        ######
+####################################
+
+pragma solidity ^0.8.0;
+
+import &quot;./interfaces/IERC20.sol&quot;;
+import &quot;./interfaces/IERC3156FlashBorrower.sol&quot;;
+import &quot;./interfaces/IERC3156FlashLender.sol&quot;;
+
+contract FlashBorrower is IERC3156FlashBorrower {
+    enum Action {NORMAL, OTHER}
+
+    IERC3156FlashLender lender;
+
+    constructor (
+        IERC3156FlashLender lender_
+    ) {
+        lender = lender_;
+    }
+
+    /// @dev ERC-3156 Flash loan callback
+    function onFlashLoan(
+        address initiator,
+        address token,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata data
+    ) external override returns(bytes32) {
+        require(
+            msg.sender == address(lender),
+            &quot;FlashBorrower: Untrusted lender&quot;
+        );
+        require(
+            initiator == address(this),
+            &quot;FlashBorrower: Untrusted loan initiator&quot;
+        );
+        (Action action) = abi.decode(data, (Action));
+        if (action == Action.NORMAL) {
+            // do one thing
+        } else if (action == Action.OTHER) {
+            // do another
+        }
+        return keccak256(&quot;ERC3156FlashBorrower.onFlashLoan&quot;);
+    }
+
+    /// @dev Initiate a flash loan
+    function flashBorrow(
+        address token,
+        uint256 amount
+    ) public {
+        bytes memory data = abi.encode(Action.NORMAL);
+        uint256 _allowance = IERC20(token).allowance(address(this), address(lender));
+        uint256 _fee = lender.flashFee(token, amount);
+        uint256 _repayment = amount + _fee;
+        IERC20(token).approve(address(lender), _allowance + _repayment);
+        lender.flashLoan(this, token, amount, data);
+    }
+}
+
+
+
+
+##################################
+######                      ######
+###### Lender（出借人）示例  ######
+###### (具备   mint   功能)  ######
+######                      ######
+##################################
+
+pragma solidity ^0.8.0;
+
+import &quot;../ERC20.sol&quot;;
+import &quot;../interfaces/IERC20.sol&quot;;
+import &quot;../interfaces/IERC3156FlashBorrower.sol&quot;;
+import &quot;../interfaces/IERC3156FlashLender.sol&quot;;
+
+
+/**
+ * @author Alberto Cuesta Cañada
+ * @dev Extension of {ERC20} that allows flash minting.
+ */
+contract FlashMinter is ERC20, IERC3156FlashLender {
+
+    bytes32 public constant CALLBACK_SUCCESS = keccak256(&quot;ERC3156FlashBorrower.onFlashLoan&quot;);
+    uint256 public fee; //  1 == 0.01 %.
+
+    /**
+     * @param fee_ The percentage of the loan `amount` that needs to be repaid, in addition to `amount`.
+     */
+    constructor (
+        string memory name,
+        string memory symbol,
+        uint256 fee_
+    ) ERC20(name, symbol) {
+        fee = fee_;
+    }
+
+    /**
+     * @dev The amount of currency available to be lent.
+     * @param token The loan currency.
+     * @return The amount of `token` that can be borrowed.
+     */
+    function maxFlashLoan(
+        address token
+    ) external view override returns (uint256) {
+        return type(uint256).max - totalSupply();
+    }
+
+    /**
+     * @dev The fee to be charged for a given loan.
+     * @param token The loan currency. Must match the address of this contract.
+     * @param amount The amount of tokens lent.
+     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
+     */
+    function flashFee(
+        address token,
+        uint256 amount
+    ) external view override returns (uint256) {
+        require(
+            token == address(this),
+            &quot;FlashMinter: Unsupported currency&quot;
+        );
+        return _flashFee(token, amount);
+    }
+
+    /**
+     * @dev Loan `amount` tokens to `receiver`, and takes it back plus a `flashFee` after the ERC3156 callback.
+     * @param receiver The contract receiving the tokens, needs to implement the `onFlashLoan(address user, uint256 amount, uint256 fee, bytes calldata)` interface.
+     * @param token The loan currency. Must match the address of this contract.
+     * @param amount The amount of tokens lent.
+     * @param data A data parameter to be passed on to the `receiver` for any custom use.
+     */
+    function flashLoan(
+        IERC3156FlashBorrower receiver,
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external override returns (bool){
+        require(
+            token == address(this),
+            &quot;FlashMinter: Unsupported currency&quot;
+        );
+        uint256 fee = _flashFee(token, amount);
+        _mint(address(receiver), amount);
+        require(
+            receiver.onFlashLoan(msg.sender, token, amount, fee, data) == CALLBACK_SUCCESS,
+            &quot;FlashMinter: Callback failed&quot;
+        );
+        uint256 _allowance = allowance(address(receiver), address(this));
+        require(
+            _allowance &gt;= (amount + fee),
+            &quot;FlashMinter: Repay not approved&quot;
+        );
+        _approve(address(receiver), address(this), _allowance - (amount + fee));
+        _burn(address(receiver), amount + fee);
+        return true;
+    }
+
+    /**
+     * @dev The fee to be charged for a given loan. Internal function with no checks.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
+     */
+    function _flashFee(
+        address token,
+        uint256 amount
+    ) internal view returns (uint256) {
+        return amount * fee / 10000;
+    }
+}
+
+
+
+
+
+
+##################################
+######                      ######
+######    闪电贷示例参考     ######
+######                      ######
+##################################
+
+
+pragma solidity ^0.8.0;
+
+import &quot;../interfaces/IERC20.sol&quot;;
+import &quot;../interfaces/IERC3156FlashBorrower.sol&quot;;
+import &quot;../interfaces/IERC3156FlashLender.sol&quot;;
+
+
+/**
+ * @author Alberto Cuesta Cañada
+ * @dev Extension of {ERC20} that allows flash lending.
+ */
+contract FlashLender is IERC3156FlashLender {
+
+    bytes32 public constant CALLBACK_SUCCESS = keccak256(&quot;ERC3156FlashBorrower.onFlashLoan&quot;);
+    mapping(address =&gt; bool) public supportedTokens;
+    uint256 public fee; //  1 == 0.01 %.
+
+
+    /**
+     * @param supportedTokens_ Token contracts supported for flash lending.
+     * @param fee_ The percentage of the loan `amount` that needs to be repaid, in addition to `amount`.
+     */
+    constructor(
+        address[] memory supportedTokens_,
+        uint256 fee_
+    ) {
+        for (uint256 i = 0; i &lt; supportedTokens_.length; i++) {
+            supportedTokens[supportedTokens_[i]] = true;
+        }
+        fee = fee_;
+    }
+
+    /**
+     * @dev Loan `amount` tokens to `receiver`, and takes it back plus a `flashFee` after the callback.
+     * @param receiver The contract receiving the tokens, needs to implement the `onFlashLoan(address user, uint256 amount, uint256 fee, bytes calldata)` interface.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @param data A data parameter to be passed on to the `receiver` for any custom use.
+     */
+    function flashLoan(
+        IERC3156FlashBorrower receiver,
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external override returns(bool) {
+        require(
+            supportedTokens[token],
+            &quot;FlashLender: Unsupported currency&quot;
+        );
+        uint256 fee = _flashFee(token, amount);
+        require(
+            IERC20(token).transfer(address(receiver), amount),
+            &quot;FlashLender: Transfer failed&quot;
+        );
+        require(
+            receiver.onFlashLoan(msg.sender, token, amount, fee, data) == CALLBACK_SUCCESS,
+            &quot;FlashLender: Callback failed&quot;
+        );
+        require(
+            IERC20(token).transferFrom(address(receiver), address(this), amount + fee),
+            &quot;FlashLender: Repay failed&quot;
+        );
+        return true;
+    }
+
+    /**
+     * @dev The fee to be charged for a given loan.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
+     */
+    function flashFee(
+        address token,
+        uint256 amount
+    ) external view override returns (uint256) {
+        require(
+            supportedTokens[token],
+            &quot;FlashLender: Unsupported currency&quot;
+        );
+        return _flashFee(token, amount);
+    }
+
+    /**
+     * @dev The fee to be charged for a given loan. Internal function with no checks.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
+     */
+    function _flashFee(
+        address token,
+        uint256 amount
+    ) internal view returns (uint256) {
+        return amount * fee / 10000;
+    }
+
+    /**
+     * @dev The amount of currency available to be lent.
+     * @param token The loan currency.
+     * @return The amount of `token` that can be borrowed.
+     */
+    function maxFlashLoan(
+        address token
+    ) external view override returns (uint256) {
+        return supportedTokens[token] ? IERC20(token).balanceOf(address(this)) : 0;
+    }
+}
+</pre></div>
+
+<h2 id="eip-1620">EIP-1620 (流支付)  资金流代表了在有限时间内连续支付的想法<a class="headerlink" href="#eip-1620" title="Permanent link"></a></h2>
+<p><strong>其中时间是使用块号来测量的，[流] 是主合约中的映射。</strong></p>
+<ol>
+<li>供应商设立资金流合约。</li>
+<li>潜在 付款人 可以与 合约 进行交互，并通过存入所选期间所需的资金来立即开始流支付。</li>
+<li>收款人 可以根据其持续的偿付能力从合约中提取资金。 那是：payment rate * (current block height - starting block height)。</li>
+<li>如果双方承诺签名，流条款（支付率、长度、元数据）可以随时更新。</li>
+<li>任何一方都可以在没有链上共识的情况下在任何时间点停止流。</li>
+<li>如果流支付期间结束并且之前没有被任何一方停止，则收款人有权提取所有存入的资金。</li>
+</ol>
+<p><strong>应用场景</strong></p>
+<ol>
+<li>工资</li>
+<li>订阅</li>
+<li>顾问公司</li>
+<li>CDP</li>
+<li>租</li>
+<li>停车场</li>
+</ol>
+<p>如： 资金不是一次性投资并将钱分给项目开发商，而是保存在智能合约中，该合约根据时间的流逝分配资金。项目开发人员可以在流保持活跃时撤回资金，而如果项目停止，投资者有权收回其初始承诺的很大一部分。</p>
+<p><strong>结构定义</strong></p>
+<div class="highlight"><pre>/// 流结构
+struct Stream {
+  address sender;             为流提供资金的实体的
+  address recipient;          钱被送到哪里
+  address tokenAddress;       用作支付资产的 ERC20 代币的
+  uint256 balance;            流中剩余的总资金
+  Timeframe timeframe;        时间结构
+  Rate rate;                  频率结构
+}
+
+
+/// 时间结构
+struct Timeframe {
+    uint256 start;          流的起始块号
+    uint256 stop;           流的停止块号
+}
+
+
+/// 率结构
+struct Rate {
+  uint256 payment;          可以从sender转入recipient的钱数目
+  uint256 interval;         payment频率 sender -&gt; recipient
+}
+</pre></div>
+
+<p><strong>方法定义</strong></p>
+<div class="highlight"><pre>/// 给定 流Id 和 账户的可用资金
+///
+function balanceOf(uint256 _streamId, address _addr);
+
+/// 获取 流信息
+///
+function getStream(uint256 _streamId) returns (address sender, address recipient, address tokenAddress, uint256 balance, uint256 startBlock, uint256 stopBlock, uint256 payment, uint256 interval);
+
+
+/// 创建 支付流   
+///
+/// 必须允许发送者并行创建多个流。 不应该接受以太币并且只使用 ERC20 兼容的代币。
+///
+/// 触发事件：LogCreate
+///
+function create(address _recipient, address _tokenAddress, uint256 _startBlock, uint256 _stopBlock, uint256 _payment, uint256 _interval);
+
+
+/// 提取全部或部分可用资金
+///
+/// 必须只允许接收者执行此操作
+///
+/// 触发事件：LogWithdraw
+///
+function withdraw(uint256 _streamId, uint256 _funds);
+
+
+/// 通过将资金分配给发送者和接收者来赎回流
+///
+/// 应该允许任何一方操作
+///
+/// 触发事件：LogRedeem
+function redeem(uint256 _streamId);
+
+
+
+/// 表明一方愿意更新流
+///
+/// 应允许任何一方这样做，但不得在未经所有相关方同意的情况下执行
+///
+/// 触发事件：LogConfirmUpdate
+///
+/// 触发事件：最后一个相关方调用此函数时的LogExecuteUpdate
+///
+function update(uint256 _streamId, address _tokenAddress, uint256 _stopBlock, uint256 _payment, uint256 _interval);
+
+
+
+/// 撤销相关方之一提出的更新 (应该是 确认更新吧 ??) 【妈的，标准上定义的名字为 comfirmXxx 而不是 RevokeXxx ...】
+///
+/// 必须允许任何一方这样做
+///
+/// 触发事件：LogRevokeUpdate
+///
+function confirmUpdate(uint256 _streamId, address _tokenAddress, uint256 _stopBlock, uint256 _payment, uint256 _interval);
+
+
+
+
+/// 撤销相关方之一提出的更新 (这个方法我自己加的) 【妈的，标准没有定义 RevokeXxx 但 event 又定义了 event LogRevokeUpdate ...】
+///
+/// 必须允许任何一方这样做
+///
+/// 触发事件：LogRevokeUpdate
+///
+function revokeUpdate(uint256 indexed _streamId, address _tokenAddress, uint256 _stopBlock, uint256 _payment, uint256 _interval);
+</pre></div>
+
+<p><strong>事件定义</strong></p>
+<div class="highlight"><pre>/// 创建流
+///
+/// 必须在create成功调用时触发
+///
+event LogCreate(uint256 indexed _streamId, address indexed _sender, address indexed _recipient, address _tokenAddress, uint256 _startBlock, uint256 _stopBlock, uint256 _payment, uint256 _interval);
+
+
+
+/// 提取款项
+///
+/// 必须在 withdraw 函数成功调用时触发
+///
+event LogWithdraw(uint256 indexed _streamId, address indexed _recipient, uint256 _funds);
+
+
+
+/// 兑换 (赎回)
+///
+/// 必须在 redeem 函数成功调用时触发
+///
+event LogRedeem(uint256 indexed _streamId, address indexed _sender, address indexed _recipient, uint256 _senderBalance, uint256 _recipientBalance);
+
+
+/// 确认更新
+///
+/// 必须在 confirmUpdate 函数成功调用时触发
+///
+event LogConfirmUpdate(uint256 indexed _streamId, address indexed _confirmer, address _newTokenAddress, uint256 _newStopBlock, uint256 _newPayment, uint256 _newInterval);
+
+
+
+/// 撤销更新
+///
+/// 必须在 revokeUpdate 函数成功调用时触发
+///
+event LogRevokeUpdate(uint256 indexed _streamId, address indexed revoker, address _newTokenAddress, uint256 _newStopBlock, uint256 _newPayment, uint256 _newInterval);
+
+
+/// 执行更新
+/// 
+/// 必须在所有相关方批准更新时触发
+/// 
+event LogExecuteUpdate(uint256 indexed _newStreamId, address indexed _sender, address indexed _recipient, address _newTokenAddress, uint256 _newStopBlock, uint256 _newPayment, uint256 _newInterval);
+</pre></div>
+
+<h2 id="eip-820">EIP-820 (伪内省注册合约, 作废)<a class="headerlink" href="#eip-820" title="Permanent link"></a></h2>
+<h2 id="eip-1820-eip-820-eip-1820-eip-777-eip-777-eip-1820">EIP-1820 (伪内省注册合约, 替换 EIP-820)  EIP-1820 从 EIP-777 抽出来的， EIP-777 要配合 EIP-1820 用<a class="headerlink" href="#eip-1820-eip-820-eip-1820-eip-777-eip-777-eip-1820" title="Permanent link"></a></h2>
+<p><strong>【注意】</strong></p>
+<p>EIP-1820 修复了 Solidity 0.5 更新引入的 EIP-165 逻辑中的不兼容性</p>
+<p>【除了这个修复，EIP-1820 在功能上等同于 EIP-820】</p>
+<p><strong>作用</strong></p>
+<blockquote>
+<p>该标准定义了一个通用的注册智能合约，任何地址（合约或普通账户）都可以注册它支持的接口以及由哪个智能合约负责其实现。就是说，实现了可以给任意账户地址注册它的支持接口且将该实现交由某个合约去做。</p>
+</blockquote>
+<ol>
+<li>定义了一个注册表，{智能合约} 和 {常规账户} 可以在其中发布它们实现的功能——直接或通过代理合约。</li>
+<li>【任何人都可以查询此注册表以询问特定地址是否实现了给定接口以及哪个智能合约处理其实现。】</li>
+<li>【该注册表可以部署在任何链上，并在所有链上共享相同的地址。】</li>
+<li>最后 28 个字节为零 ( 0) 的接口被视为ERC-165接口，并且该注册表应将调用转发给合约以查看它是否实现了该接口。</li>
+<li>【该合约还充当ERC-165缓存以减少气体消耗。】</li>
+</ol>
+<p><strong>动机</strong></p>
+<p>在以太坊中有不同的方法来定义伪内省。</p>
+<ol>
+<li>第一个是ERC-165，它有不能被普通账户使用的限制。 (只能检查 合约的 interfaceId，对于普通地址来说不能做检查)</li>
+<li>第二次尝试是使用反向ENS的ERC-672。使用反向ENS有两个问题。首先，它不必要地复杂，其次，ENS仍然是一个由多重签名控制的中心化合约。理论上，这种多重签名将能够修改系统。</li>
+</ol>
+<p>该标准比ERC-672简单得多，并且是完全去中心化的。该标准还为所有链提供了唯一地址。从而解决了为不同链解析正确注册地址的问题。</p>
+<h3 id="_2">代码<a class="headerlink" href="#_2" title="Permanent link"></a></h3>
+<div class="highlight"><pre>/// 合约的标准代码
+
+pragma solidity 0.5.3;
+// IV is value needed to have a vanity address starting with &#39;0x1820&#39;.
+// IV: 53759
+
+/// @dev The interface a contract MUST implement if it is the implementer of
+/// some (other) interface for any address other than itself.
+interface ERC1820ImplementerInterface {
+    /// @notice Indicates whether the contract implements the interface &#39;interfaceHash&#39; for the address &#39;addr&#39; or not.
+    /// @param interfaceHash keccak256 hash of the name of the interface
+    /// @param addr Address for which the contract will implement the interface
+    /// @return ERC1820_ACCEPT_MAGIC only if the contract implements &#39;interfaceHash&#39; for the address &#39;addr&#39;.
+    function canImplementInterfaceForAddress(bytes32 interfaceHash, address addr) external view returns(bytes32);
+}
+
+
+/// @title ERC1820 Pseudo-introspection Registry Contract
+/// @author Jordi Baylina and Jacques Dafflon
+/// @notice This contract is the official implementation of the ERC1820 Registry.
+/// @notice For more details, see https://eips.ethereum.org/EIPS/eip-1820
+contract ERC1820Registry {
+    /// @notice ERC165 Invalid ID.
+    bytes4 constant internal INVALID_ID = 0xffffffff;
+    /// @notice Method ID for the ERC165 supportsInterface method (= `bytes4(keccak256(&#39;supportsInterface(bytes4)&#39;))`).
+    bytes4 constant internal ERC165ID = 0x01ffc9a7;
+    /// @notice Magic value which is returned if a contract implements an interface on behalf of some other address.
+    bytes32 constant internal ERC1820_ACCEPT_MAGIC = keccak256(abi.encodePacked(&quot;ERC1820_ACCEPT_MAGIC&quot;));
+
+    /// @notice mapping from addresses and interface hashes to their implementers.
+    mapping(address =&gt; mapping(bytes32 =&gt; address)) internal interfaces;
+    /// @notice mapping from addresses to their manager.
+    mapping(address =&gt; address) internal managers;
+    /// @notice flag for each address and erc165 interface to indicate if it is cached.
+    mapping(address =&gt; mapping(bytes4 =&gt; bool)) internal erc165Cached;
+
+    /// @notice Indicates a contract is the &#39;implementer&#39; of &#39;interfaceHash&#39; for &#39;addr&#39;.
+    event InterfaceImplementerSet(address indexed addr, bytes32 indexed interfaceHash, address indexed implementer);
+    /// @notice Indicates &#39;newManager&#39; is the address of the new manager for &#39;addr&#39;.
+    event ManagerChanged(address indexed addr, address indexed newManager);
+
+    /// @notice Query if an address implements an interface and through which contract.
+    /// @param _addr Address being queried for the implementer of an interface.
+    /// (If &#39;_addr&#39; is the zero address then &#39;msg.sender&#39; is assumed.)
+    /// @param _interfaceHash Keccak256 hash of the name of the interface as a string.
+    /// E.g., &#39;web3.utils.keccak256(&quot;ERC777TokensRecipient&quot;)&#39; for the &#39;ERC777TokensRecipient&#39; interface.
+    /// @return The address of the contract which implements the interface &#39;_interfaceHash&#39; for &#39;_addr&#39;
+    /// or &#39;0&#39; if &#39;_addr&#39; did not register an implementer for this interface.
+    function getInterfaceImplementer(address _addr, bytes32 _interfaceHash) external view returns (address) {
+        address addr = _addr == address(0) ? msg.sender : _addr;
+        if (isERC165Interface(_interfaceHash)) {
+            bytes4 erc165InterfaceHash = bytes4(_interfaceHash);
+            return implementsERC165Interface(addr, erc165InterfaceHash) ? addr : address(0);
+        }
+        return interfaces[addr][_interfaceHash];
+    }
+
+    /// @notice Sets the contract which implements a specific interface for an address.
+    /// Only the manager defined for that address can set it.
+    /// (Each address is the manager for itself until it sets a new manager.)
+    /// @param _addr Address for which to set the interface.
+    /// (If &#39;_addr&#39; is the zero address then &#39;msg.sender&#39; is assumed.)
+    /// @param _interfaceHash Keccak256 hash of the name of the interface as a string.
+    /// E.g., &#39;web3.utils.keccak256(&quot;ERC777TokensRecipient&quot;)&#39; for the &#39;ERC777TokensRecipient&#39; interface.
+    /// @param _implementer Contract address implementing &#39;_interfaceHash&#39; for &#39;_addr&#39;.
+    function setInterfaceImplementer(address _addr, bytes32 _interfaceHash, address _implementer) external {
+        address addr = _addr == address(0) ? msg.sender : _addr;
+        require(getManager(addr) == msg.sender, &quot;Not the manager&quot;);
+
+        require(!isERC165Interface(_interfaceHash), &quot;Must not be an ERC165 hash&quot;);
+        if (_implementer != address(0) &amp;&amp; _implementer != msg.sender) {
+            require(
+                ERC1820ImplementerInterface(_implementer)
+                    .canImplementInterfaceForAddress(_interfaceHash, addr) == ERC1820_ACCEPT_MAGIC,
+                &quot;Does not implement the interface&quot;
+            );
+        }
+        interfaces[addr][_interfaceHash] = _implementer;
+        emit InterfaceImplementerSet(addr, _interfaceHash, _implementer);
+    }
+
+    /// @notice Sets &#39;_newManager&#39; as manager for &#39;_addr&#39;.
+    /// The new manager will be able to call &#39;setInterfaceImplementer&#39; for &#39;_addr&#39;.
+    /// @param _addr Address for which to set the new manager.
+    /// @param _newManager Address of the new manager for &#39;addr&#39;. (Pass &#39;0x0&#39; to reset the manager to &#39;_addr&#39;.)
+    function setManager(address _addr, address _newManager) external {
+        require(getManager(_addr) == msg.sender, &quot;Not the manager&quot;);
+        managers[_addr] = _newManager == _addr ? address(0) : _newManager;
+        emit ManagerChanged(_addr, _newManager);
+    }
+
+    /// @notice Get the manager of an address.
+    /// @param _addr Address for which to return the manager.
+    /// @return Address of the manager for a given address.
+    function getManager(address _addr) public view returns(address) {
+        // By default the manager of an address is the same address
+        if (managers[_addr] == address(0)) {
+            return _addr;
+        } else {
+            return managers[_addr];
+        }
+    }
+
+    /// @notice Compute the keccak256 hash of an interface given its name.
+    /// @param _interfaceName Name of the interface.
+    /// @return The keccak256 hash of an interface name.
+    function interfaceHash(string calldata _interfaceName) external pure returns(bytes32) {
+        return keccak256(abi.encodePacked(_interfaceName));
+    }
+
+    /* --- ERC165 Related Functions --- */
+    /* --- Developed in collaboration with William Entriken. --- */
+
+    /// @notice Updates the cache with whether the contract implements an ERC165 interface or not.
+    /// @param _contract Address of the contract for which to update the cache.
+    /// @param _interfaceId ERC165 interface for which to update the cache.
+    function updateERC165Cache(address _contract, bytes4 _interfaceId) external {
+        interfaces[_contract][_interfaceId] = implementsERC165InterfaceNoCache(
+            _contract, _interfaceId) ? _contract : address(0);
+        erc165Cached[_contract][_interfaceId] = true;
+    }
+
+    /// @notice Checks whether a contract implements an ERC165 interface or not.
+    //  If the result is not cached a direct lookup on the contract address is performed.
+    //  If the result is not cached or the cached value is out-of-date, the cache MUST be updated manually by calling
+    //  &#39;updateERC165Cache&#39; with the contract address.
+    /// @param _contract Address of the contract to check.
+    /// @param _interfaceId ERC165 interface to check.
+    /// @return True if &#39;_contract&#39; implements &#39;_interfaceId&#39;, false otherwise.
+    function implementsERC165Interface(address _contract, bytes4 _interfaceId) public view returns (bool) {
+        if (!erc165Cached[_contract][_interfaceId]) {
+            return implementsERC165InterfaceNoCache(_contract, _interfaceId);
+        }
+        return interfaces[_contract][_interfaceId] == _contract;
+    }
+
+    /// @notice Checks whether a contract implements an ERC165 interface or not without using nor updating the cache.
+    /// @param _contract Address of the contract to check.
+    /// @param _interfaceId ERC165 interface to check.
+    /// @return True if &#39;_contract&#39; implements &#39;_interfaceId&#39;, false otherwise.
+    function implementsERC165InterfaceNoCache(address _contract, bytes4 _interfaceId) public view returns (bool) {
+        uint256 success;
+        uint256 result;
+
+        (success, result) = noThrowCall(_contract, ERC165ID);
+        if (success == 0 || result == 0) {
+            return false;
+        }
+
+        (success, result) = noThrowCall(_contract, INVALID_ID);
+        if (success == 0 || result != 0) {
+            return false;
+        }
+
+        (success, result) = noThrowCall(_contract, _interfaceId);
+        if (success == 1 &amp;&amp; result == 1) {
+            return true;
+        }
+        return false;
+    }
+
+    /// @notice Checks whether the hash is a ERC165 interface (ending with 28 zeroes) or not.
+    /// @param _interfaceHash The hash to check.
+    /// @return True if &#39;_interfaceHash&#39; is an ERC165 interface (ending with 28 zeroes), false otherwise.
+    function isERC165Interface(bytes32 _interfaceHash) internal pure returns (bool) {
+        return _interfaceHash &amp; 0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF == 0;
+    }
+
+    /// @dev Make a call on a contract without throwing if the function does not exist.
+    function noThrowCall(address _contract, bytes4 _interfaceId)
+        internal view returns (uint256 success, uint256 result)
+    {
+        bytes4 erc165ID = ERC165ID;
+
+        assembly {
+            let x := mload(0x40)               // Find empty storage location using &quot;free memory pointer&quot;
+            mstore(x, erc165ID)                // Place signature at beginning of empty storage
+            mstore(add(x, 0x04), _interfaceId) // Place first argument directly next to signature
+
+            success := staticcall(
+                30000,                         // 30k gas
+                _contract,                     // To addr
+                x,                             // Inputs are stored at location x
+                0x24,                          // Inputs are 36 (4 + 32) bytes long
+                x,                             // Store output over input (saves space)
+                0x20                           // Outputs are 32 bytes long
+            )
+
+            result := mload(x)                 // Load the result
+        }
+    }
+}
+
+
+
+/// 任何兼容 ethereum 的链上必须使用下列字节码进行部署
+
+
+0xf90a388085174876e800830c35008080b909e5608060405234801561001057600080fd5b506109c5806100206000396000f3fe608060405234801561001057600080fd5b50600436106100a5576000357c010000000000000000000000000000000000000000000000000000000090048063a41e7d5111610078578063a41e7d51146101d4578063aabbb8ca1461020a578063b705676514610236578063f712f3e814610280576100a5565b806329965a1d146100aa5780633d584063146100e25780635df8122f1461012457806365ba36c114610152575b600080fd5b6100e0600480360360608110156100c057600080fd5b50600160a060020a038135811691602081013591604090910135166102b6565b005b610108600480360360208110156100f857600080fd5b5035600160a060020a0316610570565b60408051600160a060020a039092168252519081900360200190f35b6100e06004803603604081101561013a57600080fd5b50600160a060020a03813581169160200135166105bc565b6101c26004803603602081101561016857600080fd5b81019060208101813564010000000081111561018357600080fd5b82018360208201111561019557600080fd5b803590602001918460018302840111640100000000831117156101b757600080fd5b5090925090506106b3565b60408051918252519081900360200190f35b6100e0600480360360408110156101ea57600080fd5b508035600160a060020a03169060200135600160e060020a0319166106ee565b6101086004803603604081101561022057600080fd5b50600160a060020a038135169060200135610778565b61026c6004803603604081101561024c57600080fd5b508035600160a060020a03169060200135600160e060020a0319166107ef565b604080519115158252519081900360200190f35b61026c6004803603604081101561029657600080fd5b508035600160a060020a03169060200135600160e060020a0319166108aa565b6000600160a060020a038416156102cd57836102cf565b335b9050336102db82610570565b600160a060020a031614610339576040805160e560020a62461bcd02815260206004820152600f60248201527f4e6f7420746865206d616e616765720000000000000000000000000000000000604482015290519081900360640190fd5b6103428361092a565b15610397576040805160e560020a62461bcd02815260206004820152601a60248201527f4d757374206e6f7420626520616e204552433136352068617368000000000000604482015290519081900360640190fd5b600160a060020a038216158015906103b85750600160a060020a0382163314155b156104ff5760405160200180807f455243313832305f4143434550545f4d4147494300000000000000000000000081525060140190506040516020818303038152906040528051906020012082600160a060020a031663249cb3fa85846040518363ffffffff167c01000000000000000000000000000000000000000000000000000000000281526004018083815260200182600160a060020a0316600160a060020a031681526020019250505060206040518083038186803b15801561047e57600080fd5b505afa158015610492573d6000803e3d6000fd5b505050506040513d60208110156104a857600080fd5b5051146104ff576040805160e560020a62461bcd02815260206004820181905260248201527f446f6573206e6f7420696d706c656d656e742074686520696e74657266616365604482015290519081900360640190fd5b600160a060020a03818116600081815260208181526040808320888452909152808220805473ffffffffffffffffffffffffffffffffffffffff19169487169485179055518692917f93baa6efbd2244243bfee6ce4cfdd1d04fc4c0e9a786abd3a41313bd352db15391a450505050565b600160a060020a03818116600090815260016020526040812054909116151561059a5750806105b7565b50600160a060020a03808216600090815260016020526040902054165b919050565b336105c683610570565b600160a060020a031614610624576040805160e560020a62461bcd02815260206004820152600f60248201527f4e6f7420746865206d616e616765720000000000000000000000000000000000604482015290519081900360640190fd5b81600160a060020a031681600160a060020a0316146106435780610646565b60005b600160a060020a03838116600081815260016020526040808220805473ffffffffffffffffffffffffffffffffffffffff19169585169590951790945592519184169290917f605c2dbf762e5f7d60a546d42e7205dcb1b011ebc62a61736a57c9089d3a43509190a35050565b600082826040516020018083838082843780830192505050925050506040516020818303038152906040528051906020012090505b92915050565b6106f882826107ef565b610703576000610705565b815b600160a060020a03928316600081815260208181526040808320600160e060020a031996909616808452958252808320805473ffffffffffffffffffffffffffffffffffffffff19169590971694909417909555908152600284528181209281529190925220805460ff19166001179055565b600080600160a060020a038416156107905783610792565b335b905061079d8361092a565b156107c357826107ad82826108aa565b6107b85760006107ba565b815b925050506106e8565b600160a060020a0390811660009081526020818152604080832086845290915290205416905092915050565b6000808061081d857f01ffc9a70000000000000000000000000000000000000000000000000000000061094c565b909250905081158061082d575080155b1561083d576000925050506106e8565b61084f85600160e060020a031961094c565b909250905081158061086057508015155b15610870576000925050506106e8565b61087a858561094c565b909250905060018214801561088f5750806001145b1561089f576001925050506106e8565b506000949350505050565b600160a060020a0382166000908152600260209081526040808320600160e060020a03198516845290915281205460ff1615156108f2576108eb83836107ef565b90506106e8565b50600160a060020a03808316600081815260208181526040808320600160e060020a0319871684529091529020549091161492915050565b7bffffffffffffffffffffffffffffffffffffffffffffffffffffffff161590565b6040517f01ffc9a7000000000000000000000000000000000000000000000000000000008082526004820183905260009182919060208160248189617530fa90519096909550935050505056fea165627a7a72305820377f4a2d4301ede9949f163f319021a6e9c687c292a5e2b2c4734c126b524e6c00291ba01820182018201820182018201820182018201820182018201820182018201820a01820182018201820182018201820182018201820182018201820182018201820
+
+
+
+/// 该合约将使用无密钥部署方法（也称为Nick的方法）进行部署，该方法依赖于一次性地址。
+
+一次性地址为  0xa990077c3205cbDf861e17Fa532eeB069cE9fF96   该帐户是通过对其交易签名进行逆向工程而生成的。这样私钥就没人知道了，但是却知道它是部署交易的有效签名者。
+
+
+/// 部署在每条链上都必须是下列地址
+
+
+0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24
+</pre></div>
+
+<p><strong>主要接口</strong></p>
+<ol>
+<li>setInterfaceImplementer(address addr, bytes32 interfaceHash, address implementer) </li>
+</ol>
+<p>用来设置地址 addr 的接口 interfaceHash 接口名称的 keccak256 Hash 由哪个合约实现 implementer </p>
+<ol start="2">
+<li>getInterfaceImplementer(address addr, bytes32 interfaceHash) external view returns (address) </li>
+</ol>
+<p>这个函数用来查询地址 addr 的接口由哪个合约实现</p>
+<p>setInterfaceImplementer 函数会参数信息记录到下面这个 interfaces 映射里：</p>
+<div class="highlight"><pre>mapping(address =&gt; mapping(bytes32 =&gt; address)) interfaces;  // 地址 =&gt; 接口 =&gt; 实现地址
+</pre></div>
+
+<p>相对应的 getInterfaceImplementer() 通过 interfaces 这个 mapping 来获得接口的实现。</p>
+<h2 id="eip-2429">EIP 2429 (秘密多重签名恢复)<a class="headerlink" href="#eip-2429" title="Permanent link"></a></h2></article></body></html>
