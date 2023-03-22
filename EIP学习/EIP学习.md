@@ -270,7 +270,7 @@ interface ERC721Metadata {
 /// 枚举接口包含了按索引获取到对应的代币，可以提供NFTs的完整列表，以便NFT可被发现。
 
 interface ERC721Enumerable {
-    
+
     /// @notice  NFTs 计数
     /// @return  返回合约有效跟踪（所有者不为零地址）的 NFT数量
     function totalSupply() external view returns (uint256);
@@ -392,7 +392,7 @@ function _beforeTokenTransfer(address from,address to,uint256 tokenId
 ```
 
 
-## EIP-5006 (租赁NFT)  针对 EIP-1155 的NFT租赁标准
+## EIP-5006 (租赁NFT)  针对 [EIP-1155](#EIP-1155) 的NFT租赁标准
 
 EIP-5006 的核心价值则是将进一步强化围绕用户创作应用场景上所有权和使用权的分离，明确NFT扩大应用价值的方向。
 
@@ -1754,7 +1754,9 @@ function afterDeposit(uint256 assets, uint256 shares) internal virtual {}
 Vault 的接口是为聚合器设计的。
 
 
-## ERC-1155 (多代币标准, 多重通证标准)
+<span id="EIP-1155" />
+
+## EIP-1155 (ERC-1155, 多代币标准, 多重通证标准)
 
 【注意】： 实现ERC-1155标准的智能合约必须实现ERC-165标准中的supportsInterface接口函数，并当其参数interfaceID传入值为0xd9b67a26时，返回true
 
@@ -1762,110 +1764,111 @@ Vault 的接口是为聚合器设计的。
 pragma solidity ^0.5.9;
 
 /**
-    @title ERC-1155 Multi Token Standard
-    @dev See https://learnblockchain.cn/docs/eips/eip-1155.html
-    Note: The ERC-165 identifier for this interface is 0xd9b67a26.
- */
+ @title ERC-1155多代币标准
+ @dev 详见 https://learnblockchain.cn/docs/eips/eip-1155.html
+ 注意：此接口的ERC-165标识符为 0xd9b67a26。
+*/
 interface ERC1155 /* is ERC165 */ {
+
     /**
-        @dev Either `TransferSingle` or `TransferBatch` MUST emit when tokens are transferred, including zero value transfers as well as minting or burning (see "Safe Transfer Rules" section of the standard).
-        The `_operator` argument MUST be the address of an account/contract that is approved to make the transfer (SHOULD be msg.sender).
-        The `_from` argument MUST be the address of the holder whose balance is decreased.
-        The `_to` argument MUST be the address of the recipient whose balance is increased.
-        The `_id` argument MUST be the token type being transferred.
-        The `_value` argument MUST be the number of tokens the holder balance is decreased by and match what the recipient balance is increased by.
-        When minting/creating tokens, the `_from` argument MUST be set to `0x0` (i.e. zero address).
-        When burning/destroying tokens, the `_to` argument MUST be set to `0x0` (i.e. zero address).
+        @dev 当代币被转移时，无论是零值转移还是铸造或销毁，必须发出“TransferSingle”或“TransferBatch”事件（请参见标准的“安全转移规则”部分）。
+        _operator参数必须是已获准进行转移的账户/合约的地址（应为msg.sender）。
+        _from参数必须是减少余额的持有者的地址。
+        _to参数必须是增加余额的收件人的地址。
+        _id参数必须是正在转移的代币类型。
+        _value参数必须是持有者余额减少的代币数量，并与接收方余额增加的代币数量相匹配。
+        在铸造/创建代币时，_from参数必须设置为“0x0”（即零地址）。
+        在销毁代币时，_to参数必须设置为“0x0”（即零地址）。
     */
     event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
 
     /**
-        @dev Either `TransferSingle` or `TransferBatch` MUST emit when tokens are transferred, including zero value transfers as well as minting or burning (see "Safe Transfer Rules" section of the standard).
-        The `_operator` argument MUST be the address of an account/contract that is approved to make the transfer (SHOULD be msg.sender).
-        The `_from` argument MUST be the address of the holder whose balance is decreased.
-        The `_to` argument MUST be the address of the recipient whose balance is increased.
-        The `_ids` argument MUST be the list of tokens being transferred.
-        The `_values` argument MUST be the list of number of tokens (matching the list and order of tokens specified in _ids) the holder balance is decreased by and match what the recipient balance is increased by.
-        When minting/creating tokens, the `_from` argument MUST be set to `0x0` (i.e. zero address).
-        When burning/destroying tokens, the `_to` argument MUST be set to `0x0` (i.e. zero address).
+        @dev 当代币被转移时，无论是零值转移还是铸造或销毁，必须发出“TransferSingle”或“TransferBatch”事件（请参见标准的“安全转移规则”部分）。
+        _operator参数必须是已获准进行转移的账户/合约的地址（应为msg.sender）。
+        _from参数必须是减少余额的持有者的地址。
+        _to参数必须是增加余额的收件人的地址。
+        _ids参数必须是正在转移的代币列表。
+        _values参数必须是持有者余额减少的代币数量列表（与_ids参数的列表和顺序匹配），并与接收方余额增加的代币数量相匹配。
+        在铸造/创建代币时，_from参数必须设置为“0x0”（即零地址）。
+        在销毁代币时，_to参数必须设置为“0x0”（即零地址）。
     */
     event TransferBatch(address indexed _operator, address indexed _from, address indexed _to, uint256[] _ids, uint256[] _values);
 
     /**
-        @dev MUST emit when approval for a second party/operator address to manage all tokens for an owner address is enabled or disabled (absence of an event assumes disabled).
+        @dev 必须在启用或禁用第二方/操作员地址代表所有者地址管理所有代币时发出（没有事件意味着禁用）。
     */
     event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved);
 
     /**
-        @dev MUST emit when the URI is updated for a token ID.
-        URIs are defined in RFC 3986.
-        The URI MUST point to a JSON file that conforms to the "ERC-1155 Metadata URI JSON Schema".
+    @dev 当令牌ID的URI更新时，必须发出。
+    URI在RFC 3986中定义。
+    URI必须指向符合“ERC-1155元数据URI JSON模式”的JSON文件。
     */
     event URI(string _value, uint256 indexed _id);
 
     /**
-        @notice Transfers `_value` amount of an `_id` from the `_from` address to the `_to` address specified (with safety call).
-        @dev Caller must be approved to manage the tokens being transferred out of the `_from` account (see "Approval" section of the standard).
-        MUST revert if `_to` is the zero address.
-        MUST revert if balance of holder for token `_id` is lower than the `_value` sent.
-        MUST revert on any other error.
-        MUST emit the `TransferSingle` event to reflect the balance change (see "Safe Transfer Rules" section of the standard).
-        After the above conditions are met, this function MUST check if `_to` is a smart contract (e.g. code size > 0). If so, it MUST call `onERC1155Received` on `_to` and act appropriately (see "Safe Transfer Rules" section of the standard).
-        @param _from    Source address
-        @param _to      Target address
-        @param _id      ID of the token type
-        @param _value   Transfer amount
-        @param _data    Additional data with no specified format, MUST be sent unaltered in call to `onERC1155Received` on `_to`
+        @notice 将指定的 _id 中的 _value 数量从 _from 地址转移到 _to 地址（包含安全调用）。
+        @dev 调用者必须被授权管理从 _from 账户中转移的代币（请参见标准中的“Approval”部分）。
+        如果 _to 是零地址，必须引发错误。
+        如果持有者对于代币 _id 的余额低于发送的 _value，必须引发错误。
+        在任何其他错误情况下，都必须引发错误。
+        必须发出 TransferSingle 事件以反映余额变化（请参见标准中的“安全转移规则”部分）。
+        在满足上述条件之后，此函数必须检查 _to 是否为智能合约（例如代码大小>0）。 如果是，它必须在 _to 上调用 onERC1155Received     并相应地处理（请参见标准中的“安全转移规则”部分）。
+        @param _from 源地址
+        @param _to 目标地址
+        @param _id 代币类型的 ID
+        @param _value 转移数量
+        @param _data 没有特定格式的附加数据，必须在调用 _to 上的 onERC1155Received 时不改变地发送
     */
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) external;
 
     /**
-        @notice Transfers `_values` amount(s) of `_ids` from the `_from` address to the `_to` address specified (with safety call).
-        @dev Caller must be approved to manage the tokens being transferred out of the `_from` account (see "Approval" section of the standard).
-        MUST revert if `_to` is the zero address.
-        MUST revert if length of `_ids` is not the same as length of `_values`.
-        MUST revert if any of the balance(s) of the holder(s) for token(s) in `_ids` is lower than the respective amount(s) in `_values` sent to the recipient.
-        MUST revert on any other error.
-        MUST emit `TransferSingle` or `TransferBatch` event(s) such that all the balance changes are reflected (see "Safe Transfer Rules" section of the standard).
-        Balance changes and events MUST follow the ordering of the arrays (_ids[0]/_values[0] before _ids[1]/_values[1], etc).
-        After the above conditions for the transfer(s) in the batch are met, this function MUST check if `_to` is a smart contract (e.g. code size > 0). If so, it MUST call the relevant `ERC1155TokenReceiver` hook(s) on `_to` and act appropriately (see "Safe Transfer Rules" section of the standard).
-        @param _from    Source address
-        @param _to      Target address
-        @param _ids     IDs of each token type (order and length must match _values array)
-        @param _values  Transfer amounts per token type (order and length must match _ids array)
-        @param _data    Additional data with no specified format, MUST be sent unaltered in call to the `ERC1155TokenReceiver` hook(s) on `_to`
+        @notice 将指定的 _ids 中的 _values 数量的代币从 _from 地址转移到 _to 地址（包含安全调用）。
+        @dev 调用者必须被授权管理从 _from 账户中转移的代币（请参见标准中的“Approval”部分）。
+        如果 _to 是零地址，必须引发错误。
+        如果 _ids 的长度与 _values 的长度不同，必须引发错误。
+        如果 _ids 中任何代币的持有者的余额低于发送到接收者的相应金额 _values，必须引发错误。
+        在任何其他错误情况下，都必须引发错误。
+        必须发出 TransferSingle 或 TransferBatch 事件以反映所有余额变化（请参见标准中的“安全转移规则”部分）。
+        余额变化和事件必须遵循数组的顺序（_ids[0]/_values[0] 在 _ids[1]/_values[1] 之前，依此类推）。
+        在满足批量转移的上述条件之后，此函数必须检查 _to 是否为智能合约（例如代码大小>0）。 如果是，它必须在 _to 上调用相应的 ERC1155TokenReceiver      钩子，并相应地处理（请参见标准中的“安全转移规则”部分）。
+        @param _from 源地址
+        @param _to 目标地址
+        @param _ids 每种代币的 ID（顺序和长度必须与 _values 数组匹配）
+        @param _values 每种代币的转移金额（顺序和长度必须与 _ids 数组匹配）
+        @param _data 没有特定格式的附加数据，必须在调用 _to 上的 ERC1155TokenReceiver 钩子时不改变地发送
     */
     function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) external;
 
     /**
-        @notice Get the balance of an account's tokens.
-        @param _owner  The address of the token holder
-        @param _id     ID of the token
-        @return        The _owner's balance of the token type requested
-     */
+        @notice 获取账户的代币余额。
+        @param _owner 代币持有者的地址
+        @param _id 代币的ID
+        @return _owner 持有的该代币类型的余额
+    */
     function balanceOf(address _owner, uint256 _id) external view returns (uint256);
 
     /**
-        @notice Get the balance of multiple account/token pairs
-        @param _owners The addresses of the token holders
-        @param _ids    ID of the tokens
-        @return        The _owner's balance of the token types requested (i.e. balance for each (owner, id) pair)
-     */
+        @notice 获取多个账户/代币对的余额
+        @param _owners 代币持有者的地址
+        @param _ids 代币的ID
+        @return _owners 持有的所请求代币类型的余额（即每个（持有者，ID）对应的余额）
+    */
     function balanceOfBatch(address[] calldata _owners, uint256[] calldata _ids) external view returns (uint256[] memory);
 
     /**
-        @notice Enable or disable approval for a third party ("operator") to manage all of the caller's tokens.
-        @dev MUST emit the ApprovalForAll event on success.
-        @param _operator  Address to add to the set of authorized operators
-        @param _approved  True if the operator is approved, false to revoke approval
+        @notice 启用或禁用第三方（"操作员"）管理调用者所有代币的批准。
+        @dev 如果成功，必须发出ApprovalForAll事件。
+        @param _operator 要添加到已授权操作员集合中的地址
+        @param _approved 如果授权则为True，撤销授权则为False
     */
     function setApprovalForAll(address _operator, bool _approved) external;
 
     /**
-        @notice Queries the approval status of an operator for a given owner.
-        @param _owner     The owner of the tokens
-        @param _operator  Address of authorized operator
-        @return           True if the operator is approved, false if not
+        @notice 查询操作员是否已被授权管理特定账户的代币。
+        @param _owner 代币所有者的地址
+        @param _operator 授权的操作员地址
+        @return 如果操作员已获授权则返回true，否则返回false
     */
     function isApprovedForAll(address _owner, address _operator) external view returns (bool);
 }
@@ -1881,36 +1884,37 @@ interface ERC1155 /* is ERC165 */ {
 
 
 /**
-    Note: The ERC-165 identifier for this interface is 0x4e2312e0.
+注意：该接口的 ERC-165 标识符为 0x4e2312e0 。
 */
 interface ERC1155TokenReceiver {
+    
     /**
-        @notice Handle the receipt of a single ERC1155 token type.
-        @dev An ERC1155-compliant smart contract MUST call this function on the token recipient contract, at the end of a `safeTransferFrom` after the balance has been updated.
-        This function MUST return `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))` (i.e. 0xf23a6e61) if it accepts the transfer.
-        This function MUST revert if it rejects the transfer.
-        Return of any other value than the prescribed keccak256 generated value MUST result in the transaction being reverted by the caller.
-        @param _operator  The address which initiated the transfer (i.e. msg.sender)
-        @param _from      The address which previously owned the token
-        @param _id        The ID of the token being transferred
-        @param _value     The amount of tokens being transferred
-        @param _data      Additional data with no specified format
-        @return           `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`
+        @notice 处理单个 ERC1155 代币类型的接收。
+        @dev 一个符合 ERC1155 标准的智能合约在 safeTransferFrom 函数中更新了代币余额之后，必须调用接收代币的合约的该函数。
+        如果该函数接受该转移，则必须返回 bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))（即 0xf23a6e61）。
+        如果该函数拒绝该转移，则必须回滚。
+        返回任何不是规定的 keccak256 生成值的其他值都必须由调用方回滚交易。
+        @param _operator 触发转移的地址（即 msg.sender）
+        @param _from 先前拥有代币的地址
+        @param _id 被转移代币的 ID
+        @param _value 被转移代币的数量
+        @param _data 没有指定格式的附加数据
+        @return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))
     */
     function onERC1155Received(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data) external returns(bytes4);
 
     /**
-        @notice Handle the receipt of multiple ERC1155 token types.
-        @dev An ERC1155-compliant smart contract MUST call this function on the token recipient contract, at the end of a `safeBatchTransferFrom` after the balances have been updated.
-        This function MUST return `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))` (i.e. 0xbc197c81) if it accepts the transfer(s).
-        This function MUST revert if it rejects the transfer(s).
-        Return of any other value than the prescribed keccak256 generated value MUST result in the transaction being reverted by the caller.
-        @param _operator  The address which initiated the batch transfer (i.e. msg.sender)
-        @param _from      The address which previously owned the token
-        @param _ids       An array containing ids of each token being transferred (order and length must match _values array)
-        @param _values    An array containing amounts of each token being transferred (order and length must match _ids array)
-        @param _data      Additional data with no specified format
-        @return           `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`
+        @notice 处理多个 ERC1155 代币类型的接收。
+        @dev 一个符合 ERC1155 标准的智能合约在 safeBatchTransferFrom 函数中更新了代币余额之后，必须调用接收代币的合约的该函数。
+        如果该函数接受该转移，则必须返回 bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))（即 0xbc197c81）。
+        如果该函数拒绝该转移，则必须回滚。
+        返回任何不是规定的 keccak256 生成值的其他值都必须由调用方回滚交易。
+        @param _operator 触发批量转移的地址（即 msg.sender）
+        @param _from 先前拥有代币的地址
+        @param _ids 包含每个被转移代币的 ID 的数组（顺序和长度必须与 _values 数组匹配）
+        @param _values 包含每个被转移代币数量的数组（顺序和长度必须与 _ids 数组匹配）
+        @param _data 没有指定格式的附加数据
+        @return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))
     */
     function onERC1155BatchReceived(address _operator, address _from, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) external returns(bytes4);
 }
@@ -1928,7 +1932,7 @@ interface ERC1155TokenReceiver {
 
 场景1：接收者不是智能合约
 
-onERC1155Received 和 onERC1155BatchReceived 不应该被外部账户（Externally Owned Account简称EOA）调用。 只能是合约接收。
+onERC1155Received 和 onERC1155BatchReceived 不应该被外部账户（Externally Owned Account简称EOA）调用。 【只能是合约接收】。
 
 
 
@@ -1960,19 +1964,19 @@ onERC1155Received 和 onERC1155BatchReceived 不应该在除挖矿或转账之�
 场景6：接收合约实现了ERC1155TokenReceiver接口函数，并且接收者有且仅有一个账户的余额发生了变化（比如safeTransferFrom被调用）。
 
 
- - 转账交易中账户余额的更新必须在 ERC1155TokenReceiver 接口函数在接收合约处被调用之前完成。
- - 该笔转账的事件必须在 ERC1155TokenReceiver 接口函数在接收合约处被调用前触发，并且事件要反映账户余额的变化。
- - onERC1155Received 或 onERC1155BatchReceived 必须在接收合约中被调用。
- - onERC1155Received 必须在接收合约中被调用并遵循其调用规则。 关于调用onERC1155Received必须遵循的规则，更多细节请参看“onERC1155Received rules”。
+ - 转账交易中账户余额的更新 必须在 ERC1155TokenReceiver 接口函数在接收合约处被调用 之前 完成。
+ - 该笔转账的事件必须在 ERC1155TokenReceiver 接口函数在接收合约处 被调用前 触发，并且事件要反映账户余额的变化。
+ - onERC1155Received 或 onERC1155BatchReceived 必须在 接收合约中 被调用。
+ - onERC1155Received 必须在接收合约中被调用并遵循其调用规则。 关于调用 onERC1155Received 必须遵循的规则，更多细节请参看“onERC1155Received rules”。
  - onERC1155BatchReceived 或许（并非一定）会在接收合约中被调用，一旦被调用则必须遵循其调用规则。 关于调用onERC1155BatchReceived必须遵循的规则，更多细节请参看“onERC1155BatchReceived rules”。
 
 
 
 场景7：接收合约实现了ERC1155TokenReceiver接口函数，并且接收者有多个账户余额发生了变化（比如 safeBatchTransferFrom 被调用）。
 
- - 转账交易中所有账户余额的更新必须在 ERC1155TokenReceiver 接口函数在接收合约中被调用之前完成。
+ - 转账交易中所有账户余额 的更新必须在 ERC1155TokenReceiver 接口函数在接收合约中被调用 之前 完成。
  - 所有的转账事件必须在 ERC1155TokenReceiver 接口函数在接收合约中被调用前触发，并且事件要反映账户的余额变化。
- - 对每一个账户余额的变动，onERC1155Received 或 onERC1155BatchReceived 都必须在接收合约中被调用。 对每一个接口函数的返回 魔值（return magic value）必须进行检查和处理，并遵循 "onERC1155Received rules" 和 "onERC1155BatchReceived rules" 中的规则。
+ - 对每一个账户余额的变动，onERC1155Received 或 onERC1155BatchReceived 都必须在 接收合约中 被调用。 对每一个接口函数的返回 魔值（return magic value）必须进行检查和处理，并遵循 "onERC1155Received rules" 和 "onERC1155BatchReceived rules" 中的规则。
  - onERC1155BatchReceived 必须在接收合约处被调用并遵循其调用规则。 关于调用onERC1155BatchReceived必须遵循的规则，更多细节请参看“onERC1155BatchReceived rules”。
  - onERC1155Received 或许（并非一定）会在接收合约处被调用，如调用则必须遵循其调用规则。 关于调用onERC1155Received必须遵循的规则，更多细节请参看“onERC1155Received rules”。
 
@@ -1989,7 +1993,7 @@ onERC1155Received 和 onERC1155BatchReceived 不应该在除挖矿或转账之�
 场景9：用户通过非标准API函数转账通证。所谓的非标准API函数是指除 safeTransferFrom 和 safeBatchTransferFrom 以外的API函数。
 
  - 在此场景中，转账交易里所有发生的账户余额变化和触发的事件消息都必须遵循标准API被调用时所遵循的规则。 即用户仍然可以通过标准函数查询余额，并且所查询到的结果和调用 TransferSingle 及 TransferBatch 事件得到的结果一样。
- - 如果接收者是智能合约，ERC1155TokenReceiver 接口函数仍然必须被调用，且返回值必须与调用标准函数时一样。 当接收者是智能合约，但该合约并未实现 ERC1155TokenReceiver 接口函数时，safeTransferFrom 或 safeBatchTransferFrom 一定会回滚交易。但对非标准函数而言，它可能（并非一定）会继续执行后续的操作而不回滚交易。 更多细节请参看“Implementation specific transfer API rules”。
+ - 如果接收者是 智能合约，ERC1155TokenReceiver 接口函数仍然必须被调用，且返回值必须与调用标准函数时一样。 当接收者是 智能合约，但该合约并未实现 ERC1155TokenReceiver 接口函数时，safeTransferFrom 或 safeBatchTransferFrom 一定会回滚交易。但对非标准函数而言，它可能（并非一定）会继续执行后续的操作而不回滚交易。 更多细节请参看“Implementation specific transfer API rules”。
 
 
 /// 上述各个规则请细看 "https://u.naturaldao.io/be/chapter4/4.7%20EIP-1155%20%E5%A4%9A%E9%87%8D%E9%80%9A%E8%AF%81%E6%A0%87%E5%87%86" 和 "https://eips.ethereum.org/EIPS/eip-1155"。
@@ -2011,10 +2015,17 @@ function supportsInterface(bytes4 interfaceID) external view returns (bool) {
 
 /// 各个接口的 methodId 
 
-bytes4 constant public ERC1155_ERC165 = 0xd9b67a26; // ERC-165 identifier for the main token standard.
-bytes4 constant public ERC1155_ERC165_TOKENRECEIVER = 0x4e2312e0; // ERC-165 identifier for the `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")) ^ bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
-bytes4 constant public ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
-bytes4 constant public ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
+bytes4 constant public ERC1155_ERC165 = 0xd9b67a26; 
+// ERC-165 identifier for the main token standard.
+
+bytes4 constant public ERC1155_ERC165_TOKENRECEIVER = 0x4e2312e0; 
+// ERC-165 identifier for the `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")) ^ bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
+
+bytes4 constant public ERC1155_ACCEPTED = 0xf23a6e61; 
+// Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
+
+bytes4 constant public ERC1155_BATCH_ACCEPTED = 0xbc197c81; 
+// Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
 
 
 
@@ -2040,9 +2051,11 @@ uint128 indexNFT = 50;
 
 uint256 baseTokenFT = 54321 << 128;
 
-balanceOf(baseTokenNFT, msg.sender); // Get balance of the base token for non-fungible set 12345 (this MAY be used to get balance of the user for all of this token set if the implementation wishes as a convenience).
-balanceOf(baseTokenNFT + indexNFT, msg.sender); // Get balance of the token at index 50 for non-fungible set 12345 (should be 1 if user owns the individual non-fungible token or 0 if they do not).
-balanceOf(baseTokenFT, msg.sender); // Get balance of the fungible base token 54321.
+balanceOf(baseTokenNFT, msg.sender); // 获取非同质代币集合 12345 的基础代币余额（如果实现方便的话，这也可以用于获取用户在该代币集合中的所有余额）。
+
+balanceOf(baseTokenNFT + indexNFT, msg.sender); // 获取非同质代币集合 12345 中索引为 50 的代币余额（如果用户拥有该非同质代币，则应该为 1，否则为 0）。
+
+balanceOf(baseTokenFT, msg.sender); // 获取同质代币 54321 的余额。
 
 
 ```
@@ -2649,7 +2662,10 @@ SFT 的交易与其他代币类似。不同的是，SFT 双方的交易目标都
  EIP-3525 标准保留了 `ERC721代币` 的描述性属性和 `ERC20代币` 的量化属性，允许<span style="background: red;">相同代币类型（槽）</span>之间的交易、拆分和合并，实现可替代代币的拆分。
 
 
-## EIP-3712 (多种批量 同质通证标准)   弥补ERC20和ERC1155的不足之处，使得其适合多同质化通证进行授权与交易等应用场景
+## EIP-3475 (ERC-3475, 抽象存储债券)
+
+
+## EIP-3712 (多种批量 同质通证标准)   弥补ERC20 和 ERC1155 的不足之处，使得其适合多同质化通证进行授权与交易等应用场景
  
 
 ## EIP-223 (token标准 ERC-223, 貌似没被通过？？还是没被记录在案？？？)
