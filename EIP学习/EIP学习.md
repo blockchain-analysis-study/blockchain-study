@@ -211,14 +211,31 @@ interface ERC721TokenReceiver {
 }
 
 
+
+
+/// 【注意】： 由于NFT最早面向艺术品，ERC-721可选Metadata接口“ERC721 Metadata JSON Schema”只指定了 name、description、image三个属性（且不可修改）。但对于游戏而言，这些属性远远不够，因此我们下一节要介绍的另一个NFT标准 EIP-1155 将 name、description、image 属性转移到了URI的json里面，而不规定URI接口返回的JSON Schema。
+
+
 ######################
 #####            #####
 #####   可选接口  #####
 #####            #####
 ######################
 
-/// 
-、、、
+interface ERC721Metadata {
+    /// @notice NFTs 集合的名字
+    function name() external view returns (string _name);
+
+    /// @notice NFTs 缩写代号
+    function symbol() external view returns (string _symbol);
+
+    /// @notice 一个给定资产的唯一的统一资源标识符(URI)
+    /// @dev 如果 `_tokenId` 无效，抛出异常. URIs在 RFC 3986 定义，
+    /// URIs在 RFC 3986 定义。ERC721 URI 可指向一个符合 "ERC721 URI JSON Schema" 的 JSON 文件。
+    function tokenURI(uint256 _tokenId) external view returns (string);
+}
+
+/// tokenURI(uint256 _tokenId) 返回的 ERC721 Metadata JSON Schema (只指定了 name、description、image三个属性, 不好拓展， 但是在 EIP-1155 中得到了新的拓展)
 
 {
     "title": "Asset Metadata",
@@ -239,28 +256,21 @@ interface ERC721TokenReceiver {
     }
 }
 
-、、、
 
-/// 【注意】： 由于NFT最早面向艺术品，ERC-721可选Metadata接口“ERC721 Metadata JSON Schema”只指定了name、description、image三个属性（且不可修改）。但对于游戏而言，这些属性远远不够，因此我们下一节要介绍的另一个NFT标准EIP-1155将name、description、image属性转移到了URI的json里面，而不规定URI接口返回的JSON Schema。
 
-interface ERC721Metadata {
-    /// @notice NFTs 集合的名字
-    function name() external view returns (string _name);
 
-    /// @notice NFTs 缩写代号
-    function symbol() external view returns (string _symbol);
 
-    /// @notice 一个给定资产的唯一的统一资源标识符(URI)
-    /// @dev 如果 `_tokenId` 无效，抛出异常. URIs在 RFC 3986 定义，
-    /// URIs在 RFC 3986 定义。ERC721 URI 可指向一个符合 "ERC721 URI JSON Schema" 的 JSON 文件。
-    function tokenURI(uint256 _tokenId) external view returns (string);
-}
-
+######################
+#####            #####
+#####   可选接口  #####
+#####            #####
+######################
 
 
 /// 枚举接口包含了按索引获取到对应的代币，可以提供NFTs的完整列表，以便NFT可被发现。
 
 interface ERC721Enumerable {
+    
     /// @notice  NFTs 计数
     /// @return  返回合约有效跟踪（所有者不为零地址）的 NFT数量
     function totalSupply() external view returns (uint256);
@@ -964,11 +974,11 @@ contract ERC1820Registry {
 
 1. 使用和发送以太相同的理念发送token，方法为：send(dest, value, data).
 
-2. 合约和普通地址都可以通过注册tokensToSend hook函数来控制和拒绝发送哪些token（拒绝发送通过在hook函数tokensToSend 里 revert 来实现）。
+2. 合约和普通地址都可以通过注册 `tokensToSend` hook函数来控制和拒绝发送哪些 token（拒绝发送通过在 hook 函数 `tokensToSend` 里 revert 来实现）。
 
-3. 合约和普通地址都可以通过注册tokensReceived hook函数来控制和拒绝接受哪些token（拒绝接受通过在hook函数tokensReceived 里 revert 来实现）。
+3. 合约和普通地址都可以通过注册 `tokensReceived` hook函数来控制和拒绝接受哪些 token（拒绝接受通过在 hook 函数 `tokensReceived` 里 revert 来实现）。
 
-4. tokensReceived 可以通过hook函数可以做到在一个交易里完成发送代币和**通知合约接受代币**，而不像 ERC20 必须通过两次调用（approve/transferFrom）来完成。
+4. `tokensReceived` 可以通过 hook 函数可以做到在一个交易里完成发送代币和**通知合约接受代币**，而不像 ERC20 必须通过两次调用（approve/transferFrom）来完成。
 
 5. 持有者可以"授权"和"撤销"操作员（operators: 可以代表持有者发送代币）。 这些操作员通常是（去中心化）交易所、支票处理机或自动支付系统。
 
@@ -1085,7 +1095,7 @@ interface ERC777TokensSender {
 
 	// 通知（或请求）从持有人地址发送或销毁 amount 数量的代币。
 	//
-	// 注意: 请勿在发送（或 ERC20 transfer）或 销毁 之外调用。
+	// 注意: 请勿在发送 (或 ERC20 transfer 函数)或 burn 函数之外调用。
     function tokensToSend(
         address operator,
         address from,
@@ -1096,7 +1106,7 @@ interface ERC777TokensSender {
     ) external;
 }
 
-调用tokensToSend钩子函数用于通知持有者余额减少（如发送和销毁）。
+调用 `tokensToSend 钩子函数` 用于通知持有者 (持有者来实现) 余额减少（如发送和销毁）。
 
 任何希望收到代币通知的地址（普通地址或合约）都会从需要按 ERC1820 注册及实现 ERC777TokensSender 接口，描述如下：
 
@@ -1112,7 +1122,7 @@ interface ERC777TokensRecipient {
 
 	// 用于通知接受代币。
 	//
-	// 注意: 请勿在发送（或 ERC20 transfer）或 铸币 之外调用。
+	// 注意: 请勿在发送 (或 ERC20 transfer 函数)或 mint 函数之外调用。
     function tokensReceived(
         address operator,
         address from,
@@ -1127,7 +1137,7 @@ interface ERC777TokensRecipient {
 
 
 
-调用 `tokensReceived 钩子函数` 用于通知接收者余额增加了（如发送和铸币）。
+调用 `tokensReceived 钩子函数` 用于通知接收者 (接收者来实现) 余额增加了（如发送和铸币）。
 
 任何希望收到代币通知的地址（普通地址或合约）都会从需要按ERC1820注册及实现 ERC777TokensRecipient 接口，描述如下：
 
@@ -1141,7 +1151,8 @@ interface ERC777TokensRecipient {
 
 与 ERC-20 相比，ERC-777 提供了以下改进。
 
-钩子
+hook 
+
 钩子是智能合约代码中描述的一个函数。 钩子将会在代币通过合约发送或者接收时调用。 这将允许智能合约对进出的通证做出互动。
 
 ** 钩子是使用 ERC-1820 标准注册及发现利用的 **
@@ -5634,8 +5645,10 @@ contract ERC1820Registry {
     /// @param _contract 需要更新缓存的合约地址。
     /// @param _interfaceId 需要更新缓存的 ERC165 接口。
     function updateERC165Cache(address _contract, bytes4 _interfaceId) external {
+
         interfaces[_contract][_interfaceId] = implementsERC165InterfaceNoCache(
             _contract, _interfaceId) ? _contract : address(0);
+
         erc165Cached[_contract][_interfaceId] = true;
     }
 
