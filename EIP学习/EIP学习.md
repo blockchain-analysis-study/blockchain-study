@@ -942,28 +942,40 @@ contract ERC1820Registry {
 ```
 
 
+<span id="EIP-777" />
+
+## EIP-777 (ERC-777, ERC-20 的高级拓展)  配合 [EIP-1820](#EIP-1820) 用， EIP-1820 从 EIP-777 抽出来的
 
 
-## EIP-777 (ERC-777, ERC-20 的高级拓展)  配合 EIP-1820 用， EIP-1820 从 EIP-777 抽出来的
+
+**必须搭配 EIP-1820 使用，详细查看 [补充](#EIP-777的补充) 部分**
+
+
+<span style="background: red;">ERC777标准，ERC777是ERC20的加强版，旨在加强用户的控制权限，具体有：</span>
+
+1. 随交易发送可以附带描述数据，以供某些业务场景使用
+2. 设置一些转账限制，如: 黑名单
+3. 支持一些高级交易
 
 
 如：操作员（operators） 可以代表另一个地址（合约或普通账户）发送代币， 以及 send/receive 加入了钩子函数（hooks ）让代币持有者可以有更多的控制。
 
 
 
-使用和发送以太相同的理念发送token，方法为：send(dest, value, data).
+1. 使用和发送以太相同的理念发送token，方法为：send(dest, value, data).
 
-合约和普通地址都可以通过注册tokensToSend hook函数来控制和拒绝发送哪些token（拒绝发送通过在hook函数tokensToSend 里 revert 来实现）。
+2. 合约和普通地址都可以通过注册tokensToSend hook函数来控制和拒绝发送哪些token（拒绝发送通过在hook函数tokensToSend 里 revert 来实现）。
 
-合约和普通地址都可以通过注册tokensReceived hook函数来控制和拒绝接受哪些token（拒绝接受通过在hook函数tokensReceived 里 revert 来实现）。
+3. 合约和普通地址都可以通过注册tokensReceived hook函数来控制和拒绝接受哪些token（拒绝接受通过在hook函数tokensReceived 里 revert 来实现）。
 
-tokensReceived 可以通过hook函数可以做到在一个交易里完成发送代币和通知合约接受代币，而不像 ERC20 必须通过两次调用（approve/transferFrom）来完成。
+4. tokensReceived 可以通过hook函数可以做到在一个交易里完成发送代币和**通知合约接受代币**，而不像 ERC20 必须通过两次调用（approve/transferFrom）来完成。
 
-持有者可以"授权"和"撤销"操作员（operators: 可以代表持有者发送代币）。 这些操作员通常是（去中心化）交易所、支票处理机或自动支付系统。
+5. 持有者可以"授权"和"撤销"操作员（operators: 可以代表持有者发送代币）。 这些操作员通常是（去中心化）交易所、支票处理机或自动支付系统。
 
-每个代币交易都包含 data 和 operatorData 字段， 可以分别传递来自持有者和操作员的数据。
+6. 每个代币交易都包含 data 和 operatorData 字段， 可以分别 传递来自 **持有者**和**操作员**的数据。
 
-可以通过部署实现 tokensReceived 的代理合约来兼容没有实现tokensReceived 函数的地址。
+
+**可以通过部署实现 `tokensReceived 的代理合约` 来兼容没有实现 `tokensReceived 函数` 的地址。**
 
 
 ```
@@ -1000,9 +1012,11 @@ interface ERC777Token {
 
     // ##########################################################################
 	// ##########################################################################
+    //
 	// ERC-777 中故意没有定义 mint 函数，用意是不希望限制ERC777标准的使用，因为铸币通常特定于特定的代币。
-	//
-
+    //
+    // ##########################################################################
+    // ##########################################################################
     function burn(uint256 amount, bytes calldata data) external;
     function operatorBurn(
         address from,
@@ -1054,16 +1068,13 @@ interface ERC777Token {
 
 合约需要用自己的地址通过 ERC1820 标准注册 ERC777Token 接口。
 
-注册方法是调用ERC1820 注册表合约的 setInterfaceImplementer 方法，参数 _addr 及 _implementer 均是合约的地址，_interfaceHash 是 ERC777Token 的 keccak256 哈希值， 即0xac7fbab5f54a3ca8194167523c6753bfeb96a445279294b6125b68cce2177054
+注册方法是调用 `ERC1820 注册表合约` 的 setInterfaceImplementer 方法，参数 _addr 及 _implementer 均是合约的地址，_interfaceHash 是 ERC777Token 的 keccak256 哈希值， 即0xac7fbab5f54a3ca8194167523c6753bfeb96a445279294b6125b68cce2177054
 
-如果合约有一个开关来启用或禁用ERC777功能，每次触发开关时，代币合约必须相应地通过ERC1820注册或取消注册ERC777Token接口。
+如果合约有一个开关来启用或禁用ERC777功能，每次触发开关时，代币合约必须相应地通过 ERC1820 注册或取消注册 ERC777Token 接口。
 
-取消注册使用代币合约地址作为参数 _addr 、ERC777Token的keccak256哈希作为接口哈希及'0x0作为实现者参数_implementer调用函数setInterfaceImplementer`， 有关详细信息，请参阅ERC1820中的为接口设置实现地址
+取消注册使用代币合约地址作为参数 _addr 、ERC777Token 的keccak256哈希作为接口哈希及'0x0作为实现者参数_implementer调用函数setInterfaceImplementer`， 有关详细信息，请参阅ERC1820中的为接口设置实现地址
 
 当和代币合约进行交互时，所有的数量和余额都是无符号整型 uint256 类型 。总是以18次方存储（ decimals 只能是 18），0.5个代币存储为 500,000,000,000,000,000 (0.5×1018) ERC20内部处理也是一样（不过decimals可为其他值），最小单位相当于 wei, 用户看见的币相当于 ether。
-
-
-
 
 
 
@@ -1116,7 +1127,7 @@ interface ERC777TokensRecipient {
 
 
 
-调用tokensReceived钩子函数用于通知接收者余额增加了（如发送和铸币）。
+调用 `tokensReceived 钩子函数` 用于通知接收者余额增加了（如发送和铸币）。
 
 任何希望收到代币通知的地址（普通地址或合约）都会从需要按ERC1820注册及实现 ERC777TokensRecipient 接口，描述如下：
 
@@ -1141,12 +1152,13 @@ interface ERC777TokensRecipient {
 
 ```
 
+<span id="EIP-777的补充" />
 
-**补充**
+### **补充**
 
-ERC777 合约必须要通过 ERC1820 注册 ERC777Token 接口，这样任何人都可以查询合约是否是 ERC777 标准的合约，注册方法是 : 调用 ERC1820 注册合约的 setInterfaceImplementer 方法，参数 addr 及 implementer 均是合约的地址，interfaceHash 是 ERC777Token 的 keccak256 哈希值（0xac7fbab5…177054）
+1. <span style="background: red;" >ERC777 合约必须要通过 ERC1820 注册 ERC777Token 接口，这样任何人都可以查询合约是否是 ERC777 标准的合约，注册方法是 : 调用 ERC1820 注册合约的 setInterfaceImplementer 方法，参数 addr 及 implementer 均是合约的地址，interfaceHash 是 ERC777Token 的 keccak256 哈希值（0xac7fbab5…177054）</span>
 
-如果 ERC777 要实现 ERC20 标准，还必须通过 ERC1820 注册 ERC20Token 接口
+2. <span style="background: skyblue;" >如果 ERC777 要实现 ERC20 标准，还必须通过 ERC1820 注册 ERC20Token 接口</span>
 
 
 
@@ -1312,7 +1324,7 @@ library Clones {
 **和 EIP-1820/EIP-2429 部署区别**
 
 
-和 EIP-1820 和 EIP-2429 一样使用 nick部署方式部署合约
+和 EIP-1820 和 EIP-2429 一样使用 `nick 部署方式` 部署合约
 
 [https://eips.ethereum.org/EIPS/eip-2470]
 
@@ -5446,10 +5458,14 @@ event LogExecuteUpdate(uint256 indexed _newStreamId, address indexed _sender, ad
 
 ```
 
+<span id="EIP-820" />
 
-## EIP-820 (伪内省注册合约, 作废)
+## EIP-820 (伪内省注册合约, 作废) 详细查看 [EIP-1820](#EIP-1820)
 
-## EIP-1820 (伪内省注册合约, 替换 EIP-820)  EIP-1820 从 EIP-777 抽出来的， EIP-777 要配合 EIP-1820 用
+
+<span id="EIP-1820" >
+
+## EIP-1820 (伪内省注册合约, 替换 EIP-820)  EIP-1820 从 [EIP-777](#EIP-777) 抽出来的， EIP-777 要配合 EIP-1820 用
 
 
 
@@ -5457,7 +5473,7 @@ event LogExecuteUpdate(uint256 indexed _newStreamId, address indexed _sender, ad
 
 EIP-1820 修复了 Solidity 0.5 更新引入的 EIP-165 逻辑中的不兼容性
 
-【除了这个修复，EIP-1820 在功能上等同于 EIP-820】
+【除了这个修复，EIP-1820 在功能上等同于 [EIP-820](#EIP-820)】
 
 
 
@@ -5465,7 +5481,7 @@ EIP-1820 修复了 Solidity 0.5 更新引入的 EIP-165 逻辑中的不兼容性
 
 **作用**
 
-> 该标准定义了一个通用的注册智能合约，任何地址（合约或普通账户）都可以注册它支持的接口以及由哪个智能合约负责其实现。就是说，实现了可以给任意账户地址注册它的支持接口且将该实现交由某个合约去做。
+> 该标准定义了一个通用的 **注册智能合约**，<span style="background: skyblue;">任何地址（合约或普通账户）都可以注册它支持的接口以及由哪个智能合约负责其实现。</span> 就是说，实现了可以给任意账户地址注册它的支持接口且将该实现交由某个合约去做。
 
 
 
@@ -5500,51 +5516,56 @@ EIP-1820 修复了 Solidity 0.5 更新引入的 EIP-165 逻辑中的不兼容性
 /// 合约的标准代码
 
 pragma solidity 0.5.3;
-// IV is value needed to have a vanity address starting with '0x1820'.
+
+// IV 是需要生成以 '0x1820' 开头的虚荣地址所需的值。
 // IV: 53759
 
-/// @dev The interface a contract MUST implement if it is the implementer of
-/// some (other) interface for any address other than itself.
+/// @dev 合约必须实现的接口，如果它是某个（其他）地址的接口实现者，则需要实现该接口。
 interface ERC1820ImplementerInterface {
-    /// @notice Indicates whether the contract implements the interface 'interfaceHash' for the address 'addr' or not.
-    /// @param interfaceHash keccak256 hash of the name of the interface
-    /// @param addr Address for which the contract will implement the interface
-    /// @return ERC1820_ACCEPT_MAGIC only if the contract implements 'interfaceHash' for the address 'addr'.
+
+    /// @notice 表示合约是否实现了接口名称为 'interfaceHash'，且针对地址 'addr'。
+    /// @param interfaceHash 接口名称的 keccak256 哈希值
+    /// @param addr 要实现该接口的地址
+    /// @return 只有当合约针对地址 'addr' 实现了 'interfaceHash' 接口时，才返回 ERC1820_ACCEPT_MAGIC。
     function canImplementInterfaceForAddress(bytes32 interfaceHash, address addr) external view returns(bytes32);
 }
 
 
-/// @title ERC1820 Pseudo-introspection Registry Contract
-/// @author Jordi Baylina and Jacques Dafflon
-/// @notice This contract is the official implementation of the ERC1820 Registry.
-/// @notice For more details, see https://eips.ethereum.org/EIPS/eip-1820
+/// @title ERC1820 伪内省注册合约
+/// @author Jordi Baylina 和 Jacques Dafflon
+/// @notice 该合约是 ERC1820 注册表的官方实现。
+/// @notice 更多详情请参见 https://eips.ethereum.org/EIPS/eip-1820。
 contract ERC1820Registry {
-    /// @notice ERC165 Invalid ID.
+
+    /// @notice ERC165 无效的 ID。
     bytes4 constant internal INVALID_ID = 0xffffffff;
-    /// @notice Method ID for the ERC165 supportsInterface method (= `bytes4(keccak256('supportsInterface(bytes4)'))`).
+
+    /// @notice ERC165 的 supportsInterface 方法的方法 ID (等于 bytes4(keccak256('supportsInterface(bytes4)')))。
     bytes4 constant internal ERC165ID = 0x01ffc9a7;
-    /// @notice Magic value which is returned if a contract implements an interface on behalf of some other address.
+
+    /// @notice 魔术值，当合约代表某个其他地址实现一个接口时返回。
     bytes32 constant internal ERC1820_ACCEPT_MAGIC = keccak256(abi.encodePacked("ERC1820_ACCEPT_MAGIC"));
 
-    /// @notice mapping from addresses and interface hashes to their implementers.
+    /// @notice 地址和接口哈希到它们的实现者的映射。
     mapping(address => mapping(bytes32 => address)) internal interfaces;
-    /// @notice mapping from addresses to their manager.
+
+    /// @notice 地址到其管理者的映射。
     mapping(address => address) internal managers;
-    /// @notice flag for each address and erc165 interface to indicate if it is cached.
+
+    /// @notice 对于每个地址和 ERC165 接口的标志，用于指示是否已缓存。
     mapping(address => mapping(bytes4 => bool)) internal erc165Cached;
 
-    /// @notice Indicates a contract is the 'implementer' of 'interfaceHash' for 'addr'.
+    /// @notice 表示一个合约是地址 'addr' 的 'interfaceHash' 的实现者。
     event InterfaceImplementerSet(address indexed addr, bytes32 indexed interfaceHash, address indexed implementer);
-    /// @notice Indicates 'newManager' is the address of the new manager for 'addr'.
+
+    /// @notice 表示 'newManager' 是 'addr' 的新管理者地址。
     event ManagerChanged(address indexed addr, address indexed newManager);
 
-    /// @notice Query if an address implements an interface and through which contract.
-    /// @param _addr Address being queried for the implementer of an interface.
-    /// (If '_addr' is the zero address then 'msg.sender' is assumed.)
-    /// @param _interfaceHash Keccak256 hash of the name of the interface as a string.
-    /// E.g., 'web3.utils.keccak256("ERC777TokensRecipient")' for the 'ERC777TokensRecipient' interface.
-    /// @return The address of the contract which implements the interface '_interfaceHash' for '_addr'
-    /// or '0' if '_addr' did not register an implementer for this interface.
+    /// @notice 查询一个地址是否实现了某个接口，以及是哪个合约实现的。
+    /// @param _addr 被查询的地址，用于查询接口实现者。（如果 '_addr' 是零地址，则默认为 'msg.sender'。）
+    /// @param _interfaceHash 接口名称的 keccak256 哈希值，类型为字符串。
+    /// 例如，'web3.utils.keccak256("ERC777TokensRecipient")' 用于 'ERC777TokensRecipient' 接口。
+    /// @return '_addr' 的实现接口 '_interfaceHash' 的合约地址，如果 '_addr' 没有为此接口注册实现，则返回 '0'。
     function getInterfaceImplementer(address _addr, bytes32 _interfaceHash) external view returns (address) {
         address addr = _addr == address(0) ? msg.sender : _addr;
         if (isERC165Interface(_interfaceHash)) {
@@ -5554,14 +5575,13 @@ contract ERC1820Registry {
         return interfaces[addr][_interfaceHash];
     }
 
-    /// @notice Sets the contract which implements a specific interface for an address.
-    /// Only the manager defined for that address can set it.
-    /// (Each address is the manager for itself until it sets a new manager.)
-    /// @param _addr Address for which to set the interface.
-    /// (If '_addr' is the zero address then 'msg.sender' is assumed.)
-    /// @param _interfaceHash Keccak256 hash of the name of the interface as a string.
-    /// E.g., 'web3.utils.keccak256("ERC777TokensRecipient")' for the 'ERC777TokensRecipient' interface.
-    /// @param _implementer Contract address implementing '_interfaceHash' for '_addr'.
+    /// @notice 设置某个地址的特定接口的实现合约。
+    /// 只有为该地址定义的管理者才能进行设置。
+    /// （每个地址自己都是自己的管理者，直到它设置了新的管理者。）
+    /// @param _addr 需要设置接口的地址。（如果 '_addr' 是零地址，则默认为 'msg.sender'。）
+    /// @param _interfaceHash 接口名称的 keccak256 哈希值，类型为字符串。
+    /// 例如，'web3.utils.keccak256("ERC777TokensRecipient")' 用于 'ERC777TokensRecipient' 接口。
+    /// @param _implementer 实现 '_addr' 的 '_interfaceHash' 接口的合约地址。
     function setInterfaceImplementer(address _addr, bytes32 _interfaceHash, address _implementer) external {
         address addr = _addr == address(0) ? msg.sender : _addr;
         require(getManager(addr) == msg.sender, "Not the manager");
@@ -5578,19 +5598,19 @@ contract ERC1820Registry {
         emit InterfaceImplementerSet(addr, _interfaceHash, _implementer);
     }
 
-    /// @notice Sets '_newManager' as manager for '_addr'.
-    /// The new manager will be able to call 'setInterfaceImplementer' for '_addr'.
-    /// @param _addr Address for which to set the new manager.
-    /// @param _newManager Address of the new manager for 'addr'. (Pass '0x0' to reset the manager to '_addr'.)
+    /// @notice 将 '_newManager' 设置为 '_addr' 的管理者。
+    /// 新的管理者将能够为 '_addr' 调用 'setInterfaceImplementer' 方法。
+    /// @param _addr 需要设置新管理者的地址。
+    /// @param _newManager '_addr' 的新管理者的地址。（传递 '0x0' 将管理者重置为 '_addr'。）
     function setManager(address _addr, address _newManager) external {
         require(getManager(_addr) == msg.sender, "Not the manager");
         managers[_addr] = _newManager == _addr ? address(0) : _newManager;
         emit ManagerChanged(_addr, _newManager);
     }
 
-    /// @notice Get the manager of an address.
-    /// @param _addr Address for which to return the manager.
-    /// @return Address of the manager for a given address.
+    /// @notice 获取某个地址的管理者。
+    /// @param _addr 需要返回管理者的地址。
+    /// @return 给定地址的管理者地址。
     function getManager(address _addr) public view returns(address) {
         // By default the manager of an address is the same address
         if (managers[_addr] == address(0)) {
@@ -5600,32 +5620,31 @@ contract ERC1820Registry {
         }
     }
 
-    /// @notice Compute the keccak256 hash of an interface given its name.
-    /// @param _interfaceName Name of the interface.
-    /// @return The keccak256 hash of an interface name.
+    /// @notice 根据接口名称计算其 keccak256 哈希值。
+    /// @param _interfaceName 接口名称。
+    /// @return 接口名称的 keccak256 哈希值。
     function interfaceHash(string calldata _interfaceName) external pure returns(bytes32) {
         return keccak256(abi.encodePacked(_interfaceName));
     }
 
-    /* --- ERC165 Related Functions --- */
-    /* --- Developed in collaboration with William Entriken. --- */
-
-    /// @notice Updates the cache with whether the contract implements an ERC165 interface or not.
-    /// @param _contract Address of the contract for which to update the cache.
-    /// @param _interfaceId ERC165 interface for which to update the cache.
+    /* --- ERC165 相关函数 --- /
+    / --- 与 William Entriken 协作开发。--- */
+    
+    /// @notice 更新缓存以指示合约是否实现了 ERC165 接口。
+    /// @param _contract 需要更新缓存的合约地址。
+    /// @param _interfaceId 需要更新缓存的 ERC165 接口。
     function updateERC165Cache(address _contract, bytes4 _interfaceId) external {
         interfaces[_contract][_interfaceId] = implementsERC165InterfaceNoCache(
             _contract, _interfaceId) ? _contract : address(0);
         erc165Cached[_contract][_interfaceId] = true;
     }
 
-    /// @notice Checks whether a contract implements an ERC165 interface or not.
-    //  If the result is not cached a direct lookup on the contract address is performed.
-    //  If the result is not cached or the cached value is out-of-date, the cache MUST be updated manually by calling
-    //  'updateERC165Cache' with the contract address.
-    /// @param _contract Address of the contract to check.
-    /// @param _interfaceId ERC165 interface to check.
-    /// @return True if '_contract' implements '_interfaceId', false otherwise.
+    /// @notice 检查合约是否实现了 ERC165 接口。
+    /// 如果结果未被缓存，则会在合约地址上直接查找。
+    /// 如果结果未被缓存或缓存值已过期，则必须通过调用 'updateERC165Cache' 更新缓存。
+    /// @param _contract 需要检查的合约地址。
+    /// @param _interfaceId 需要检查的 ERC165 接口。
+    /// @return 如果 '_contract' 实现了 '_interfaceId'，则返回 true，否则返回 false。
     function implementsERC165Interface(address _contract, bytes4 _interfaceId) public view returns (bool) {
         if (!erc165Cached[_contract][_interfaceId]) {
             return implementsERC165InterfaceNoCache(_contract, _interfaceId);
@@ -5633,10 +5652,10 @@ contract ERC1820Registry {
         return interfaces[_contract][_interfaceId] == _contract;
     }
 
-    /// @notice Checks whether a contract implements an ERC165 interface or not without using nor updating the cache.
-    /// @param _contract Address of the contract to check.
-    /// @param _interfaceId ERC165 interface to check.
-    /// @return True if '_contract' implements '_interfaceId', false otherwise.
+    /// @notice 检查合约是否实现了 ERC165 接口，而不使用也不更新缓存。
+    /// @param _contract 需要检查的合约地址。
+    /// @param _interfaceId 需要检查的 ERC165 接口。
+    /// @return 如果 '_contract' 实现了 '_interfaceId'，则返回 true，否则返回 false。
     function implementsERC165InterfaceNoCache(address _contract, bytes4 _interfaceId) public view returns (bool) {
         uint256 success;
         uint256 result;
@@ -5658,23 +5677,23 @@ contract ERC1820Registry {
         return false;
     }
 
-    /// @notice Checks whether the hash is a ERC165 interface (ending with 28 zeroes) or not.
-    /// @param _interfaceHash The hash to check.
-    /// @return True if '_interfaceHash' is an ERC165 interface (ending with 28 zeroes), false otherwise.
+    /// @notice 检查哈希值是否为 ERC165 接口（以 28 个零结尾）。
+    /// @param _interfaceHash 需要检查的哈希值。
+    /// @return 如果 '_interfaceHash' 是 ERC165 接口（以 28 个零结尾），则返回 true，否则返回 false。
     function isERC165Interface(bytes32 _interfaceHash) internal pure returns (bool) {
         return _interfaceHash & 0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF == 0;
     }
 
-    /// @dev Make a call on a contract without throwing if the function does not exist.
+    /// @dev 在不抛出异常的情况下调用合约中的函数，即使函数不存在也不会抛出异常。
     function noThrowCall(address _contract, bytes4 _interfaceId)
         internal view returns (uint256 success, uint256 result)
     {
         bytes4 erc165ID = ERC165ID;
 
         assembly {
-            let x := mload(0x40)               // Find empty storage location using "free memory pointer"
-            mstore(x, erc165ID)                // Place signature at beginning of empty storage
-            mstore(add(x, 0x04), _interfaceId) // Place first argument directly next to signature
+            let x := mload(0x40)               // 使用 "free memory pointer" 找到空闲的存储位置
+            mstore(x, erc165ID)                // 在空闲存储的开头放置函数签名
+            mstore(add(x, 0x04), _interfaceId) // 将第一个参数直接放在函数签名的旁边
 
             success := staticcall(
                 30000,                         // 30k gas
