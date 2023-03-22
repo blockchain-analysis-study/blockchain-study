@@ -1150,8 +1150,110 @@ ERC777 合约必须要通过 ERC1820 注册 ERC777Token 接口，这样任何人
 
 
 
+## EIP-1400 安全令牌标准
 
-## EIP-1594 核心安全令牌标准
+
+提供了一套标准接口，用于发行/赎回证券型代币、管理其所有权和转让限制，并向代币持有者提供透明度，让他们了解代币余额的不同子集在转让限制、权利和义务方面的表现。
+
+
+## EIP-1410   部分可替代代币标准  (该标准属于 ERC-1400 ( #1411 ) 与安全令牌相关的标准集)
+
+
+## EIP-1594 核心安全令牌标准 (该标准属于 ERC-1400 ( #1411 ) 与安全令牌相关的标准集)
+
+
+提供一个标准来支持将数据链下注入到传输/发行/赎回中，并能够检查传输的有效性以区别于它的执行。
+
+
+**canTransfer / canTransferFrom 可以转移/可以转移自**
+
+```
+function canTransfer(address _to, uint256 _value, bytes _data) external view returns (byte, bytes32);
+
+function canTransferFrom(address _from, address _to, uint256 _value, bytes _data) external view returns (byte, bytes32);
+
+// canTransfer 假设代币的发送者是 msg.sender ，将通过 transfer 或 transferWithData 执行，而 canTransferFrom 允许指定代币的发送者，转账将通过 transferFrom 或 transferFromWithData 。
+```
+
+
+**transferWithData / transferFromWithData**
+
+```
+
+// 
+function transferWithData(address _to, uint256 _value, bytes _data) external;
+
+function transferFromWithData(address _from, address _to, uint256 _value, bytes _data) external;
+```
+
+**isIssuable**   安全令牌发行者可以指定令牌的发行已经完成（即不能铸造或发行新令牌）
+
+```
+function isIssuable() external view returns (bool);
+```
+
+
+**issue**  必须调用此函数来增加总供应量
+
+```
+function issue(address _tokenHolder, uint256 _value, bytes _data) external;
+```
+
+**redeem** 允许代币持有者赎回代币
+
+
+```
+function redeem(uint256 _value, bytes _data) external;
+```
+
+**redeemFrom**
+
+```
+function redeemFrom(address _tokenHolder, uint256 _value, bytes _data) external;
+```
+
+
+**完整的示例**
+
+```
+/// @title IERC1594 Security Token Standard
+/// @dev See https://github.com/SecurityTokenStandard/EIP-Spec
+
+interface IERC1594 is IERC20 {
+
+    // Transfers
+    function transferWithData(address _to, uint256 _value, bytes _data) external;
+    function transferFromWithData(address _from, address _to, uint256 _value, bytes _data) external;
+
+    // Token Issuance
+    function isIssuable() external view returns (bool);
+    function issue(address _tokenHolder, uint256 _value, bytes _data) external;
+
+    // Token Redemption
+    function redeem(uint256 _value, bytes _data) external;
+    function redeemFrom(address _tokenHolder, uint256 _value, bytes _data) external;
+
+    // Transfer Validity
+    function canTransfer(address _to, uint256 _value, bytes _data) external view returns (bool, byte, bytes32);
+    function canTransferFrom(address _from, address _to, uint256 _value, bytes _data) external view returns (bool, byte, bytes32);
+
+    // Issuance / Redemption Events
+    event Issued(address indexed _operator, address indexed _to, uint256 _value, bytes _data);
+    event Redeemed(address indexed _operator, address indexed _from, uint256 _value, bytes _data);
+
+}
+```
+
+
+## EIP1644 控制器令牌操作标准  (该标准属于 ERC-1400 ( #1411 ) 与安全令牌相关的标准集)
+
+
+
+
+## EIP-1724 (zkERC20: Confidential Token Standard, 加密通证标准)
+
+
+## EIP-5805  (授权投票 通证)
 
 
 ## EIP-55 (混合大小写校验和地址编码)
@@ -1931,6 +2033,599 @@ balanceOf(baseTokenFT, msg.sender); // Get balance of the fungible base token 54
 ## EIP-3525 (半同质化token ERC3525)   一种介于 ERC20 和 ERC721 的产物
 
 
+定义一个规范，其中具有相同 SLOT 和不同 ID 的 EIP-721 兼容令牌是可替代的。
+
+
+```
+EIP-3525 是一个以太坊改进提案（Ethereum Improvement Proposal，简称 EIP），提出了一种新的代币标准，用于支持半同质化令牌，即在代币中允许每个代币具有不同的属性和值。这个标准可以被任何遵循它的智能合约实现，从而支持半同质化代币的发行和交易。
+```
+
+
+这是半同质代币的标准。本文档中描述的智能合约接口集定义了 EIP-721 兼容令牌标准。该标准引入了一个 <ID, SLOT, VALUE> 三重标量模型，代表代币的半同质化结构。它还引入了新的转移模型以及反映代币半同质化性质的批准模型。
+
+- Token 包含一个 EIP-721 等效 ID 属性，以将其自身标识为一个普遍唯一的实体，以便 Token 可以在地址之间转移并被批准以 EIP-721 兼容的方式运行。
+
+- Token还包含一个 value 属性，代表token的量化性质。 “价值”属性的含义与 EIP-20 代币的“余额”属性非常相似。每个令牌都有一个“插槽”属性，<span style="background: red;">确保具有相同插槽的两个令牌的值被视为可替代的</span>，从而为令牌的值属性添加可替代性。
+
+该 EIP 引入了新的半同质性代币转移模型，包括<span style="background: red;">同一插槽的两个代币之间的价值 (类似 ERC20)</span>转移以及<span style="background: red;">从一个代币到一个地址的价值转移 (实则是根据 fromTokenId 生成 newTokenId 给该地址铸造 ERC721 并将 newToken 的 slot 设置成和 fromToken 的slot 一致)</span>。
+
+
+**ERC20 和 ERC721 的缺点**
+
+两者都有明显的缺点。例如，EIP-20 要求用户为每个单独的数据结构或可自定义属性的组合创建单独的 EIP-20 合约。实际上，这会导致需要创建大量的 EIP-20 合约。另一方面，EIP-721 代币不提供量化特征，大大削弱了它们的可计算性、流动性和可管理性。例如，如果要使用 EIP-721 创建金融工具，如债券、保险单或归属计划，则没有标准接口可供我们控制其中的价值，例如，无法转移一部分代币所代表的合约中的权益。
+
+
+
+
+
+
+
+
+**每个符合 EIP-3525 的合约都必须实现 EIP-3525、EIP-721 和 EIP-165 接口**
+
+```
+pragma solidity ^0.8.0;
+
+/**
+ * @title EIP-3525 半同质化令牌标准
+ * 注意：该接口在 EIP-165 中的标识符为 0xd5358140。
+ */
+interface IERC3525 /* is IERC165, IERC721 */ {
+    /**
+     * @dev 当一个代币的价值被转移到另一个相同插槽的代币时，必须触发此事件，包括零值转移（_value == 0）以及在创建代币时（`_fromTokenId` == 0）或销毁代币时（`_toTokenId` == 0）的转移。
+     * @param _fromTokenId 转移价值的代币ID
+     * @param _toTokenId 转移价值的目标代币ID
+     * @param _value 转移的价值
+     */
+    event TransferValue(uint256 indexed _fromTokenId, uint256 indexed _toTokenId, uint256 _value);
+
+    /**
+     * @dev 当代币的批准值被设置或更改时，必须触发此事件。
+     * @param _tokenId 要批准的代币ID
+     * @param _operator 被批准的操作者
+     * @param _value `_operator` 允许管理的最大值
+     */
+    event ApprovalValue(uint256 indexed _tokenId, address indexed _operator, uint256 _value);
+    
+    /**
+     * @dev 当代币的插槽被设置或更改时，必须触发此事件。
+     * @param _tokenId 插槽被设置或更改的代币ID
+     * @param _oldSlot 代币之前的插槽
+     * @param _newSlot 代币更新后的插槽
+     */
+    event SlotChanged(uint256 indexed _tokenId, uint256 indexed _oldSlot, uint256 indexed _newSlot);
+
+    /**
+     * @notice 获取代币价值使用的小数位数 - 例如，6 表示代币的用户价值表示可以通过将其除以 1,000,000 来计算。
+     *  考虑到与第三方钱包的兼容性，此函数被定义为 `valueDecimals()` 而不是 `decimals()`，以避免与 EIP-20 代币冲突。
+     * @return 价值的小数位数
+     */
+    function valueDecimals() external view returns (uint8);
+
+    /**
+     * @notice 获取代币的价值。
+     * @param _tokenId 要查询余额的代币
+     * @return `_tokenId` 的价值
+     */
+    function balanceOf(uint256 _tokenId) external view returns (uint256);
+
+    /**
+     * @notice 获取代币的插槽。
+     * @param _tokenId 代币的标识符
+     * @return 代币的插槽
+     */
+    function slotOf(uint256 _tokenId) external view returns (uint256);
+
+    /**
+     * @notice 允许操作者管理代币的价值，最大值为 `_value`。
+     * @dev 除非调用者是当前所有者、授权操作者或 `_tokenId` 的批准地址，否则必须回滚。
+     *  必须触发 ApprovalValue 事件。
+     * @param _tokenId 要批准的代币
+     * @param _operator 要批准的操作者
+     * @param _value `_operator` 允许管理的 `_tokenId` 的最大值
+     */
+    function approve(
+        uint256 _tokenId,
+        address _operator,
+        uint256 _value
+    ) external payable;
+
+    /**
+     * @notice 获取操作者被允许管理的代币的最大价值。
+     * @param _tokenId 要查询津贴的代币
+     * @param _operator 操作者的地址
+     * @return `_operator` 允许管理的 `_tokenId` 的当前批准价值
+     */
+    function allowance(uint256 _tokenId, address _operator) external view returns (uint256);
+
+    /**
+     * @notice 从一个指定的代币向另一个具有相同插槽的指定代币转移价值。
+     * @dev 调用者必须是当前所有者、已授权的操作者或已被批准整个 `_fromTokenId` 或其部分的操作者。
+     *  如果 `_fromTokenId` 或 `_toTokenId` 是零代币 ID 或不存在，则必须失败。
+     *  如果 `_fromTokenId` 和 `_toTokenId` 的插槽不匹配，则必须失败。
+     *  如果 `_value` 超过 `_fromTokenId` 的余额或其授权给操作者的余额，则必须失败。
+     *  必须发出 `TransferValue` 事件。
+     * @param _fromTokenId 要从中转移价值的代币
+     * @param _toTokenId 要将价值转移至的代币
+     * @param _value 转移的价值
+     */
+    function transferFrom(
+        uint256 _fromTokenId,
+        uint256 _toTokenId,
+        uint256 _value
+    ) external payable;
+
+
+    /**
+     * @notice 将指定令牌中的价值转移至一个地址。调用者应确认 _to 能够接收 EIP-3525 令牌。
+     * @dev 该函数必须为 _to 创建具有相同 slot 的新的 EIP-3525 令牌，或找到已由 _to 拥有的具有相同 slot 的现有令牌，以接收转移的价值。
+     * 如果 _fromTokenId 是零令牌 id 或不存在，则必须回滚。
+     * 如果 _to 是零地址，则必须回滚。
+     * 如果 _value 超过 _fromTokenId 的余额或其对操作员的授权，则必须回滚。
+     * 必须发出 Transfer 和 TransferValue 事件。
+     * @param _fromTokenId 要从中转移价值的令牌
+     * @param _to 要转移价值的地址
+     * @param _value 转移的价值
+     * @return 接收转移价值的令牌的 ID
+    */
+    function transferFrom(
+        uint256 _fromTokenId,
+        address _to,
+        uint256 _value
+    ) external payable returns (uint256);
+}
+```
+
+
+**槽的枚举扩展是可选的。这允许您的合约发布其完整的 SLOT 列表并使它们可被发现**
+
+
+```
+pragma solidity ^0.8.0;
+
+/**
+ *@title EIP-3525 可选扩展标准，用于支持 slot 枚举
+ *@dev 用于任何想要支持同一 slot 内 token 和 slot 枚举的合约接口。
+ *Note: 该接口的 EIP-165 标识符为 0x3b741b9e。
+*/
+interface IERC3525SlotEnumerable is IERC3525 /* , IERC721Enumerable */ {
+
+    /**
+     *@notice 获取合约中存储的槽位总数。
+     *@return 槽位总数
+    */
+    function slotCount() external view returns (uint256);
+
+    /**
+     * @notice 获取合约存储的所有 slot 中指定索引处的 slot。
+     * @param _index slot 列表中的索引
+     * @return 所有 slot 中索引为 `_index` 的 slot。
+     */
+    function slotByIndex(uint256 _index) external view returns (uint256);
+
+    /**
+     *@notice 获取特定 slot 下存储的 token 总量。
+     *@param _slot 查询该 slot 下的 token 供应量
+     *@return 特定 _slot 下的 token 总量
+    */
+    function tokenSupplyInSlot(uint256 _slot) external view returns (uint256);
+
+    /**
+     * @notice 获取所有属于同一槽位的所有代币中指定索引的代币ID。
+     * @param _slot 要查询代币的槽位
+     * @param _index 槽位代币列表中的索引
+     * @return `_slot` 槽位所有代币中位于索引 `_index` 的代币ID。
+     */
+    function tokenInSlotByIndex(uint256 _slot, uint256 _index) external view returns (uint256);
+}
+```
+
+
+**插槽级别批准是可选的。这允许任何想要支持插槽批准的合约，这允许运营商使用相同的插槽管理一个人的代币。**
+
+
+```
+pragma solidity ^0.8.0;
+
+/**
+ *@title EIP-3525 半同质化代币标准，用于支持对槽位级别授权的可选扩展
+ *@dev 该接口适用于希望支持槽位级别授权的任何合约，使操作员能够管理具有相同槽位的代币。
+ *请参见 https://eips.ethereum.org/EIPS/eip-3525
+ *注意：该接口的 EIP-165 标识符为 0xb688be58。
+*/
+interface IERC3525SlotApprovable is IERC3525 {
+    /**
+     * @dev 当一个操作者被授权或取消授权管理 `_owner` 拥有的所有具有相同 slot 的代币时，必须发出此事件。
+     * @param _owner 被授权的地址
+     * @param _slot 被授权的 slot，所有属于 `_owner` 且具有此 slot 的代币都被授权
+     * @param _operator 被授权或取消授权的操作者
+     * @param _approved 表示 `_operator` 是否被授权
+     */
+    event ApprovalForSlot(address indexed _owner, uint256 indexed _slot, address indexed _operator, bool _approved);
+
+    /**
+     * @notice 批准或取消批准一个操作者来管理 _owner 拥有的具有指定 slot 的所有代币。
+     * @dev 调用者应为 _owner 或已通过 setApprovalForAll 授权的操作者。
+     * 该函数必须触发 ApprovalSlot 事件。
+     * @param _owner 拥有 EIP-3525 代币的地址
+     * @param _slot 要查询批准的代币的 slot
+     * @param _operator 要查询批准的地址
+     * @param _approved 表示 _operator 是否被批准
+    */
+    function setApprovalForSlot(
+        address _owner,
+        uint256 _slot,
+        address _operator,
+        bool _approved
+    ) external payable;
+
+    /**
+     * @notice 查询 _operator 是否被授权管理 _owner 持有的指定 _slot 下的所有代币。
+     * @param _owner 拥有 EIP-3525 代币的地址
+     * @param _slot 查询授权的代币槽位
+     * @param _operator 查询授权的地址
+     * @return 如果 _operator 被授权管理 _owner 持有的所有 _slot 下的代币，返回 true，否则返回 false。
+    */
+    function isApprovedForSlot(
+        address _owner,
+        uint256 _slot,
+        address _operator
+    ) external view returns (bool);
+}
+```
+
+**EIP-3525 令牌接收器**
+
+
+```
+pragma solidity ^0.8.0;
+
+/**
+ * @title EIP-3525 token receiver interface
+ * @title EIP-3525 令牌接收接口
+ * @dev 此接口用于支持合约接收来自任意地址或 EIP-3525 代币的转账信息。
+ * 请注意，此接口的 EIP-165 标识符为 0x009ce20b 。
+*/
+interface IERC3525Receiver {
+    /**
+     * @notice 处理接收 EIP-3525 代币价值的收据。
+     * @dev EIP-3525 智能合约必须检查接收方合约是否实现了此函数，如果接收方合约实现了此函数，
+     *  则 EIP-3525 合约必须在价值转移之后（即 `transferFrom(uint256,uint256,uint256,bytes)`）调用此函数。
+     *  如果转移被接受，此函数必须返回 0x009ce20b（即 `bytes4(keccak256('onERC3525Received(address,uint256,uint256,uint256,bytes)'))`）。
+     *  如果转移被拒绝，此函数必须引发异常或返回除 0x009ce20b 之外的任何值。
+     * @param _operator 触发转移的地址
+     * @param _fromTokenId 要从中转移价值的代币 ID
+     * @param _toTokenId 要将价值转移至的代币 ID
+     * @param _value 转移的价值
+     * @param _data 没有指定格式的附加数据
+     * @return `bytes4(keccak256('onERC3525Received(address,uint256,uint256,uint256,bytes)'))`，
+     *  除非转移被拒绝。
+     */
+    function onERC3525Received(address _operator, uint256 _fromTokenId, uint256 _toTokenId, uint256 _value, bytes calldata _data) external returns (bytes4);
+
+}
+```
+
+
+**新的转账模型**
+
+
+1. ID到ID的价值转移
+2. ID到地址的价值转移
+
+
+```
+// 第一个允许在同一槽中将值从一个令牌（由 _fromTokenId 指定）转移到另一个令牌（由 _toTokenId 指定），导致从源令牌的值中减去 _value 并添加到目标令牌的值；
+//
+function transferFrom(uint256 _fromTokenId, uint256 _toTokenId, uint256 _value) external payable;
+
+
+// 第二个允许从一个代币（由 _fromTokenId 指定）转移到一个地址（由 _to 指定），该值实际上转移到该地址拥有的代币，并且应该返回目标代币的 id .进一步的解释可以在这个方法的“设计决策”部分找到。
+//    
+function transferFrom(uint256 _fromTokenId, address _to, uint256 _value) external payable returns (uint256 toTokenId_);
+```
+
+
+### **规则**
+
+#### **approving 规则**
+
+本EIP提供四种审批功能，分别表示不同级别的审批，分别为全级审批、槽位级审批、token ID级审批和价值级审批。
+
+1. **全级审批**: `setApprovalForAll` ，与 EIP-721 兼容，应该表示完全批准级别，这意味着授权操作员能够管理所有者拥有的所有代币，包括它们的价值。
+2. **槽位级审批**: `setApprovalForSlot` （可选）应该表示批准的插槽级别，这意味着授权操作员能够管理所有者拥有的具有指定插槽的所有令牌，包括它们的值。
+3. **ID级审批**: `approve` 与 EIP-721 兼容的令牌 ID 级别 approve 函数应该指示授权操作员只能管理所有者拥有的指定令牌 ID，包括其 value 价值。
+4. **价值级审批**: `approve` 值级别 approve 函数 (兼容 ERC20)，应该表明授权操作员能够管理所有者拥有的指定代币的指定最大值。
+
+**对于任何批准功能，调用者必须是所有者或已获得更高级别的权限。**
+
+#### **transferFrom 规则**
+
+**`transferFrom(uint256 _fromTokenId, uint256 _toTokenId, uint256 _value)` 函数应该根据以下规则指示从一个代币到另一个代币的价值转移：**
+
+- 必须恢复，除非 msg.sender 是 `_fromTokenId` 的所有者、授权操作员或已批准整个令牌或至少 `_value` 的操作员。
+- 如果 `_fromTokenId` 或 `_toTokenId` 为零标记 ID 或不存在，则必须还原。
+- 如果 `_fromTokenId` 和 `_toTokenId` 的插槽不匹配，则必须还原。
+- 如果 `_value` 超过了 `_fromTokenId` 的值或其对操作员的允许，则必须恢复。
+- 如果 `_toTokenId` 的所有者是智能合约，则必须检查 `onERC3525Received` 函数，如果该函数存在，则必须在价值转移后调用此函数，如果结果不等于 `0x009ce20b`，则必须返回；
+- 必须发出 `TransferValue` 事件。
+
+
+**`transferFrom(uint256 _fromTokenId, address _to, uint256 _value)` 函数将值从一个代币 ID 转移到一个地址，应该遵循以下规则：**
+
+- 必须找到地址 `_to` 拥有的 EIP-3525 代币，或者创建一个新的 EIP-3525 代币，与 `_fromTokenId` 的槽相同，以接收传输的值。
+- 必须恢复，除非 msg.sender 是 `_fromTokenId` 的所有者、授权操作员或已批准整个令牌或至少 `_value` 的操作员。
+- 如果 `_fromTokenId` 为零令牌 ID 或不存在，则必须还原。
+- 如果 `_to` 是零地址，则必须还原。
+- 如果 `_value` 超过了 `_fromTokenId` 的值或其对操作员的允许，则必须恢复。
+- 如果 `_to` 地址是智能合约，则必须检查 onERC3525Received 函数，如果该函数存在，则必须在值传输后调用该函数，如果结果不等于 `0x009ce20b`，则必须返回；
+- 必须发出 Transfer 和 TransferValue 事件。
+
+
+**Metadata Extensions 元数据扩展**
+
+EIP-3525 元数据扩展是兼容的 EIP-721 元数据扩展。
+
+这个可选接口可以用 EIP-165 标准接口检测来识别。
+
+```
+pragma solidity ^0.8.0;
+
+/**
+ * @title EIP-3525半同质化代币标准，元数据的可选扩展
+ * @dev 任何希望支持查询EIP-3525合约中统一资源标识符(URI)及指定槽位的合约的接口。
+ * 由于智能合约中存储的数据比存储在集中式系统中的数据更可靠，因此建议元数据（包括“contractURI”、“slotURI”和“tokenURI”）直接以JSON格式返回，
+ * 而不是以指向存储在集中式系统中的任何资源的URL返回。
+ * 参见：https://eips.ethereum.org/EIPS/eip-3525
+ * 注意：此接口的EIP-165标识符为 `0xe1600902`
+*/
+interface IERC3525Metadata is
+    IERC3525 /* , IERC721Metadata */
+{
+    /**
+     * @notice 返回当前EIP-3525合约的统一资源标识符（URI）。
+     * @dev 此函数应返回以JSON格式呈现的此合约的URI，以头部“data:application/json;”开头。
+     * 参见：https://eips.ethereum.org/EIPS/eip-3525 了解合约URI的JSON模式。
+     * @return 当前EIP-3525合约的JSON格式化URI
+    */
+    function contractURI() external view returns (string memory);
+
+    /**
+     * @notice 返回指定槽位的统一资源标识符（URI）。
+     * @dev 此函数应返回以JSON格式呈现的_slot的URI，以头部“data:application/json;”开头。
+     * 参见：https://eips.ethereum.org/EIPS/eip-3525 了解槽位URI的JSON模式。
+     * @return _slot 的JSON格式化URI
+    */
+    function slotURI(uint256 _slot) external view returns (string memory);
+}
+```
+
+
+
+**EIP-3525 元数据 URI JSON 架构**
+
+```
+/////////////////////////////
+///                       ///
+/// contractURI() 的返回  ///
+///                      ///
+////////////////////////////
+
+{
+  "title": "Contract Metadata",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Contract Name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Describes the contract"
+    },
+    "image": {
+      "type": "string",
+      "description": "Optional. Either a base64 encoded imgae data or a URI pointing to a resource with mime type image/* representing what this contract represents."
+    },
+    "external_link": {
+      "type": "string",
+      "description": "Optional. A URI pointing to an external resource."
+    },
+    "valueDecimals": {
+      "type": "integer",
+      "description": "The number of decimal places that the balance should display - e.g. 18, means to divide the token value by 1000000000000000000 to get its user representation."
+    }
+  }
+}
+
+
+///////////////////////
+///                 ///
+/// slotURI(uint)  ///
+///                ///
+//////////////////////
+
+
+{
+  "title": "Slot Metadata",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Identifies the asset category to which this slot represents"
+    },
+    "description": {
+      "type": "string",
+      "description": "Describes the asset category to which this slot represents"
+    },
+    "image": {
+      "type": "string",
+      "description": "Optional. Either a base64 encoded imgae data or a URI pointing to a resource with mime type image/* representing the asset category to which this slot represents."
+    },
+    "properties": {
+      "type": "array",
+      "description": "Each item of `properties` SHOULD be organized in object format, including name, description, value, order (optional), display_type (optional), etc."
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of this property."
+          },
+          "description": {
+            "type": "string",
+            "description": "Describes this property."
+          }
+          "value": {
+            "description": "The value of this property, which may be a string or a number."
+          },
+          "is_intrinsic": {
+            "type": "boolean",
+            "description": "According to the definition of `slot`, one of the best practice to generate the value of a slot is utilizing the `keccak256` algorithm to calculate the hash value of multi properties. In this scenario, the `properties` field should contain all the properties that are used to calculate the value of `slot`, and if a property is used in the calculation, is_intrinsic must be TRUE."
+          },
+          "order": {
+            "type": "integer",
+            "description": "Optional, related to the value of is_intrinsic. If is_intrinsic is TRUE, it must be the order of this property appeared in the calculation method of the slot."
+          },
+          "display_type": {
+            "type": "string",
+            "description": "Optional. Specifies in what form this property should be displayed."
+          }
+        }
+      }
+    }
+  }
+}
+
+
+///////////////////////
+///                 ///
+/// tokenURI(uint)  ///
+///                 ///
+///////////////////////
+
+{
+  "title": "Token Metadata",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Identifies the asset to which this token represents"
+    },
+    "description": {
+      "type": "string",
+      "description": "Describes the asset to which this token represents"
+    },
+    "image": {
+      "type": "string",
+      "description": "Either a base64 encoded imgae data or a URI pointing to a resource with mime type image/* representing the asset to which this token represents."
+    },
+    "balance": {
+      "type": "integer",
+      "description": "THe value held by this token."
+    },
+    "slot": {
+      "type": "integer",
+      "description": "The id of the slot that this token belongs to."
+    },
+    "properties": {
+      "type": "object",
+      "description": "Arbitrary properties. Values may be strings, numbers, objects or arrays. Optional, you can use the same schema as the properties section of EIP-3525 Metadata JSON Schema for slotURI(uint) if you need a better description attribute."
+    }
+  }
+}
+
+```
+
+
+### 原因
+
+**元数据生成** 
+
+该代币标准旨在表示最适合金融工具而非收藏品或游戏内物品的半同质化资产。为了数字资产的最大透明度和安全性，我们强烈建议所有实现都应直接从合约代码生成元数据，而不是给出链下服务器 URL。
+
+
+
+#### **策略：从代币到地址的价值转移**
+
+<span style="background: red;">代币的“价值”是代币的属性，与地址无关，因此将价值转移到地址实际上是将其转移到该地址拥有的代币，而不是地址本身。</span>
+
+将价值从代币转移到地址的过程可以按如下方式完成：（1）为接收者的地址创建一个新代币，（2）将价值从“源代币”转移到“新代币”。因此该方法并不完全独立于 ID 到 ID 的传输方法，可以看作是包装上述过程的语法糖。
+
+在一种特殊情况下，如果目标地址拥有一个或多个与“源代币”具有相同槽值的“代币”，则该方法将有如下替代实现： (1) 找到地址拥有的一个具有相同槽值的“代币源代币”，（2）将值转移到找到的“代币”。
+
+上述两种实现都应视为符合该标准。
+
+**决定： 通知/接受机制而不是“安全传输”**
+
+EIP-721和后来的一些代币标准引入了 `SafeTransfer` 模型，为了更好地控制代币转移时的“安全”，这种机制将不同转移模式（安全/不安全）的选择权留给了发送者，可能会导致一些<span style="background: red;">潜在的风险问题</span>：
+
+1. 在大多数情况下，发送方不知道如何在两种传输方式（安全/不安全）之间进行选择。
+2. 如果发送方调用 `safeTransferFrom` 方法，如果接收方合约没有实现回调函数，传输可能会失败，即使该合约能够毫无问题地接收和操作令牌。
+
+
+对于 EIP-3525 标准来说:
+
+1. 不需要额外的 `safeTransferFrom` 方法，所有调用者只需要调用一种转账；
+2. 所有 EIP-3525 合约必须检查接收者合约上是否存在 `onERC3525Received` 并在存在时调用该函数；
+3. 任何智能合约都可以实现 `onERC3525Received` 功能，目的是在收到值后得到通知；如果传输被接受，此函数必须返回 `0x009ce20b`(即 `bytes4(keccak256('onERC3525Received(address,uint256,uint256,uint256,bytes)'))`)，如果传输被拒绝，则返回任何其他值。
+
+
+这种通知/接受机制有一个特殊情况：由于 EIP-3525 允许从一个地址向自身转移价值 **自己转给自己**，当实现 `onERC3525Received` 的智能合约向自身转移价值时， `onERC3525Received` 也会被调用。这允许合约在自我价值转移和从其他地址接收价值之间实施不同的接受规则。
+
+
+#### **决策：不同审批模型之间的关系**
+
+
+
+为了与 EIP-721 的语义兼容以及代币价值操纵的灵活性，定义一些批准级别之间的关系:
+
+1. 批准 id 将导致批准的操作员能够从该 id 部分转移值；这将简化 id 的**价值审批**。但是，对代币总价值的批准不应导致获得批准的运营商能够转移代币实体。
+2. `setApprovalForAll` 将导致从任何代币部分转移价值的能力，以及批准从任何代币向第三方部分转移价值的能力；这将简化地址拥有的所有代币的**价值转移和批准**。
+
+
+
+### **与 EIP-721 的区别**
+
+半同质代币将具有 ERC-20 的定量特征和 ERC-721 的定性属性。与ERC-721标准相比，主要增加的是 `mapping(uint256 => uint256) internal _values // tokenId => value` 和 `mapping(uint256 => uint256) internal _slots // tokenId => slot`之间新的映射关系，分别代表**代币数量**和**资产类型**。主要区别在于铸造、转移和销毁功能。
+
+**关于 mint**
+
+`mint` 函数传入三个参数，分别是address to_、uint256 tokenId_和uint256 slot_。该函数首先调用ERC721的mint函数来铸造token，之后将资产类型存入_slots映射关系中。
+
+还有一个 `mintValue` 函数，先调用铸币函数，然后将铸币数量存入_values映射关系。通过这种方式，ERC721 代币被赋予数量和资产类型属性。
+
+![](./img/EIP-3525_code_mint&mintValue.png)
+
+**关于 transfer**
+
+SFT 的交易与其他代币类似。不同的是，SFT 双方的交易目标都在 tokenId 中。
+
+转账有两种情况，
+
+1. 第一种是当目标地址为**地址**时，为目标地址进行铸币，然后将双方的tokenId和交易数量传入函数；
+
+2. 第二种是当交易对象是**tokenId**时，直接调用transfer函数。
+
+![](./img/EIP-3525_code_transferFrom.png)
+
+`_transfer()` 函数会先做一些条件判断，然后根据_values映射关系进行相应的增减来进行交易
+
+![](./img/EIP-3525_code_transfer_internal.png)
+
+**关于 burn**
+
+`burn` 函数首先调用ERC721标准_burn函数烧录相应的token，然后清除tokenId对应的_slots到_values的映射关系。
+
+
+![](./img/EIP-3525_code_burn.png)
+
+
+### 总结
+
+ EIP-3525 标准保留了 `ERC721代币` 的描述性属性和 `ERC20代币` 的量化属性，允许<span style="background: red;">相同代币类型（槽）</span>之间的交易、拆分和合并，实现可替代代币的拆分。
+
+
 ## EIP-3712 (多种批量 同质通证标准)   弥补ERC20和ERC1155的不足之处，使得其适合多同质化通证进行授权与交易等应用场景
  
 
@@ -1973,7 +2668,7 @@ http://192.168.10.146:6789
 
 
 
-## ERC-672 (逆向 ENS 伪自省)
+## EIP-672 (ERC-672, 逆向 ENS 伪自省)
 
 
 ```
@@ -2294,7 +2989,173 @@ contract ERC1271 {
 
 ## EIP-6492 (预部署合同签名验证，EIP-1271 的拓展，针对还未部署的合约使用 EIP-1271 的功能)
 
+**就是在 signature 的内容上做文章**
 
+
+合约可以通过 ERC-1271 签署可验证消息。但是，如果合约尚未部署，则无法进行 ERC-1271 验证，因为您无法在该合约上调用 isValidSignature 函数。 特别是在 EIP-4337 中，直到第一个 UserOp 被挖出后，账户才会被部署。通常这很好，因为我们可以使用`反事实地址` (create2 生成的地址) 接收资产，而无需先部署帐户。但是假设将该地址对接到 Dapp 中时，在 还未部署的 EIP-4337 钱包地址被 Dapp 通过 `code` 来判断是否为一个合约时，发现其没有  `code`，这时候就会被当做一个 EOA 处理，从而拒绝钱包的签名 (假如使用了还未部署的钱包的未来 owner 的 EOA 做的签名)，那么签名校验将被拒绝，它不知道通过 ERC-1271 验证我的签名，因为 EIP-4337 的钱包还没有被部署。
+
+
+**规范**
+
+相对于 EIP-1271 我们使用相同的 isValidSignature 函数，但我们添加了一个新的包装器签名格式，签署合约可以在部署之前使用，以便支持验证。
+
+**如果检测到包装签名格式，签名验证器必须在试图调用isValidSignature之前执行合同部署。**
+
+通过检查签名是否以 magicBytes 结尾（必须定义为 0x6492649264926492649264926492649264926492649264926492649264926492 ）来检测包装器格式。建议将此 ERC 与 CREATE2 合约一起使用，因为它们的部署地址始终是可预测的。
+
+
+**签名侧**
+
+
+
+1. 如果部署了合约，则生成一个正常的 ERC-1271 签名。
+2. 如果合约尚未部署，则将签名包裹如下： `concat(abi.encode((create2Factory, factoryCalldata, originalERC1271Signature), (address, bytes, bytes)), magicBytes)`。
+
+注意，我们传递的是 `factoryCalldata` 而不是 salt 和 bytecode 。我们这样做是为了使验证符合任何工厂接口。我们不需要根据 create2Factory / salt / bytecode 计算地址，因为 ERC-1271 验证假定我们已经知道我们正在验证签名的帐户地址。
+
+
+**校验侧**
+
+
+必须按以下顺序执行完整的签名验证：
+
+1. 检查签名是否以 `魔术字节` 结尾，在这种情况下，对多调用合约执行 eth_call ，它将首先使用 factoryCalldata 调用工厂，如果尚未部署则部署合约；然后，像往常一样使用展开的签名调用 EIP-1271 的 contract.isValidSignature()。
+2. 检查地址是否有合约代码。如果是这样，通过调用 isValidSignature 照常执行 ERC-1271 验证。
+3. 如果该地址没有合约代码，请尝试 ecrecover 验证。
+
+
+**原因**
+
+包装器格式以 magicBytes 结尾，以 0x92 结尾，这使得如果以 r,s,v 格式打包，它就不可能与有效的 ecrecover 签名发生冲突，因为 0x92 不是有效的 v 的值。为了避免与正常的 ERC-1271 冲突， magicBytes 本身也很长 ( bytes32 )。
+
+其实在 signature 内容中做文章，可以适用于很多签名，不限于 EIP-1271 。
+
+**示例**
+
+```
+// As per ERC-1271
+interface IERC1271Wallet {
+  function isValidSignature(bytes32 hash, bytes calldata signature) external view returns (bytes4 magicValue);
+}
+
+error ERC1271Revert(bytes error);
+error ERC6492DeployFailed(bytes error);
+
+contract UniversalSigValidator {
+  bytes32 private constant ERC6492_DETECTION_SUFFIX = 0x6492649264926492649264926492649264926492649264926492649264926492;
+  bytes4 private constant ERC1271_SUCCESS = 0x1626ba7e;
+
+  function isValidSigImpl(
+    address _signer,
+    bytes32 _hash,
+    bytes calldata _signature,
+    bool allowSideEffects
+  ) public returns (bool) {
+    uint contractCodeLen = address(_signer).code.length;
+    bytes memory sigToValidate;
+    // The order here is striclty defined in https://eips.ethereum.org/EIPS/eip-6492
+    // - ERC-6492 suffix check and verification first, while being permissive in case the contract is already deployed; if the contract is deployed we will check the sig against the deployed version, this allows 6492 signatures to still be validated while taking into account potential key rotation
+    // - ERC-1271 verification if there's contract code
+    // - finally, ecrecover
+    bool isCounterfactual = bytes32(_signature[_signature.length-32:_signature.length]) == ERC6492_DETECTION_SUFFIX;
+    if (isCounterfactual) {
+      address create2Factory;
+      bytes memory factoryCalldata;
+      (create2Factory, factoryCalldata, sigToValidate) = abi.decode(_signature[0:_signature.length-32], (address, bytes, bytes));
+
+      if (contractCodeLen == 0) {
+        (bool success, bytes memory err) = create2Factory.call(factoryCalldata);
+        if (!success) revert ERC6492DeployFailed(err);
+      }
+    } else {
+      sigToValidate = _signature;
+    }
+
+    // Try ERC-1271 verification
+    if (isCounterfactual || contractCodeLen > 0) {
+      try IERC1271Wallet(_signer).isValidSignature(_hash, sigToValidate) returns (bytes4 magicValue) {
+        bool isValid = magicValue == ERC1271_SUCCESS;
+
+        if (contractCodeLen == 0 && isCounterfactual && !allowSideEffects) {
+          // if the call had side effects we need to return the
+          // result using a `revert` (to undo the state changes)
+          assembly {
+           mstore(0, isValid)
+           revert(31, 1)
+          }
+        }
+
+        return isValid;
+      } catch (bytes memory err) { revert ERC1271Revert(err); }
+    }
+
+    // ecrecover verification
+    require(_signature.length == 65, 'SignatureValidator#recoverSigner: invalid signature length');
+    bytes32 r = bytes32(_signature[0:32]);
+    bytes32 s = bytes32(_signature[32:64]);
+    uint8 v = uint8(_signature[64]);
+    if (v != 27 && v != 28) {
+      revert('SignatureValidator: invalid signature v value');
+    }
+    return ecrecover(_hash, v, r, s) == _signer;
+  }
+
+  function isValidSigWithSideEffects(address _signer, bytes32 _hash, bytes calldata _signature)
+    external returns (bool)
+  {
+    return this.isValidSigImpl(_signer, _hash, _signature, true);
+  }
+
+  function isValidSig(address _signer, bytes32 _hash, bytes calldata _signature)
+    external returns (bool)
+  {
+    try this.isValidSigImpl(_signer, _hash, _signature, false) returns (bool isValid) { return isValid; }
+    catch (bytes memory error) {
+      // in order to avoid side effects from the contract getting deployed, the entire call will revert with a single byte result
+      uint len = error.length;
+      if (len == 1) return error[0] == 0x01;
+      // all other errors are simply forwarded, but in custom formats so that nothing else can revert with a single byte in the call
+      else assembly { revert(error, len) }
+    }
+  }
+}
+
+// this is a helper so we can perform validation in a single eth_call without pre-deploying a singleton
+contract ValidateSigOffchain {
+  constructor (address _signer, bytes32 _hash, bytes memory _signature) {
+    UniversalSigValidator validator = new UniversalSigValidator();
+    bool isValidSig = validator.isValidSigWithSideEffects(_signer, _hash, _signature);
+    assembly {
+      mstore(0, isValidSig)
+      return(31, 1)
+    }
+  }
+}
+
+
+
+// 对于链上校验： (两种方式)
+
+1. UniversalSigValidator.isValidSig(_signer, _hash, _signature) : 返回签名是否有效的布尔值；这是可重入安全的。
+2. UniversalSigValidator.isValidSigWithSideEffects(_signer, _hash, _signature) ：这等同于前者——它不是重入安全的，但在某些情况下它更省 gas 。
+
+
+// 对于链下校验： ValidateSigOffchain 帮助程序允许您在一个 eth_call 中执行通用验证，而无需任何预先部署的合同。
+
+
+以下是如何使用 ethers 库执行此操作的示例：
+
+
+const isValidSignature = '0x01' === await provider.call({
+  data: ethers.utils.concat([
+    validateSigOffchainBytecode,
+    (new ethers.utils.AbiCoder()).encode(['address', 'bytes32', 'bytes'], [signer, hash, signature])
+  ])
+})
+
+
+
+```
 
 
 ## EIP-2612（[链下]授权签名） EIP-20 签名批准的许可延期
