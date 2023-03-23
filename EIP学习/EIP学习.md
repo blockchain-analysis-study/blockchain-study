@@ -294,10 +294,12 @@ interface ERC721Enumerable {
 ```
 
 
-
+<span id="EIP-4907" />
 
 ## ERC-4907 (租赁NFT协议)  作为 EIP-721 的拓展
 
+
+和[EIP-5006](EIP-5006)的区别
 
 他作为 ERC-721 的扩展， EIP-4907 增加了一个变量UserInfo，让应用可以查询此NFT当前被租出去的目标地址“user”和出租时间”expires"。如果发现已经超出出租时间，则租赁关系宣告失效。
 
@@ -392,7 +394,11 @@ function _beforeTokenTransfer(address from,address to,uint256 tokenId
 ```
 
 
+
 ## EIP-5006 (租赁NFT)  针对 [EIP-1155](#EIP-1155) 的NFT租赁标准
+
+
+和[EIP-4907](EIP-4907)的区别
 
 EIP-5006 的核心价值则是将进一步强化围绕用户创作应用场景上所有权和使用权的分离，明确NFT扩大应用价值的方向。
 
@@ -2665,6 +2671,522 @@ SFT 的交易与其他代币类似。不同的是，SFT 双方的交易目标都
 ## EIP-3475 (ERC-3475, 抽象存储债券)
 
 
+ERC-3475 不但延伸了 ERC-20, ERC-721, ERC-1155，並額外增加了一些功能，除了將債券會用到的資訊、功能直接寫進這個 token 標準，也提供token更多的玩法。
+
+
+
+**摘要**
+
+1. 现有的 token 标准无法实现具有多个赎回数据的债券发行。
+2. 该 EIP 使每个债券类别 ID 能够代表一个新的可配置 token 类型，并且对应于每个类别，相应的债券随机数代表 `发行条件` 或 uint256 中的任何其他形式的数据。债券类别的每个随机数都可以有其元数据、供应和其他赎回条件。
+3. EIP 创建的债券也可以根据发行/赎回条件进行批量处理，以提高 gas 成本和 UX 方面的效率。最后，根据该标准创建的债券可以在二级市场上进行分割和交换。
+
+
+**动力**
+
+当前的 LP（流动性提供者）代币是简单的 EIP-20 代币，没有复杂的数据结构。 <span style="background: red;"> 为了让更复杂的 `奖励` 和 `兑换` 逻辑存储在链上，我们需要一个新的代币标准：</span>
+
+
+
+
+1. 支持多个令牌 ID
+2. 可以存储链上 metadata
+3. 不需要固定的存储模式
+4. 省 gas
+5. 该EIP允许创建任何具有相同接口的义务
+6. 将使任何第 3 方钱包应用程序或交易所能够读取这些代币的余额和赎回条件
+7. 这些债券也可以批量作为可交易工具
+
+
+**解读**
+
+債券是投資人借錢給政府或公司的憑證，通常債券的發行方(政府/公司)會跟投資人約定給付利息的方式與到期返還的金額。
+其實債券跟定存很像，差別在於你放錢的地方從銀行變成政府/銀行/一般企業，而且債券的利率較高、可以在次級市場交易。
+
+- 对于传统债券来说，投资人需要承担：信用风险、利率风险
+
+
+1. 信用风险： 如果發行機構信用變差，投資人會擔心該機構還不出本金，這時會紛紛出手賣出，該機構債券價格就會變低。
+2. 利率风险： 如果市場利率高於債券票面利率，這時投資人會去投資市場，而不购买債券，債券價格就會下跌；反之如果市場利率低於債券票面利率，買債券反而賺錢，這時投資人會去投資債券，債券價格就會上漲。
+
+
+- 信用成本
+
+債券都是金融行業的重要組成。然而，其低風險的特性也決定了只有政府、通過債券管理部門審查的公司才能發行，這部分是在降低風險以及建立信任。
+
+在貸款過程中增加中間商和監管會導致高額費用，而且手續處理的時間可能達到幾週之久。簡而言之，高額的費用以及冗長的時間是這個機制的信任成本，使債券的發展受到極大的限制。
+
+
+**ERC20 作为债券的缺点**
+
+1. 因為 ERC-20 本身只能定义九個最基本的函数，而債券的到期日、票面利率等等資訊無法寫入，因此要部署新的智能合約，增加负担
+2. 不同类型的债券必須写出不同智能合約 (一种债券一个 ERC20 合约)，而每個開發團隊寫的智能合約也會不同，多樣性太多就容易產生漏洞，若有不慎就會被駭，造成投資者血虧
+3. 在送出交易時要花更多 gas fee
+
+
+
+
+**规范**
+
+
+银行：在获得必要的流动性后发行、赎回或销毁债券的实体。通常，具有池管理员访问权限的单个实体。
+
+```
+pragma solidity ^0.8.0;
+
+/**
+ * @param _from 参数是将减少余额的债券持有人的地址。
+ * @param _to 参数是将增加余额的债券接收方的地址。
+ * @param _transactions 是在下面的理论部分中定义的 Transaction[] calldata 结构，类型为 ['classId'，'nonceId'，'_amountBonds']。
+ * @dev transferFrom 必须具有 isApprovedFor(_from, _to, _transactions[i].classId) 批准，以便为给定的 classId（即对于所有 nonce 相应的 Transaction 元组）将 _from  * 地址转移到 _to 地址。
+ * 
+ * 例如：
+ * function transferFrom(0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef, 0x82a55a613429Aeb3D01fbE6841bE1AcA4fFD5b2B, [IERC3475.Transaction(1,14,500)]); 
+ * 从 _from 地址向 _to 地址转移，类型为 class 1 和 nonce 42 的 500000000 债券。
+*/
+function transferFrom(address _from, address _to, Transaction[] calldata _transactions) external;
+
+/**
+ *
+ * @dev 允许仅传输分配给 _to 地址的债券类型和 nonce，使用 allowance() 函数。
+ * @param _from 参数是将减少余额的持有人的地址。
+ * @param _to 参数是将增加余额的接收方的地址。
+ * @param _transactions 是在下面的 rationale 部分中定义的 Transaction[] calldata 结构。
+ * @dev transferAllowanceFrom 必须具备 `allowance(_from, msg.sender, _transactions[i].classId, _transactions[i].nonceId)` 批准（其中 i 循环范围为 [0 ... Transaction.length - 1]）
+ * 
+ * 例如：
+ * function transferAllowanceFrom(0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef, 0x82a55a613429Aeb3D01fbE6841bE1AcA4fFD5b2B, [IERC3475.Transaction(1,14,500)]);
+ *
+ * 从 _from 地址向 _to 地址转移，类型为 class 1 和 nonce 42 的 500000000 债券。
+*/
+function transferAllowanceFrom(address _from,address _to, Transaction[] calldata _transactions) public ;
+
+/**
+ * 发行
+ * @dev 允许向地址发行任意数量的债券类型（由参数中的Transaction元组定义）。
+ * @dev 必须由单一实体（例如具有与_depositor 地址的流动性池的角色基础可拥有合同进行集成）发行。
+ * @param _to 参数是将要发行债券的地址。
+ * @param _transactions 是Transaction[] calldata（即要发行的债券类别，债券随机数和要发行的债券数量的数组）。
+ * @dev transferAllowanceFrom 必须具有 `allowance（_from，msg.sender，_transactions [i] .classId，_transactions [i] .nonceId`）（其中i循环为[0 ...Transaction.length-1] * ）。
+ * 
+ * 例如：issue（0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef，[IERC3475.Transaction（1，14，500）]）;
+ * 
+ * 发行一个类别为0的债券，向地址0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef发行1000个，具有随机数5。
+*/
+function issue(address _to, Transaction[] calldata _transaction) external; 
+
+/**
+ * 从地址中赎回债券
+ * @dev 调用此函数需要限制为债券发行方合约。
+ * @param _from 是要赎回债券的地址。
+ * @param _transactions 是  Transaction[] calldata 结构体（即包含（债券类别、nonce 和数量）的元组数组）。
+ * @dev 对于给定的债券类别和 nonce，赎回函数必须在达到一定成熟条件后才能执行（可以是结束时间、总活跃流动性等）。
+ * @dev 此外，应该只能由银行或二级市场交易商合约调用。
+ * 例如：
+ * redeem(0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef, [IERC3475.Transaction(1,14,500)]); 
+ * 
+ * 表示“从钱包地址（0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef）赎回500000000个类别为1、nonce为42的债券。”
+*/
+
+function redeem(address _from, Transaction[] calldata _transactions) external; 
+
+/**
+ * 销毁
+ * @dev 允许作废债券（或将给定的债券转移到地址(0)）。
+ * @dev 给定类别和 nonce 的燃烧函数必须仅由控制合约调用。
+ * @param _from 将燃烧其债券的持有者地址。
+ * @param _transactions 是 Transaction[] calldata 结构体（即一组债券的（类别、nonce 和数量）的元组数组），进一步在理论上定义。
+ * @dev 给定类别和 nonce 的燃烧函数必须在成熟条件（可以是结束时间、总活跃流动性等）满足后才能执行。
+ * @dev 此外，它应该仅由银行或二级市场制造商合约调用。
+ * 例如：
+ * burn(0x82a55a613429Aeb3D01fbE6841bE1AcA4fFD5b2B,[IERC3475.Transaction(1,14,500)]);
+ * 
+ * 表示销毁 地址 0x82a55a613429Aeb3D01fbE6841bE1AcA4fFD5b2B 持有的类别为1、nonce为14、数量为500的债券。
+*/
+function burn(address _from, Transaction[] calldata _transactions) external; 
+
+/**
+ * 批准
+ * @dev 允许 _spender 从 msg.sender 中提取 _amount 和类型（classId 和 nonceId）的债券。
+ * @dev 如果再次调用此函数，则用该金额覆盖当前的授权金额。
+ * @dev approve() 应该仅由银行或账户所有者调用。
+ * @param _spender 参数是已被授权转移债券的用户地址。
+ * @param _transactions 是 Transaction[] calldata 结构体（即一组债券的（类别、nonce 和数量）的元组数组），进一步在理论上定义。
+ * 例如：
+ * approve(0x82a55a613429Aeb3D01fbE6841bE1AcA4fFD5b2B,[IERC3475.Transaction(1,14,500)]);
+ * 
+ * 表示 授权 地址 0x82a55a613429Aeb3D01fbE6841bE1AcA4fFD5b2B 管理类别为1、nonce为14、数量为500的债券。
+*/
+
+function approve(address _spender, Transaction[] calldata _transactions) external;
+
+/**
+ * 
+ * @dev 启用或禁用授权第三方（“操作者”）管理调用者债券中给定类别的所有债券。
+ * @dev 如果再次调用此函数，则用新的值覆盖当前的授权。
+ * @dev approve() 应仅由银行或账户所有者调用。
+ * @param _operator 是要添加到已授权操作者集合的地址。
+ *
+ * @param classId 是债券的类别 ID。
+ *
+ * @param _approved 如果操作者已被授权（基于提供的条件），则为 true，否则为 false，表示授权已被撤销。
+ * @dev 合约必须定义有关设置授权条件的内部函数，并且仅可由银行或所有者调用。
+ *
+ * 例如：setApprovalFor(0x82a55a613429Aeb3D01fbE6841bE1AcA4fFD5b2B,0,true);
+ *
+ * 表示 授权地址 0x82a55a613429Aeb3D01fbE6841bE1AcA4fFD5b2B 转移所有 nonce 的类别为 0 的所有 nonce 的所有债券。
+*/
+function setApprovalFor(address _operator, uint256 classId, bool _approved) external returns(bool approved);
+
+/**
+ * 查看总发行量
+ * @dev 这里的总供应量包括已销毁和已赎回的供应量。
+ * @param classId 是债券对应的类别ID。
+ * @param nonceId 是给定债券类别的nonce ID。
+ * @return 债券的供应量
+ * 例如：
+ * totalSupply(0, 1);
+ * 查找类别ID为0、债券nonce为1的债券的总供应量。
+*/
+function totalSupply(uint256 classId, uint256 nonceId) external view returns (uint256);
+
+/**
+ * 查询被赎回的供应量
+ * @dev 返回由(classId,nonceId)标识的债券的赎回供应量。
+ * @param classId 是债券对应的类别ID。
+ * @param nonceId 是给定债券类别的nonce ID。
+ * @return 债券的赎回供应量。
+*/
+function redeemedSupply(uint256 classId, uint256 nonceId) external view returns (uint256);
+
+/**
+ * 查询还处于活动的供应量
+ * @dev 返回由(classId,nonceId)定义的债券的活动供应量。
+ * @param classId 是债券对应的类别ID。
+ * @param nonceId 是给定债券类别的nonce ID。 @param nonceId 是给定的
+ * @return 未赎回的、活跃的供应量。
+*/
+function activeSupply(uint256 classId, uint256 nonceId) external view returns (uint256);
+
+/**
+ * 查询被销毁的供应量
+ * @dev 返回由(classId,nonceId)定义的债券的销毁供应量。
+ * @param classId 是债券对应的类别ID。
+ * @param nonceId 是给定债券类别的nonce ID。
+ * @return 返回给定类别ID和nonce ID的债券中已经被销毁的债券供应量。
+*/
+function burnedSupply(uint256 classId, uint256 nonceId) external view returns (uint256);
+
+/**
+ * 查询某账户的指定class和nonce下的token余额
+ * @dev 返回地址 '_account' 拥有的给定类别ID和nonce ID的债券（非引用）的余额。
+ * @param classId 是债券对应的类别ID。
+ * @param nonceId 是给定债券类别的nonce ID。
+ * @param _account 要确定其余额的所有者地址。
+ * @dev 这也包括已赎回的债券。
+*/
+function balanceOf(address _account, uint256 classId, uint256 nonceId) external view returns (uint256);
+
+/**
+ * @dev 返回class的JSON元数据。
+ * @dev 元数据应遵循稍后在 metadata.md 中解释的一组结构。
+ * @param metadataId 是给定债券类别信息的索引ID。
+ * @return 非ces的JSON元数据。 - 例如 [title, type, description]。
+*/
+function classMetadata(uint256 metadataId) external view returns (Metadata memory);
+
+/**
+ * @dev 返回nonce的JSON元数据。
+ * @dev 元数据应遵循稍后在 metadata.md 中解释的一组结构。
+ * @param classId 是债券对应的类别ID。
+ * @param nonceId 是给定债券类别的nonce ID。
+ * @param metadataId 是给定元数据信息的JSON存储的索引。更多详细信息在metadata.md中定义。
+ * @returns 非ces的JSON元数据。 - 例如 [title, type, description]。
+*/
+function nonceMetadata(uint256 classId, uint256 metadataId) external view returns (Metadata memory);
+
+/**
+ * @dev 允许任何人读取给定债券类别 classId 的值（存储在结构体 Values 中）。
+ * @dev 这些值应遵循元数据中解释的一组结构，同时对应于给定元数据结构的正确映射。
+ * @param classId 是债券的相应类别ID。
+ * @param metadataId 是给定所有值的元数据信息的JSON存储的索引。
+ * @returns 类别元数据的值。- 例如 [string, uint, address]。
+*/
+function classValues(uint256 classId, uint256 metadataId) external view returns (Values memory);
+
+/**
+ * @dev 允许任何人读取给定债券(nonceId,classId)的值（存储在不同类别的结构值中）。
+ * @dev 这些值应该遵循在 metadata.md 中解释的一组结构，同时对应于给定元数据结构的正确映射。
+ * @param classId 是债券的相应类别 Id。
+ * @param metadataId 是所有给定元数据值的元数据 JSON 存储的索引。
+ * @returns 类别元数据的值。-例如 [string, uint, address]。
+*/
+function nonceValues(uint256 classId, uint256 nonceId, uint256 metadataId) external view returns (Values memory);
+
+/**
+ * @dev 返回参数以确定债券成熟的当前状态。
+ * @dev 赎回条件应通过一个或多个内部函数来定义。
+ * @param classId 是债券的相应 classId。
+ * @param nonceId 是给定债券类别的 nonceId。
+ * @returns progressAchieved 定义债券当前状态的度量（可能与流动性百分比、时间等相关）。
+ * @returns progressRemaining 定义剩余时间/剩余进度的度量。
+*/
+function getProgress(uint256 classId, uint256 nonceId) external view returns (uint256 progressAchieved, uint256 progressRemaining);
+
+/**
+ * @dev 授权给 _spender 以便于 _owner 为所有被标识为(classId, nonceId)的债券设置授权额度。
+ * @param _owner 债券所有人的地址（也是 msg.sender）。
+ * @param _spender 被授权从_owner持有的(classId, nonceId)的债券中支出的地址。
+ * @param classId 债券的相应 classId。
+ * @param nonceId 给定债券类别的 nonceId。
+ * @notice 返回 _amount，该金额代表 _spender 仍被授权从 _owner 提取的金额。
+*/
+function allowance(address _owner, address _spender, uint256 classId, uint256 nonceId) external returns(uint256);
+
+/**
+ * 判断操作者是否可以操作持有者所有 token 权限
+ * @dev 返回布尔值true，如果地址_operator被授权管理账户的债券类。
+ * @notice 查询特定所有者的操作者的批准状态。
+ * @dev _owner 是债券的所有者。
+ * @dev _operator是EOA /合约，其在此批准中对债券类别的批准状态正在检查。
+ * @returns 如果已批准操作员，则为“true”，如果未批准，则为“false”。
+*/
+function isApprovedFor(address _owner, address _operator) external view returns (bool);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+
+Issue
+@notice 当发行债券时，Issue事件必须被触发。这不应包括零价值的发行。
+@dev 这不应包括零价值的发行。
+@dev 当操作者（即银行地址）合约向给定实体发行债券时，必须触发Issue。
+例如：emit Issue(_operator, 0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef,[IERC3475.Transaction(1,14,500)]);
+由地址（operator）发行500个债券（nonce14，class1）到地址0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef。
+*/
+
+event Issue(address indexed _operator, address indexed _to, Transaction[] _transactions); 
+
+/**
+
+Redeem
+@notice 当债券被赎回时，必须触发Redeem事件。这不应包括零价值赎回。
+@param _redeemer 赎回债券的地址。
+@param _bondOwner 拥有被赎回债券的地址。
+@param _transaction 一个包含赎回债券的交易的结构体，包括bond的classId、nonceId和数量。
+@dev Redeem事件应在操作者（即银行地址）合约赎回债券给定实体时触发。
+例如：emit Redeem(0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef,0x492Af743654549b12b1B807a9E0e8F397E44236E,[IERC3475.Transaction(1,14,500)]);
+表示0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef正在赎回0x492Af743654549b12b1B807a9E0e8F397E44236E拥有的500个class 1、nonce 14的债券。
+*/
+
+event Redeem(address indexed _operator, address indexed _from, Transaction[] _transactions);
+
+
+/**
+
+Burn.
+@dev Burn 必须在银行合约通过质押（或无效化）赎回债券时触发。
+@dev Burn 必须在债券被销毁时触发。这不应包括零价值销毁。
+e.g : emit Burn(0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef,0x492Af743654549b12b1B807a9E0e8F397E44236E,[IERC3475.Transaction(1,14,500)]);
+当操作者 0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef 销毁类别为1、nonce为14、拥有者为0x492Af743654549b12b1B807a9E0e8F397E44236E的500个债券时，触发事件。
+*/
+
+event burn(address _operator, address _owner, Transaction[] _transactions);
+
+/**
+
+Transfer（转账）
+@dev 当债券通过地址(operator)从所有者地址(_from)转移到地址(_to)时，以 _transactions 结构数组定义的参数传输的债券被转移，会触发此事件。
+@dev 当债券转移时，必须触发 Transfer 事件。这不应包括零价值转移。
+@dev 不应该通过 _from '0x0' 触发 Transfer 事件（使用 event Issued 代替）。
+e.g. emit Transfer(0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef, 0x492Af743654549b12b1B807a9E0e8F397E44236E, _to, [IERC3475.Transaction(1,14,500)]);
+从地址 0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef 转移数量为 500 的债券，类型为 (Class 1 and Nonce 14)，从所有者 0x492Af743654549b12b1B807a9E0e8F397E44236E 转移到地址(_to)。
+*/
+
+event Transfer(address indexed _operator, address indexed _from, address indexed _to, Transaction[] _transactions);
+
+/**
+
+ApprovalFor
+@dev 当地址_owner批准地址_operator转移其债券时，触发此事件。
+@notice 当债券持有者批准一个_operator时，必须触发Approval。这不应包括零值批准。
+eg: emit ApprovalFor(0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef, 0x492Af743654549b12b1B807a9E0e8F397E44236E, true);
+这表示0x2d03B6C79B75eE7aB35298878D05fe36DC1fE8Ef授权0x492Af743654549b12b1B807a9E0e8F397E44236E转移其债券。
+*/
+
+event ApprovalFor(address indexed _owner, address indexed _operator, bool _approved);
+```
+
+**Metadata 元数据**
+
+
+债券类或随机数的元数据存储为 JSON 对象数组
+
+
+1. description 元数据
+
+定义了有关存储在 `随机数/类` 元数据结构中的数据性质的附加信息。它们是使用此处解释的结构化定义的。然后，参与债券市场的各个实体的前端将使用它来解释符合其管辖范围的数据。
+```
+[
+    {
+        "title": "defining the title information",
+        "_type": "explaining the type of the title information added",
+        "description": "little description about the information stored in  the bond",
+    }
+]
+
+
+示例：在债券中添加详细信息，描述债券发行地的 当地管辖权：
+
+{
+"title": "localisation",
+"_type": "string",
+"description": "jurisdiction law codes compatibility"
+"values": ["fr ", "de", "ch"]
+}
+```
+
+2. nonce 元数据
+
+索引信息的关键值是“类”字段。以下是规则：
+
+  - 标题可以是任何由元数据描述区分的字母数字类型（尽管它可能取决于某些司法管辖区）。
+  - 标题不应该是空的。
+
+元数据的一些具体示例可以是债券的本地化、管辖详细信息等。
+
+
+```
+[   
+    {   
+    "title": "maturity",
+    "_type": "uint",
+    "description": "Lorem ipsum...",
+    "values": [0, 0, 0]
+    }
+]
+```
+
+3. class 元数据
+
+该结构定义了类信息的详细信息（符号、风险信息等）。
+
+```
+[ 
+    {   
+    "title": "symbol",
+    "_type": "string",
+    "description": "Lorem ipsum...",
+    "values": ["Class symbol 1", "Class symbol 2", "Class symbol 3"],
+    },
+    {   
+    "title": "issuer",
+    "_type": "string",
+    "description": "Lorem ipsum...",
+    "values": ["Issuer name 1", "Issuer name 2", "Issuer name 3"],
+    },
+
+    {   
+    "title": "issuer_address",
+    "_type": "address",
+    "description": "Lorem ipsum...",
+    "values":["Address 1.", "Address 2", "Address 3"]
+    },
+
+    {   
+    "title": "class_type",
+    "_type": "string",
+    "description": "Lorem ipsum...",
+    "values": ["Class Type 1", "Class Type 2", "Class Type 3"]
+    },
+
+    {   
+    "title": "token_address",
+    "_type": "address",
+    "description": "Lorem ipsum...",
+    "values":["Address 1.", "Address 2", "Address 3"]
+    },
+
+    {   
+    "title": "period",
+    "_type": "uint",
+    "description": "Lorem ipsum...",
+    "values": [0, 0, 0]
+    }
+]
+```
+
+**解码元数据**
+
+首先，分析元数据的函数（即 ClassMetadata 和 NonceMetadata ）将被相应的前端用来解码债券的信息。
+
+
+这是通过定义键（应该是索引）来读取存储为 JSON 对象的相应信息来覆盖函数 classValues 和 nonceValues 的函数接口来完成的。
+
+
+**一些结构定义**
+
+
+1. nonce： 個 nonce 並不是我們熟知的 transaction 流水號，而是如下圖所示，其中 `_values` 又是一個用到 IERC3475.Values 結構的 mapping，真的包含很多資訊。
+
+
+```
+// nonce 结构的定义
+struct Nonce {
+    // 存储与日期（发行和到期日）相对应的值。
+    mapping(uint256 => IERC3475.Values) _values;
+    //  和 ERC20 定义的 _balances 一致 
+    mapping(address => uint256) _balances;
+    // 和 ERC20 定义的 _allowances 一致
+    mapping(address => mapping(address => uint256)) _allowances;
+
+    uint256 _activeSupply;      // 目前可用的总流通量
+    uint256 _burnedSupply;      // 被销毁的总量
+    uint256 _redeemedSupply;    // 被赎回的总量
+}
+```
+
+2. value：
+
+```
+struct Values {
+    string stringValue;
+    uint256 uintValue;
+    address addressValue;
+    bool boolValue;
+}
+```
+
+#### 总结
+
+475中每个债务合同就是一个 Class 0，一个合约可以发行多个合同，类似 NFT 的 ID，每个 class 都管理有多个数据，记录合同的名字、缩写、说明等文本化信息，每个信息还能进一步拆分出类型以及数值，比如合同金额、合同时间、交割人、交割物、公证机构单位、营业执照编号等。
+
+![](./img/EIP-3475_abstract.jpg)
+
+ERC-3475 是一个非常高度自定义的，能够支持几乎任意信息表示的一种标准集合，而他的主要功绩也是对这样链上存储高度自定义合同之下，如何更好的节约 Gas 和支持批量转移等常规功能上做了优化。他与 4907 类似只是做了数据协议的定义，并未承担其中交割金额的管理、存储租赁的强制限制。只是定义了很完善的类型 让任何人都可以出具合约的一套标准。
+
+其特点汇总而言是：
+
+1. 专为合同定义的标准，且链上去中心化存储
+2. 高度优化存储与链上转移成本，易于拓展 AMM 等债务关系转移
+
 ## EIP-3712 (多种批量 同质通证标准)   弥补ERC20 和 ERC1155 的不足之处，使得其适合多同质化通证进行授权与交易等应用场景
  
 
@@ -2702,10 +3224,39 @@ ERC998ERC20 bottom-up:必须实现ERC20的接⼝
 
 ERC165标准必须适⽤用于所使⽤用的每个ERC998接⼝
 
-http://192.168.10.146:6789
 
 
 
+## EIP-5192 (最小化 灵魂绑定 NFTs)
+
+```
+// SPDX-License-Identifier: CC0-1.0
+pragma solidity ^0.8.0;
+
+interface IERC5192 {
+  /// @notice Emitted when the locking status is changed to locked.
+  /// @dev If a token is minted and the status is locked, this event should be emitted.
+  /// @param tokenId The identifier for a token.
+  event Locked(uint256 tokenId);
+
+  /// @notice Emitted when the locking status is changed to unlocked.
+  /// @dev If a token is minted and the status is unlocked, this event should be emitted.
+  /// @param tokenId The identifier for a token.
+  event Unlocked(uint256 tokenId);
+
+  /// @notice Returns the locking status of an Soulbound Token
+  /// @dev SBTs assigned to zero address are considered invalid, and queries
+  /// about them do throw.
+  /// @param tokenId The identifier for an SBT.
+  function locked(uint256 tokenId) external view returns (bool);
+}
+```
+
+
+## EIP-5496 (多权限管理 NFT 扩展)
+
+
+## EIP-4973 (账户绑定代币)
 
 ## EIP-672 (ERC-672, 逆向 ENS 伪自省)
 
