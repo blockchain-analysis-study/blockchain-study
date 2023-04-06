@@ -3408,8 +3408,26 @@ contract EIP672 {
 
 在 Gnosis safe 中，我们主要关注version type = 0x01, 即EIP-712的实现：
 
-而 Gnosis safe 中的 checkNSignatures() 函数，中就有  "ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", dataHash)), v - 4, r, s);"
+而 Gnosis safe 中的 checkNSignatures() 函数，中就有  "ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", dataHash)), v - 4, r, s);", 这一行使用的是 version type = 0x45；
+其中 dataHash 使用的是 version type = 0x01 (EIP-712的实现)；
 
+dataHash = keccak256(txHashData),
+txHashData = abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator(), bytes32 safeTxHash =
+            keccak256(
+                abi.encode(
+                    SAFE_TX_TYPEHASH,
+                    to,
+                    value,
+                    keccak256(data),
+                    operation,
+                    safeTxGas,
+                    baseGas,
+                    gasPrice,
+                    gasToken,
+                    refundReceiver,
+                    _nonce
+                )
+            ));
 
 ```
 
@@ -3441,11 +3459,7 @@ domainSeparator 是 EIP712 中非常重要的概念，它的作用主要是保�
 EIP712DOMAIN_TYPEHASH 是 EIP712 类型的Hash， 
 
 ```
-EIP712DOMAIN_TYPEHASH =  keccak256(
-    "EIP712Domain(uint256 chainId,address verifyingContract)"
-);
-
-
+// 标准
 bytes32 constant EIP712DOMAIN_TYPEHASH = keccak256(
     "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
 );
@@ -4501,7 +4515,117 @@ library EIP712 {
 ```
 
 
-## EIP-4361（以太坊登录）  使用同一个私钥实现 单点登录 ？？ EIP-4361 的目标是为中心化身份提供者提供一种自我托管的替代方案，提高基于以太坊身份验证的链下服务的互操作性，并为钱包供应商提供一致的机器可读消息格式，以实现更好的用户体验和同意管理。
+## EIP-4361（以太坊登录）  使用同一个私钥实现 单点登录 ？？
+
+
+[详细查看](https://eips.ethereum.org/EIPS/eip-4361)
+
+[spruce 代码参考](https://github.com/spruceid/siwe)
+
+[服务端demo](https://github.com/spruceid/siwe-quickstart/blob/main/02_backend/src/index.js)
+
+目标是为中心化身份提供者提供一种自我托管的替代方案，提高基于以太坊身份验证的链下服务的互操作性，并为钱包供应商提供一致的机器可读消息格式，以实现更好的用户体验和同意管理。
+
+
+
+**目的**
+
+在登录当今流行的非区块链服务时，用户通常会使用身份提供商 (IdP)，这些身份提供商是对用户标识符具有最终控制权的中心化实体，例如: 大型互联网公司和电子邮件提供商。这些各方之间的激励措施往往不一致。 `Sign-In with Ethereum` 为希望对自己的数字身份承担更多控制权和责任的用户提供了一种新的自我保管选项。
+
+
+许多服务已经支持使用消息签名对以太坊帐户进行身份验证的工作流，例如建立基于 cookie 的网络会话，该会话可以管理有关身份验证地址的特权元数据。这是一个标准化登录工作流程并改善现有服务之间互操作性的机会，同时还为钱包供应商提供了一种可靠的方法来将签名请求识别为使用以太坊登录以改进用户体验的请求。
+
+
+**摘要**
+
+使用以太坊登录描述了以太坊帐户如何通过签署由范围、会话详细信息和安全机制（例如，随机数）参数化的标准消息格式来使用链下服务进行身份验证。
+
+本规范的目标是为集中式身份提供者提供一种自我托管的替代方案，提高基于以太坊身份验证的跨链服务的互操作性，并为钱包供应商提供一致的机器可读消息格式，以实现改进的用户体验和同意管理。
+
+
+**规范**
+
+1. 标准化的消息内容格式
+
+钱包向用户提供结构化明文消息或等效接口，用于使用 ERC-191 签名数据格式进行签名。然后将签名呈现给依赖方，依赖方检查签名的有效性和消息内容。依赖方可以进一步获取与以太坊地址相关的数据，例如来自以太坊区块链（例如 ENS、账户余额、ERC-20 / ERC-721 / ERC-1155 资产所有权）。
+
+
+
+```
+
+消息示例：
+
+
+
+service.invalid wants you to sign in with your Ethereum account:
+0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
+
+I accept the ServiceOrg Terms of Service: https://service.invalid/tos
+
+URI: https://service.invalid/login
+Version: 1
+Chain ID: 1
+Nonce: 32891756
+Issued At: 2021-09-30T16:25:24Z
+Resources:
+- ipfs://bafybeiemxf5abjwjbikoz4mc3a3dla6ual3jsgpdr4cjr3oz3evfyavhwq/
+- https://example.com/my-web2-claim.json
+
+
+用来校验消息的 ABNF 描述：
+
+
+
+${domain} wants you to sign in with your Ethereum account:
+${address}
+
+${statement}
+
+URI: ${uri}
+Version: ${version}
+Chain ID: ${chain-id}
+Nonce: ${nonce}
+Issued At: ${issued-at}
+Expiration Time: ${expiration-time}
+Not Before: ${not-before}
+Request ID: ${request-id}
+Resources:
+- ${resources[0]}
+- ${resources[1]}
+...
+- ${resources[n]}
+
+
+```
+
+
+2. 使用 EIP-191 消息签名
+
+3. 对于外部账户 (EOA)，必须使用 ERC-191 中指定的验证方法。对于合约账户，应该使用 ERC-1271 中指定的验证方法，如果不是，实施者必须明确定义验证方法。
+
+4. 依赖方或钱包可以额外执行 ENS 数据的解析，因为这可以通过显示与 address 相关的人性化信息来改善用户体验。可解析的 ENS 数据包括：名称、头像、其他可解析的资源。
+
+**依赖方**
+
+1. 校验签名
+
+必须检查消息是否符合上述 ABNF，在解析后根据预期的术语值进行检查，并且必须验证其签名。
+
+2. session 创建
+
+会话必须绑定到 address 而不是进一步解析的可以更改的资源。
+
+**钱包**
+
+1. 校验消息
+
+必须检查完整的 message 是否符合上述 ABNF。
+
+2.  验证 domain 绑定
+
+钱包实施者必须在处理签名请求时通过匹配 domain 术语来防止网络钓鱼攻击。例如，当处理以 "service.invalid wants you to sign in..." 开头的消息时，钱包会检查请求是否确实来自 `service.invalid` 。
+
+domain 应该从受信任的数据源（例如浏览器窗口）或通过 WalletConnect (ERC-1328) 会话读取，以便与签名消息内容进行比较。
 
 
 ## EIP-86 里首次提出的 (抽象账户)，其目的是实现 “交易来源和签名的抽象”
@@ -6334,3 +6458,37 @@ mapping(address => mapping(bytes32 => address)) interfaces;  // 地址 => 接口
 
 
 ## EIP 2429 (秘密多重签名恢复)
+
+
+## EIP-2718   类型化交易信封   (配合 [EIP-1559](#EIP-1559) 使用)
+
+
+定义一个新的交易类型，它是未来交易类型的封套。
+
+
+**摘要**
+
+
+`TransactionType || TransactionPayload` 是有效交易， `TransactionType || ReceiptPayload` 是有效交易收据，其中 `TransactionType` 标识交易格式， `*Payload` 是交易/收据内容，这些内容将在未来的 EIP 中定义。
+
+
+
+<span id="EIP-1559" />
+
+## EIP-1559
+
+我们引入了一种新的 EIP-2718 交易类型，格式为 0x02 || rlp([chain_id, nonce, max_priority_fee_per_gas, max_fee_per_gas, gas_limit, destination, amount, data, access_list, signature_y_parity, signature_r, signature_s]) 
+
+
+EIP-1559 协议中每种气体都有一个基本费用，它可以根据一个公式在每个区块上下移动，
+
+该公式是 `父区块中使用的气体` 和 `父区块的气体目标`（区块 gasLimit 除以弹性乘数）的函数。当区块高于 gas 目标时，该算法导致每 gas 的基本费用增加，而当区块低于 gas 目标时减少。燃烧每种气体的基本费用。
+
+交易指定了他们愿意给矿工的每 gas 的最高费用，以激励他们包括他们的交易（又名：优先费）。
+
+交易还指定了他们愿意支付的每 gas 总费用的最高费用（又名：最大费用），
+
+其中包括优先费和区块的每 gas 网络费用（又名：基本费用）。
+
+
+交易将始终支付其所在区块的每 gas 基础费用，并且他们将支付交易中设置的每 gas 优先费用，只要这两项费用的总和不超过交易的最高费用每气。
