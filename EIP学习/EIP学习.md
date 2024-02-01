@@ -1396,6 +1396,34 @@ contract SingletonFactory {
 ## EIP-173 (合约所有权标准)
 
 
+```sol
+/// @title ERC-173 Contract Ownership Standard
+///  Note: the ERC-165 identifier for this interface is 0x7f5828d0
+interface ERC173 /* is ERC165 */ {
+    /// @dev This emits when ownership of a contract changes.    
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /// @notice Get the address of the owner    
+    /// @return The address of the owner.
+    function owner() view external returns(address);
+    
+    /// @notice Set the address of the new owner of the contract
+    /// @dev Set _newOwner to address(0) to renounce any ownership.
+    /// @param _newOwner The address of the new owner of the contract    
+    function transferOwnership(address _newOwner) external; 
+}
+
+interface ERC165 {
+    /// @notice Query if a contract implements an interface
+    /// @param interfaceID The interface identifier, as specified in ERC-165
+    /// @dev Interface identification is specified in ERC-165. 
+    /// @return `true` if the contract implements `interfaceID` and
+    ///  `interfaceID` is not 0xffffffff, `false` otherwise
+    function supportsInterface(bytes4 interfaceID) external view returns (bool);
+}
+```
+
+
 ## ERC-165  (标准接口检测)
 
 
@@ -3487,6 +3515,11 @@ encode(domainSeparator : bytes32, message : Struct) = "x19x01" ‖ domainSeparat
 **hashStruct函数的定义为：**
 
 hashStruct(s : Struct) = keccak256(typeHash ‖ encodeData(s))
+
+
+
+
+## EIP-2098 紧凑签名表示
 
 
 
@@ -6492,3 +6525,312 @@ EIP-1559 协议中每种气体都有一个基本费用，它可以根据一个�
 
 
 交易将始终支付其所在区块的每 gas 基础费用，并且他们将支付交易中设置的每 gas 优先费用，只要这两项费用的总和不超过交易的最高费用每气。
+
+
+
+## EIP-3643 (受监管交易所的代币)
+
+机构级证券型代币合约，为证券型代币的管理和合规转让提供接口
+
+
+T-REX 代币是机构级安全代币标准。该标准提供了一个接口库，用于安全令牌的管理和合规传输，使用自动链上验证器系统，利用链上身份进行资格检查。
+
+
+
+**代理角色接口**
+
+```sol
+interface IAgentRole {
+
+  // events
+  event AgentAdded(address indexed _agent);
+  event AgentRemoved(address indexed _agent);
+  
+  // functions
+  // setters
+  function addAgent(address _agent) external;
+  function removeAgent(address _agent) external;
+
+  // getters
+  function isAgent(address _agent) external view returns (bool);
+}
+```
+
+
+**EIP-3643 接口**
+
+
+
+ERC-3643 许可代币构建于标准 ERC-20 结构之上，但具有额外功能以确保安全代币交易的合规性。
+
+
+ERC-3643 代币实现了一系列附加功能，使所有者或其指定的代理人能够管理供应、转让规则、锁定以及证券管理中的任何其他要求。该标准依赖 ERC-173 来定义合约所有权，所有者有责任指定代理。任何在本标准上下文中履行代币合约角色的合约都必须与 IAgentRole 接口兼容。
+
+
+```sol
+
+interface IERC3643 is IERC20 {
+
+   // events
+    event UpdatedTokenInformation(string _newName, string _newSymbol, uint8 _newDecimals, string _newVersion, address _newOnchainID);
+    event IdentityRegistryAdded(address indexed _identityRegistry);
+    event ComplianceAdded(address indexed _compliance);
+    event RecoverySuccess(address _lostWallet, address _newWallet, address _investorOnchainID);
+    event AddressFrozen(address indexed _userAddress, bool indexed _isFrozen, address indexed _owner);
+    event TokensFrozen(address indexed _userAddress, uint256 _amount);
+    event TokensUnfrozen(address indexed _userAddress, uint256 _amount);
+    event Paused(address _userAddress);
+    event Unpaused(address _userAddress);
+
+
+    // functions
+    // getters
+    function onchainID() external view returns (address);
+    function version() external view returns (string memory);
+    function identityRegistry() external view returns (IIdentityRegistry);
+    function compliance() external view returns (ICompliance);
+    function paused() external view returns (bool);
+    function isFrozen(address _userAddress) external view returns (bool);
+    function getFrozenTokens(address _userAddress) external view returns (uint256);
+
+    // setters
+    function setName(string calldata _name) external;
+    function setSymbol(string calldata _symbol) external;
+    function setOnchainID(address _onchainID) external;
+    function pause() external;
+    function unpause() external;
+    function setAddressFrozen(address _userAddress, bool _freeze) external;
+    function freezePartialTokens(address _userAddress, uint256 _amount) external;
+    function unfreezePartialTokens(address _userAddress, uint256 _amount) external;
+    function setIdentityRegistry(address _identityRegistry) external;
+    function setCompliance(address _compliance) external;
+
+    // transfer actions
+    function forcedTransfer(address _from, address _to, uint256 _amount) external returns (bool);
+    function mint(address _to, uint256 _amount) external;
+    function burn(address _userAddress, uint256 _amount) external;
+    function recoveryAddress(address _lostWallet, address _newWallet, address _investorOnchainID) external returns (bool);
+
+    // batch functions
+    function batchTransfer(address[] calldata _toList, uint256[] calldata _amounts) external;
+    function batchForcedTransfer(address[] calldata _fromList, address[] calldata _toList, uint256[] calldata _amounts) external;
+    function batchMint(address[] calldata _toList, uint256[] calldata _amounts) external;
+    function batchBurn(address[] calldata _userAddresses, uint256[] calldata _amounts) external;
+    function batchSetAddressFrozen(address[] calldata _userAddresses, bool[] calldata _freeze) external;
+    function batchFreezePartialTokens(address[] calldata _userAddresses, uint256[] calldata _amounts) external;
+    function batchUnfreezePartialTokens(address[] calldata _userAddresses, uint256[] calldata _amounts) external;
+}
+```
+
+
+**身份注册接口**
+
+
+身份注册表链接到包含动态身份白名单的存储。它在钱包地址、身份智能合约和与投资者居住国相对应的国家代码之间建立了链接。
+
+该标准依赖 ERC-173 来定义合约所有权，所有者有责任指定代理。在本标准的上下文中，任何履行身份注册中心角色的合约都必须与 IAgentRole 接口兼容。
+
+> 请注意，此接口中需要 IClaimIssuer 和 IIdentity ，因为它们是身份资格检查所必需的。
+
+```sol
+
+interface IIdentityRegistry {
+
+
+    // events
+    event ClaimTopicsRegistrySet(address indexed claimTopicsRegistry);
+    event IdentityStorageSet(address indexed identityStorage);
+    event TrustedIssuersRegistrySet(address indexed trustedIssuersRegistry);
+    event IdentityRegistered(address indexed investorAddress, IIdentity indexed identity);
+    event IdentityRemoved(address indexed investorAddress, IIdentity indexed identity);
+    event IdentityUpdated(IIdentity indexed oldIdentity, IIdentity indexed newIdentity);
+    event CountryUpdated(address indexed investorAddress, uint16 indexed country);
+
+
+    // functions
+    // identity registry getters
+    function identityStorage() external view returns (IIdentityRegistryStorage);
+    function issuersRegistry() external view returns (ITrustedIssuersRegistry);
+    function topicsRegistry() external view returns (IClaimTopicsRegistry);
+
+    //identity registry setters
+    function setIdentityRegistryStorage(address _identityRegistryStorage) external;
+    function setClaimTopicsRegistry(address _claimTopicsRegistry) external;
+    function setTrustedIssuersRegistry(address _trustedIssuersRegistry) external;
+
+    // registry actions
+    function registerIdentity(address _userAddress, IIdentity _identity, uint16 _country) external;
+    function deleteIdentity(address _userAddress) external;
+    function updateCountry(address _userAddress, uint16 _country) external;
+    function updateIdentity(address _userAddress, IIdentity _identity) external;
+    function batchRegisterIdentity(address[] calldata _userAddresses, IIdentity[] calldata _identities, uint16[] calldata _countries) external;
+
+    // registry consultation
+    function contains(address _userAddress) external view returns (bool);
+    function isVerified(address _userAddress) external view returns (bool);
+    function identity(address _userAddress) external view returns (IIdentity);
+    function investorCountry(address _userAddress) external view returns (uint16);
+}
+```
+
+
+
+**合规接口**
+
+
+合规合约用于设置产品本身的规则，并确保这些规则在代币的整个生命周期中得到遵守。
+
+例如，合规合约将定义每个国家的最大投资者数量、每个投资者的最大代币数量以及代币流通所接受的国家（使用身份注册中每个投资者对应的国家代码）。
+
+
+合规性智能合约可以是“量身定制”的，遵循代币发行者的法律要求，也可以在通用模块化形式下部署，然后可以添加和删除外部合规性 Modules 以适应代币发行者的法律要求代币的方式与定制的“量身定制”合约相同。
+
+
+```sol
+
+interface ICompliance {
+
+    // events
+    event TokenBound(address _token);
+    event TokenUnbound(address _token);
+
+    // functions
+    // initialization of the compliance contract
+    function bindToken(address _token) external;
+    function unbindToken(address _token) external;
+
+    // check the parameters of the compliance contract
+    function isTokenBound(address _token) external view returns (bool);
+    function getTokenBound() external view returns (address);
+
+    // compliance check and state update
+    function canTransfer(address _from, address _to, uint256 _amount) external view returns (bool);
+    function transferred(address _from, address _to, uint256 _amount) external;
+    function created(address _to, uint256 _amount) external;
+    function destroyed(address _from, uint256 _amount) external;
+}
+
+```
+
+**可信发行人注册接口**
+
+可信发行人注册表存储特定安全令牌的所有可信声明发行人的合约地址。
+
+代币所有者（投资者）的身份合约（IIdentity）必须将由声明发布者签署的声明存储在该智能合约中，以便能够持有代币。
+
+> 该标准依赖 ERC-173 来定义合约所有权，所有者有责任根据其要求管理此注册表。
+
+
+```sol
+interface ITrustedIssuersRegistry {
+
+    // events
+    event TrustedIssuerAdded(IClaimIssuer indexed trustedIssuer, uint[] claimTopics);
+    event TrustedIssuerRemoved(IClaimIssuer indexed trustedIssuer);
+    event ClaimTopicsUpdated(IClaimIssuer indexed trustedIssuer, uint[] claimTopics);
+
+    // functions
+    // setters
+    function addTrustedIssuer(IClaimIssuer _trustedIssuer, uint[] calldata _claimTopics) external;
+    function removeTrustedIssuer(IClaimIssuer _trustedIssuer) external;
+    function updateIssuerClaimTopics(IClaimIssuer _trustedIssuer, uint[] calldata _claimTopics) external;
+
+    // getters
+    function getTrustedIssuers() external view returns (IClaimIssuer[] memory);
+    function isTrustedIssuer(address _issuer) external view returns(bool);
+    function getTrustedIssuerClaimTopics(IClaimIssuer _trustedIssuer) external view returns(uint[] memory);
+    function getTrustedIssuersForClaimTopic(uint256 claimTopic) external view returns (IClaimIssuer[] memory);
+    function hasClaimTopic(address _issuer, uint _claimTopic) external view returns(bool);
+}
+```
+
+
+**声明主题注册接口**
+
+声明主题注册表存储安全令牌的所有可信声明主题。代币所有者的身份合约（ IIdentity ）必须包含存储在该智能合约中的声明主题的声明。
+
+> 该标准依赖 ERC-173 来定义合约所有权，所有者有责任根据其要求管理此注册表。这包括添加和删除所需声明主题的能力。
+
+
+```sol
+interface IClaimTopicsRegistry {
+
+    // events
+    event ClaimTopicAdded(uint256 indexed claimTopic);
+    event ClaimTopicRemoved(uint256 indexed claimTopic);
+
+    // functions
+    // setters
+    function addClaimTopic(uint256 _claimTopic) external;
+    function removeClaimTopic(uint256 _claimTopic) external;
+
+    // getter
+    function getClaimTopics() external view returns (uint256[] memory);
+}
+
+```
+
+
+#### 注意
+
+证券转让可能会因多种原因而失败。这与实用代币形成鲜明对比，实用代币通常只要求发送者有足够的余额。这些条到特定的转移，而是在代币级别设置（即代币合约强制规定投资者的最大数量或任何单个投资者持有的百分比的上限）。对于ERC-20代币， balanceOf 和 allowance 函数提供了一种在执行转账之前检查转账是否可能成功的方法，该方法可以在链上和链下执行。对于代表证券的代币，T-REX 标准引入了一个函数 canTransfer ，它提供了一种更通用的方法来实现这一目标。即，当失败的原因与代币的合规规则和允许检查投资者身份的资格状态的功能 isVerified 有关时。如果发送者和/或接收者的地址被冻结，或者发送者的可用余额（总余额 - 冻结的代币）低于要转账的金额，转账也可能会失败。最终，如果令牌是 paused ，传输可能会被阻止。
+
+
+
+## EIP-4626 (代币化金库)
+
+
+> 该标准是 EIP-20 代币的扩展，提供代币存取款和读取余额的基本功能。
+
+
+
+**目的**
+
+代币化金库缺乏标准化，导致实施细节多样化。一些不同的例子包括借贷市场、聚合器和内在生息代币。这使得需要符合许多标准的协议在聚合器或插件层的集成变得困难，并迫使每个协议实现自己的适配器，这容易出错并浪费开发资源
+
+
+## EIP-7540 (异步 代币化金库、 异步 EIP-4626)
+
+
+>  EIP-7540 旨在引入异步存款和赎回流程，作为现有 ERC-4626 代币化金库标准的扩展。
+
+
+
+新的以太坊改善提案（EIP）EIP-作为目前ERC-4626代币化金库标准的扩展，7540旨在引入异步存款和赎回流程。ERC-4626本身就是一个标准，旨在引入有利可图的金库参数。这些金库是实施策略的智能合同平台，为代币存户提供奖励。
+
+
+## EIP-6900  (模块化智能合约账户和插件)
+
+该提案标准化了智能合约账户和账户插件，它们是允许智能合约账户内可组合逻辑的智能合约接口。该提案符合 ERC-4337 (账户抽象) ，并在定义更新和查询模块化功能实现的接口时受到 ERC-2535 (钻石模型, 多面代理) 的启发。
+
+
+
+
+## EIP-6551 (不可替代的代币绑定账户)
+
+
+不可替代代币拥有的智能合约账户的界面和注册表
+
+
+
+
+站在 NFT Holder 的角度： 我的地址 A 里有一个 NFT，它有个关联的地址 X，我可以用 A 控制 X 转账；当我把 NFT 转到地址 B 之后，A 失去了控制 X 的能力，同时 B 获得了这个能力，所以 账户 X 是跟这个 NFT 绑定的。
+
+
+站在 AA 账户开发者的角度： 在 AA 账户里实现一种 NFT 关联的鉴权方式，如果发起转账请求的 Key 是一个以太坊地址，并且该地址拥有某个预先登记的 NFT，那么鉴权通过，可以解锁账户。
+
+
+
+
+
+
+
+## EIP-1404 (简单受限代币协议)
+
+
+一个简单且可互操作的标准，用于发行具有转移限制的代币。以下内容借鉴了顶级发行人、律师事务所、美国相关监管机构和交易所的意见。
+
+
+
+
+## EIP-4494 (NFT 上的 EIP-2612, 离线授权 permit)
