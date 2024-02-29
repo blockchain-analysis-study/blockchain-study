@@ -6783,10 +6783,256 @@ interface IClaimTopicsRegistry {
 > 该标准是 EIP-20 代币的扩展，提供代币存取款和读取余额的基本功能。
 
 
+(ERC-4626 代币化金库标准有助于使产生收益的代币在去中心化金融中更具可组合性。该标准针对原子存款和赎回进行了优化，最高可达限额。如果达到限额，则无法提交新的存款或赎回。)
+
+
 
 **目的**
 
-代币化金库缺乏标准化，导致实施细节多样化。一些不同的例子包括借贷市场、聚合器和内在生息代币。这使得需要符合许多标准的协议在聚合器或插件层的集成变得困难，并迫使每个协议实现自己的适配器，这容易出错并浪费开发资源
+代币化金库缺乏标准化，导致实施细节多样化。一些不同的例子包括借贷市场、聚合器和内在生息代币。这使得需要符合许多标准的协议在聚合器或插件层的集成变得困难，并迫使每个协议实现自己的适配器，这容易出错并浪费开发资源。
+
+`代币化金库的标准将降低收益金库的集成工作量，同时创建更加一致和强大的实施模式。`
+
+**规范**
+
+所有 EIP-4626 代币化的 Vault 必须实现 EIP-20 来代表份额 "shares"。如果 Vault 不可划转，则它可以在调用 transfer 或 transferFrom 时 revert。
+
+EIP-20 操作 balanceOf、transfer、totalSupply 等对 Vault "股份 "进行操作，这些股份代表对 Vault 基础持有量一部分的所有权要求。
+
+所有 EIP-4626 代币化的 Vault 必须实现 EIP-20 的可选元数据扩展。 name 和 symbol 函数应该以某种方式反映底层令牌的 name 和 symbol 。
+
+
+`EIP-4626 代币化的 Vault 可以实施 EIP-2612，以改进各种集成中批准共享的用户体验。`
+
+
+#### 定义
+
+1. **asset**： Vault 管理的底层代币。具有相应 EIP-20 合同定义的单位。
+2. **share**： Vault 的（自身的）代币。具有 `铸造/存款/提取/赎回` 的基础资产交换比例（由金库定义）。
+3. **fee**： Vault 向用户收取的资产或份额金额。存款、收益、资产管理规模、提款或 Vault 规定的任何其他费用都可能存在费用。
+4. **slippage**： (`滑点`) 广告 shares 与 `金库存款` 或 `取款` 的经济现实之间的任何差异，不计入费用。
+
+
+#### 方法
+
+1. **assert**  用于Vault记账、充值、提现的底层代币地址。
+
+```sol
+# 必须是 EIP-20 代币合约。
+# 不得 revert。
+#
+function asset() public view virtual override returns (address);
+```
+
+2. **totalAssets**  Vault“管理”的标的资产总额。
+
+```sol
+# 可能应该包括因产量而产生的任何复利。
+# 必须包含针对 Vault 中的资产收取的任何费用。
+# 不得 revert。
+#
+function totalAssets() public view virtual override returns (uint256);
+```
+
+3. **convertToShares**   (资产转换为"股份") 在满足所有条件的理想情况下，金库将交换所提供的资产数量的股份数量。
+
+```sol
+# 不得包含针对 Vault 中的资产收取的任何费用。
+# 不得根据调用者的不同显示任何变化。
+# 在执行实际交换时，不得反映滑点或其他链上条件。
+# 除非由于输入过大而导致整数溢出，否则不得 revert 。
+# 必须向下舍入到 0。
+#
+# 注意：  此计算可能不会反映“每个用户”的每股价格，而应反映“平均用户”的每股价格，这意味着普通用户在交换时应该期望看到的内容。
+#
+function convertToShares(uint256 assets) public view virtual override returns (uint256);
+```
+
+
+4. **convertToAssets**  ("股份"转换为资产) 在满足所有条件的理想情况下，金库将用所提供的股份数量交换的资产数量。
+
+```sol
+# 不得包含针对 Vault 中的资产收取的任何费用。
+# 不得根据调用者的不同显示任何变化。
+# 在执行实际交换时，不得反映滑点或其他链上条件。
+# 除非由于输入过大而导致整数溢出，否则不得 revert。
+# 必须向下舍入到 0。
+#
+# 注意：  此计算可能不会反映“每个用户”的每股价格，而应反映“平均用户”的每股价格，这意味着普通用户在交换时应该期望看到的内容。
+#
+function _convertToAssets(uint256 shares, MathUpgradeable.Rounding rounding) internal view virtual returns (uint256);
+```
+
+
+5. **maxDeposit**  (最大存款) 通过 `deposit` 函数调用可存入 receiver Vault 的 `标的资产` 的最大金额。
+
+```sol
+# 必须返回 deposit 允许为 receiver 存入的最大资产金额，并且不会导致 revert ，该最大金额不得高于可接受的实际最大金额（如有必要，应低估）。    这假设用户拥有无限资产，即: 不得依赖 balanceOf 或 asset 。
+# 必须考虑 全局 和 特定 于用户的限制，例如： 如果存款完全被禁用（即使是暂时的），它必须返回 0。
+# 如果可存入的资产最大金额没有限制，则必须返回 2 ** 256 - 1 (即： `type(uint256).max` )。
+# 不得 revert。
+#
+function maxDeposit(address) public view virtual override returns (uint256);
+```
+
+6. **previewDeposit** (预览存款) 允许 链上 或 链下 用户在给定当前链上条件的情况下模拟当前区块的存款效果。
+
+```sol
+# 返回的金额必须接近且不超过同一交易中 deposit 调用中铸造的 Vault "股份" 的确切数量。 例如： 如果在同一交易中调用，deposit 应返回与 previewDeposit 相同或更多的份额。
+# 不得考虑 deposit 存款限额（例如从 maxDeposit 返回的存款限额），并且应始终表现为 deposit 存款将被接受，无论用户是否有足够的代币获得 approved 等。
+# 必须包含 deposit fee。 集成者 应该意识到 deposit fee 的存在。
+# 由于 Vault 特定的用户/全局限制，不得 revert 。可能会由于其他也会导致 deposit revert 的条件而 revert。
+# 
+# 注意：  convertToShares 和 previewDeposit 之间的任何不利差异均应被视为 `股价滑点` 或 其他类型 的情况，这意味着存款人将因存款而损失资产。
+#
+function previewDeposit(uint256 assets) public view virtual override returns (uint256);
+```
+
+7. **deposit** (存款) 通过准确存入 assets 基础代币，铸造 shares Vault 共享给 receiver 。
+
+```sol
+# 必须发出 Deposit 事件。  (如： event Deposit(address indexed sender, address indexed owner, uint256 assets, uint256 shares);)
+# 必须支持 asset 上的 EIP-20 approve / transferFrom 作为存款流。可以支持额外的流程，其中底层代币在 deposit 执行之前由 Vault 合约拥有，并在 deposit 期间进行核算。
+# 如果所有 assets 无法存入（由于达到存款限额、滑点、用户未向 Vault 合约 approve 足够的基础代币等），则必须 revert。
+#
+# 注意：  大多数实现都需要使用 Vault 的底层 asset token 预先 approve 给 Vault 合约。
+#
+function deposit(uint256 assets, address receiver) public virtual override returns (uint256);
+```
+
+8. **maxMint**  (最大铸造数) 通过 mint 函数调用，可以从 Vault 为 receiver 铸造的最大份额。
+
+```sol
+# 必须返回 mint 允许存入 receiver 且不会导致恢复的最大股份数量，该数量不得高于可接受的实际最大数量（如有必要，应低估）。这假设用户拥有无限资产，即不得依赖 balanceOf 或 asset 。
+# 必须考虑 全局 和 特定 于用户的限制，就像如果 mint 函数完全禁用（即使是暂时的）它必须返回 0。
+# 如果对可铸造的最大 "股份" 数量没有限制，则必须返回 2 ** 256 - 1 (即： `type(uint256).max` )。
+# 不得 revert。
+# 
+function maxRedeem(address owner) public view virtual override returns (uint256);
+```
+
+9. **previewMint**  (预览铸造) 允许 链上 或 链下 用户在给定当前链上条件的情况下模拟当前区块的铸币效果。
+
+```sol
+# 返回的资产必须接近且不少于在同一交易的 mint 函数调用中存入的资产的确切数量。 例如： 如果在同一交易中调用， mint 应该返回与 previewMint 相同或更少的 assets 。
+# 不得考虑像 maxMint 返回的铸币限制，并且应该始终表现得好像铸币会被接受，无论用户是否有足够的代币获得 approved 等。
+# 必须包含 deposit fee。 集成者 应该意识到 deposit fee 的存在。
+# 由于 Vault 特定的用户/全局限制，不得 revert 。可能会由于其他也会导致 mint revert 的条件而 revert。
+#
+# 注意：  convertToAssets 和 previewMint 之间的任何不利差异都应被视为 `股价滑点` 或 其他类型 的情况，这意味着存款人将因存款而损失资产。
+#
+function previewMint(uint256 shares) public view virtual override returns (uint256);
+```
+
+10. **mint**  (铸币) 通过存入 assets 基础代币，将 shares Vault 股份铸造到 receiver 。
+
+(与{deposit}相反，即使 Vault 处于 shares "股份" 价格为 0 的状态，也允许铸币。在这种情况下，将在不需要存入任何资产的情况下铸造 shares "股份"。)
+
+```sol
+# 必须发出 Deposit 事件。  (如： event Deposit(address indexed sender, address indexed owner, uint256 assets, uint256 shares);)
+# 必须支持 asset 上的 EIP-20 approve / transferFrom 作为存款流。可以支持额外的流程，其中底层代币在 mint 执行之前由 Vault 合约拥有，并在 mint 期间进行核算。
+# 如果所有 shares 无法被铸造（由于达到存款限额、滑点、用户未 approve 足够的基础代币到 Vault 合约等），则必须 revert。
+#
+# 注意：  大多数实现都需要使用 Vault 的底层 asset token 预先 approve 给 Vault 合约。
+#
+function mint(uint256 shares, address receiver) public virtual override returns (uint256);
+```
+
+11. **maxWithdraw**  (最大赎回数) 通过 withdraw 调用可以从金库中的 owner 余额中提取标的资产的最大金额。
+
+```sol
+# 必须返回可以从 owner 到 withdraw 划转的最大资产数量，并且不会导致 revert ，该资产不得高于实际接受的最大数量（如有必要，应低估）。
+# 必须考虑 全局 和 特定 于用户的限制，就像如果 withdraw 函数完全禁用（即使是暂时的）它必须返回 0。
+# 不得 revert。
+#
+function maxWithdraw(address owner) public view virtual override returns (uint256);
+```
+
+12. **previewWithdraw**  (预览赎回) 允许 链上 或 链下 用户在给定当前链上条件的情况下模拟当前区块的赎回效果。
+
+```sol
+# 返回的 Vault amount 必须接近且不少于在同一交易的 withdraw 函数调用中 burn 的确切数量。  例如：如果在同一交易中调用， withdraw 应该返回与 previewWithdraw 相同或更少的 shares 。
+# 不得考虑从 maxWithdraw 返回的赎回限制，并且应始终表现出赎回将被接受的情况，无论用户是否有足够的 "股份" 等。
+# 必须包含 withdraw fee。集成者 应该意识到 withdraw fee 的存在。
+# 由于 Vault 特定的用户/全局限制，不得 revert 。可能会由于其他也会导致 withdraw revert 的条件而 revert。
+#
+# 注意：  convertToShares 和 previewWithdraw 之间的任何不利差异均应被视为 `股价滑点` 或 其他类型 的情况，这意味着存款人将因存款而损失资产。
+#
+function previewWithdraw(uint256 assets) public view virtual override returns (uint256);
+```
+
+13. **withdraw**  (赎回) 从 owner 销毁 shares 并将 assets 底层代币发送到 receiver 。
+
+```sol
+# 必须发出 Withdraw 事件。  (如： event Withdraw(address indexed sender, address indexed receiver, address indexed owner, uint256 assets, uint256 shares);)
+# 必须支持 withdraw 流程，其中 shares "股份" 直接从 owner 销毁，其中 owner 是 msg.sender 。
+# 必须支持 withdraw 流程，其中 shares "股份" 直接从 owner 销毁，其中 msg.sender 对 owner 的 shares "股份" 拥有 EIP-20 approve。
+# 可以支持额外的流程，其中 shares "股份" 在 withdraw 执行之前转移到 Vault 合约，并在 withdraw 期间进行核算。
+# 应该检查 msg.sender 是否可以花费 owner 的资金，资产需要转换为 shares "股份"，并且应检查 shares "股份" 是否有 allowance。
+# 如果所有 assets 无法 赎回（由于达到 赎回限额、滑点、 owner 没有足够的 shares "股份" 等），则必须 revert。
+# 
+# 注意：  某些实施需要在执行 withdraw 之前向 Vault 预先请求。这些方法应该单独执行 (即类似 approve 的函数)。 
+#
+function withdraw(uint256 assets, address receiver, address owner) public virtual override returns (uint256);
+```
+
+14. **maxRedeem**   (最大兑换) 通过 redeem 调用，可以从 Vault 中的 owner 余额中赎回的 Vault "股份" 的最大数量。
+
+```sol
+# 必须返回可以从 owner 到 redeem 转移的最大 shares "股份" 数量，并且不会导致 revert ，该数量不得高于实际接受的最大数量（如有必要，应低估）。
+# 必须考虑 全局 和 特定 于用户的限制，就像如果 redeem 函数完全禁用（即使是暂时的）它必须返回 0。
+# 不得 revert。
+#
+function maxRedeem(address owner) public view virtual override returns (uint256);
+```
+
+15. **previewRedeem**  (预览兑换) 允许 链上 或 链下 用户在给定当前链上条件的情况下模拟当前区块的赎回效果。
+
+```sol
+# 返回的资产必须接近且不超过同一交易中 redeem 调用中提取的资产的确切数量。 例如： 如果在同一交易中调用， redeem 应该返回与 previewRedeem 相同或更多的 assets 。
+# 不得考虑从 maxRedeem 返回的赎回限制，并且应始终表现得好像赎回将被接受，无论用户是否有足够的 "股份" 等。
+# 必须包含 withdraw fee。集成者 应该意识到 withdraw fee 的存在。
+# 由于 Vault 特定的用户/全局限制，不得 revert 。可能会由于其他也会导致 redeem revert 的条件而 revert。
+#
+# 注意：  convertToAssets 和 previewRedeem 之间的任何不利差异都应被视为 `股价滑点` 或 其他类型 的情况，这意味着存款人将因存款而损失资产。
+#
+function previewRedeem(uint256 shares) public view virtual override returns (uint256);
+```
+
+16. **redeem**  (兑换) 从 owner 销毁 shares 并将 assets 底层代币发送到 receiver 。
+
+```sol
+# 必须发出 Withdraw 事件。  (如： event Withdraw(address indexed sender, address indexed receiver, address indexed owner, uint256 assets, uint256 shares);)
+# 必须支持 withdraw 流程，其中 shares "股份" 直接从 owner 销毁，其中 owner 是 msg.sender 。
+# 必须支持 withdraw 流程，其中 shares "股份" 直接从 owner 销毁，其中 msg.sender 对 owner 的 shares "股份" 拥有 EIP-20 approve。
+# 可以支持额外的流程，其中 shares "股份" 在 redeem 执行之前转移到 Vault 合约，并在 redeem 期间进行核算。
+# 应该检查 msg.sender 是否可以使用支出所有者资金的 allowance 。
+# 如果所有 shares 无法赎回（由于达到 赎回限额、滑点、 owner 没有足够的 shares "股份" 等），则必须 revert。
+#
+# 注意：  某些实施需要在执行 withdraw 之前向 Vault 预先请求。这些方法应该单独执行 (即类似 approve 的函数)。 
+#
+function redeem(uint256 shares, address receiver, address owner) public virtual override returns (uint256);
+```
+
+
+#### 事件
+ 
+1. **Deposit**  (存款) sender 将 assets 交换为 shares ，并将 shares 转移到 receiver 。
+
+```sol
+# 当通过 mint 和 deposit 方法将代币存入 Vault 时，必须发出该 event。
+#
+event Deposit(address indexed sender, address indexed owner, uint256 assets, uint256 shares);
+```
+
+2. **Withdraw**  (提现) sender 已将 owner 拥有的 shares 交换为 assets ，并将 assets 转移到 receiver 。
+
+```sol
+# 当以 EIP-4626.redeem 或 EIP-4626.withdraw 方法从 Vault 中 赎回 shares "股份" 时，必须发出该 event。
+#
+event Withdraw(address indexed sender, address indexed receiver, address indexed owner, uint256 assets, uint256 shares);
+```
+
 
 
 ## EIP-7540 (异步 代币化金库、 异步 EIP-4626)
