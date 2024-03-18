@@ -1282,44 +1282,179 @@ interface IERC1594 is IERC20 {
 ## EIP-1724 (zkERC20: Confidential Token Standard, 加密通证标准)
 
 
+
+
 ## EIP-5805  (授权投票 通证)
+
+#### 摘要和动力
+
+
+许多 DAO（去中心化自治组织）依靠代币来代表一个人的投票权。
+
+为了有效地执行此任务，token 合约需要包含特定的机制，例如检查点和委托。
+
+现有的实施方式并不标准化。该 ERC 提议标准化将 投票 voting 从一个帐户委托给另一个帐户的方式，以及跟踪和查询当前和过去投票的方式。
+
+相应的行为与许多代币类型兼容，包括但不限于 ERC-20 和 ERC-721 。该 ERC 还考虑了时间跟踪函数的多样性，允许投票代币（以及与之相关的任何合约）基于 block.number 、 block.timestamp 或任何其他非递减函数跟踪投票。
+
+
+
+在这些社区中，一些社区使用可转让代币（ERC-20、ERC-721 等）代表投票权。在这种情况下，一个人拥有的代币越多，投票权就越大。 Governor 合约，例如Compound的 GovernorBravo ，从这些“投票代币”合约中读取以获取用户的投票权。
+
+**问题**
+
+仅仅使用大多数令牌标准中存在的 balanceOf(address) 函数还不够好：
+
+1. 这些值没有 checkpoint，因此用户可以在投完票后，将其 token 转移到新帐户，然后使用相同的 token 再次投票。
+
+2. 在不转让 token 的全部所有权的情况下，用户不能将其投票权 委托给其他人 (委托投票)
+
+
+**解决**
+
+上述问题限制导致了带有 委托 的 投票 token 的出现：
+
+1. 用户可以将其 token 的投票权 委托 给自己或第三方。 (这造成了 账户余额 和 投票权重 之间的区别)
+
+2. 账户的投票权重设有 checkpoint ，允许在不同 时间点 查找过去的值
+
+3. 余额没有 checkpoint (即： checkpoint 只是针对 投票权重 的)
+
+#### 规范
+
+##### 方法
+
+1. **getVotes**    获取投票
+
+> 该函数返回账户当前的投票权重。 (这对应于调用该函数时委托给它的所有投票权)
+
+```sol
+function getVotes(address account) public view returns (uint256 votingWeight); 
+```
+
+2. **getPastVotes**    获取历史投票
+
+> 该函数返回账户的历史投票权重。这对应于在特定时间点授予它的所有投票权。时间点参数必须与合约的运行模式相匹配。这个函数应该只服务过去的检查点，它应该是不可变的。
+
+注意：
+> 1. 使用 大于或等于 当前时钟的时间点 (已经超时啦) 调用此函数  应该 revert 。
+> 2. 使用 严格小于 当前时钟的时间点调用此函数  不应该 revert 。
+> 3. 对于任何 严格小于 当前时钟的整数， getPastVotes 返回的值应该是常量。    (这意味着对于返回值的此函数的任何调用，重新执行相同的调用（在将来的任何时间）应该返回相同的值)
+>
+> **由于委托给 address(0) 的令牌不应被计数/快照，因此 getPastVotes(0,x) 应始终返回 0 （对于 x 的所有值）。**
+
+```sol
+function getPastVotes(address account, uint256 timepoint) public view returns (uint256 votingWeight); 
+```
+
+3. **delegates**    获取账户委托的地址
+
+> 该函数返回 当前账户 投票权 被委托的地址
+
+注意
+>  如果 被委托地址是 address(0) ，则不应检查投票权，也不可能使用投票权进行投票。
+
+```sol
+function delegates(address delegatee) public returns (address[]);
+```
+
+4. **delegate**    委托 (变更)
+
+> 此函数更改调用者的委托，同时更新投票委托
+
+```sol
+function delegate(address delegatee) external;
+```
+
+5. **delegateBySig**    变更账户的委托关系 (使用账户的签名)
+
+> 此函数使用签名更改帐户的委托，同时更新投票委托
+
+```sol
+/// @notice 必须符合 EIP-712 规范
+///
+/// keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)")
+///
+function delegateBySig(address delegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) external;
+```
+
+6. **nonces**    获取随机数
+
+> 此函数返回给定帐户的当前随机数
+> 
+> 仅当 EIP-712 签名中使用的随机数与此函数的返回值匹配时，才接受签名委托（请参阅 delegateBySig ）。每当代表 delegator 执行对 delegateBySig 的调用时， nonce(delegator) 的值就应该递增。
+
+```sol
+/// @notice account is delegator
+///
+function nonces(address account) pubic returns (uint256 nonce);
+```
+
+
+##### 事件
+
+1. **DelegateChanged**    委托更改
+
+> delegator 将其资产的委托从 fromDelegate 更改为 toDelegate
+
+```sol
+/// @notice 当帐户的委托被 delegate(address) 或 delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32) 修改时，必须发出
+event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
+```
+
+2. **DelegateVotesChanged**    代表投票已更改
+
+> delegate 可用投票权从 previousBalance 更改为 newBalance
+
+```sol
+event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
+```
+
+
+#### 预期
+
+令 clock 为当前时钟:
+
+1. 对于所有时间点 t < clock 、 getVotes(address(0)) 和 getPastVotes(address(0), t) 应返回 0 。
+2. 对于所有帐户 a != 0 、 getVotes(a) 应该是委托给 a 的所有帐户的“余额”之和。
+3. 对于所有帐户 a != 0 和所有时间戳 t < clock ， getPastVotes(a, t) 应该是当 clock 超过 t 时委托给 a 的所有帐户的“余额”之和。
+4. 对于所有帐户， a 、 getPastVotes(a, t) 在达到 t < clock 后必须保持不变。
+5. 对于所有账户 a ，将委托人从 b 更改为 c 的操作不得增加 b （ getVotes(b) ）的当前投票权，也不得减少 c （ c ）的当前投票权 getVotes(c) ）。
+
+
+#### 理由
+
+1. 委托允许 token 持有者 信任 委托人的 投票 voting，同时完全保管其 token。
+
+这意味着只有一小部分 delegator 需要支付 gas 来投票 voting。
+
+这可以让小的 token 持有者在 不支付昂贵的 gas fee 的情况下进行投票 voting，从而更好地代表他们。
+
+用户可以随时接管自己的投票权，并将其委托给其他人或自己。
+
+
+
+2. checkpoint 的使用可以防止双重投票。
+
+例如，在治理提案的背景下，投票应依赖于时间点定义的快照。只有在该时间点委托的代币才能用于投票。这意味着快照后执行的任何代币转移都不会影响 sender / receiver 代表的投票权。这也意味着**为了投票，必须有人在拍摄快照之前获取代币并委托它们。**治理者可以并且确实在提交提案和拍摄快照之间添加延迟，以便用户可以采取必要的行动（更改其委托、购买更多代币 ...）。
+
+
+
+
+3. 虽然 ERC-6372 的 clock 生成的时间戳表示为 uint48 ，但为了向后兼容， getPastVotes 的时间点参数为 uint256 。
+
+传递给 getPastVotes 的任何时间点 `>=2^48` 都应该导致函数 revert，因为它将是将来的查找。
+
+
+4. delegateBySig 对于为不想为投票支付 Gas 的代币持有者提供无 Gas 工作流程是必要的。
+
+
+
 
 
 ## EIP-55 (混合大小写校验和地址编码)
 
 
-## EIP-1167  (最小代理合约： 节省Gas部署合约)
-
-
-```
-
-pragma solidity ^0.8.0;
-library Clones {
-   
-
-    // @implementation: 被用来做复制 (未使用构造函数做初始化)的合约实例地址
-    // @instance: 被复制部署的 新合约实例地址
-    function clone(address implementation) internal returns (address instance) {
-        <!-- assembly {
-            let ptr := mload(0x40)
-            mstore(ptr, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
-            mstore(add(ptr, 0x14), shl(0x60, implementation))
-            mstore(add(ptr, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
-            instance := create(0, ptr, 0x37)
-        } -->
-        assembly {
-          let clone := mload(0x40)
-          mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
-          mstore(add(clone, 0x14), bytes20(implementation))
-          mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
-          instance := create(0, clone, 0x37)
-        }
-        require(instance != address(0), "ERC1167: create failed");
-    }
-    ///....
-}
-
-```
 
 
 ## EIP-2470 (单例工厂, 使用 create2 和 initcode 的合约部署工厂标准)
@@ -4879,7 +5014,7 @@ contract RecipientExample {
 ## EIP-1474  远程过程调用规范 定义 jsonrpc 的返回状态码
 
 
-## EIP-1167  代理(部署)合约 供了一种低成本克隆合约的方法
+## EIP-1167  (最小代理合约： 节省Gas部署合约) 代理(部署)合约 供了一种低成本克隆合约的方法
 
 ```
 
@@ -7034,6 +7169,8 @@ event Withdraw(address indexed sender, address indexed receiver, address indexed
 ```
 
 
+## EIP-7535 (原生资产 ERC-4626 代币化金库, 即支持 ETH、LAT 等原生代币)
+
 
 ## EIP-7540 (异步 代币化金库、 异步 EIP-4626)
 
@@ -7080,3 +7217,62 @@ event Withdraw(address indexed sender, address indexed receiver, address indexed
 
 
 ## EIP-4494 (NFT 上的 EIP-2612, 离线授权 permit)
+
+
+## EIP-6372 (合约时钟)
+
+
+#### 摘要和动力
+
+
+许多合约依赖于一些时钟来强制延迟和存储历史数据。虽然有些合约依赖于区块号，但其他合约则使用时间戳。目前还没有简单的方法来发现合约内部使用哪个时间跟踪函数。该 EIP 提议标准化合约接口以公开其内部时钟，从而提高可组合性和互操作性。
+
+
+许多合约检查或存储与时间相关的信息。例如，时间锁合约在执行操作之前强制执行延迟。同样，DAO 强制规定一个投票期，在此期间利益相关者可以批准或拒绝提案。最后但并非最不重要的一点是，投票代币通常使用定时快照来存储投票权的历史记录。
+
+
+一些合约使用时间戳进行时间跟踪，而另一些合约则使用区块号。在某些情况下，可能会使用更奇特的函数来跟踪时间。
+
+
+#### 规范
+
+
+**必须实现**
+
+```sol
+interface IERC6372 {
+
+  /// 时钟
+  ///
+  /// 该函数根据合约运行的模式返回当前时间点。
+  ///
+  /// 它必须是链的 非递减函数，例如 block.timestamp 或 block.number
+  ///
+  function clock() external view returns (uint48);
+
+
+  /// 时钟模式
+  ///
+  /// 该函数返回合约正在运行的时钟的机器可读字符串描述。
+  ///
+  /// 注意： 
+  /// 
+  /// 该字符串的格式必须类似于 URL 查询字符串（又名 application/x-www-form-urlencoded ），可以在标准 JavaScript 中使用 new URLSearchParams(CLOCK_MODE) 进行解码。
+  ///
+  /// 1. 如果使用块号进行操作：
+  ///
+  ///   1.1. 如果块号是 NUMBER 操作码（ 0x43 ）的块号，则该函数必须返回 mode=blocknumber&from=default 
+  ///   1.2. 如果它是任何其他块号，则此函数必须返回 mode=blocknumber&from=<CAIP-2-ID> ，其中 <CAIP-2-ID> 是 CAIP-2 区块链 ID，例如 eip155:1 
+  /// 
+  /// 2. 如果使用时间戳进行操作，则此函数必须返回 mode=timestamp
+  ///
+  /// 3. 如果使用任何其他模式进行操作，则此函数应该返回编码的 mode 字段的唯一标识符
+  ///
+  function CLOCK_MODE() external view returns (string);
+}
+```
+
+#### 理由
+
+clock 返回 uint48 ，因为它足以存储实际值。在时间戳模式下， uint48 足够到 8921556 年。即使在块数模式下，每秒 10,000 个块，到 2861 年也足够了。使用小于 uint256 的类型允许存储打包时间点其他关联值，大大降低了写入和读取存储的成本。
+   (根据区块链（尤其是第二层）的演变，使用较小的类型（例如 uint32 ）可能会很快导致问题。另一方面，任何大于 uint48 的东西都显得浪费)
