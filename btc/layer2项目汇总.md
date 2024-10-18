@@ -67,7 +67,11 @@ Data Availability Committee (DAC) ： 每一个 Oracle 节点都是 DAC 节点 (
 zkProver: 利用 SNARK 技术生成零知识证明，证明交易的有效性和正确性。
 
 
-使用  Bridge-in 机制实现 BTC 到 Layer2 的转移(MBTC) ；使用 Bridge-out 机制实现 MBTC 到 BTC 的赎回。
+#### 比特币跨链转账到以太坊网络
+
+
+
+#### 使用  Bridge-in 机制实现 BTC 到 Layer2 的转移(MBTC) ；使用 Bridge-out 机制实现 MBTC 到 BTC 的赎回。
 
 
 具体工作流程如下： 
@@ -88,13 +92,18 @@ zkProver: 利用 SNARK 技术生成零知识证明，证明交易的有效性和
 
 
 
+Oracle 节点将其验证的 zkp 运算流程进行特殊处理产生 Commitment 发送到 BTC，允许任何人对 Commitment 进行 challenge (流程类似 BitVM 的欺骗证明协议)。如果挑战成功则发布该 Commitment 的 Oracle 节点将受到经济惩罚。
+(Oracle 发布的数据必须有当前 Lauer2 的状态Hash <StateRoot>, 以及 zkp 本身，以供外界校验)
 
 
 
 
 
 
-提供幽灵BTC机制做到类似 aave 的闪电贷：
+
+
+
+提供幽灵BTC机制做到类似 aave 的闪电贷
 
 
 ## Bison (ZK-Rollup)
